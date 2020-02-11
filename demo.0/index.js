@@ -14,29 +14,36 @@ const synchronize = (store, arcs) => {
   arcs.forEach(arc => {
     store.apply(arc.changes);
   });
+  //
   const truth = store.changes;
   arcs.forEach(arc => {
     arc.apply(truth);
   });
 };
 
-const store = new Store(0);
-store.change(doc => {
-  doc.list = ['Alpha', 'Beta', 'Gamma']
-});
+const update = async () => {
+  const store = new Store(0);
+  store.change(doc => {
+    doc.list = ['Alpha', 'Beta', 'Gamma'];
+  });
+  //
+  const arc = new Arc();
+  arc.merge(store.truth);
+  const remoteArc = new Arc();
+  remoteArc.merge(store.truth);
+  //
+  arc.change(doc => {
+    doc.name = 'Mundo';
+    doc.list[1] = 'MEAT';
+  });
+  //
+  remoteArc.change(doc => {
+    doc.name = 'Nadie';
+    doc.list[1] = 'TEAM';
+    doc.list.push('Delta');
+  });
+  //
+  synchronize(store, [arc, remoteArc]);
+};
 
-const arc = new Arc();
-arc.merge(store.truth);
-const remoteArc = new Arc();
-remoteArc.merge(store.truth);
-
-arc.change(doc => {
-  doc.name = 'Mundo';
-  doc.list[1] = 'MEAT';
-});
-remoteArc.change(doc => {
-  doc.name = 'Nadie';
-  doc.list[1] = 'TEAM';
-  doc.list.push('Delta');
-});
-synchronize(store, [arc, remoteArc]);
+update();

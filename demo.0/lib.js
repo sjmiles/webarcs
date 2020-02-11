@@ -8,8 +8,8 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Xen} from './xen/xen-async.js';
-import {Automerge} from './automerge.js';
+import {Xen} from '../xen/xen-async.js';
+import {Automerge} from '../automerge.js';
 
 export class Composer {
   constructor() {
