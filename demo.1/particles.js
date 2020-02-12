@@ -45,3 +45,17 @@ export class Info extends Particle {
   }
 }
 Particle.register('Info', Info);
+
+Particle.register('Sort', class extends Particle {
+  get inputs() {
+    return ['list', 'key'];
+  }
+  update({list, key}) {
+    key = key || 'name';
+    if (list) {
+      list.sort((a, b) => (a[key] < b[key]) ? -1 : (a[key] == b[key]) ? 0 : 1);
+    }
+    return list;
+  }
+});
+
