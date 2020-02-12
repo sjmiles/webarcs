@@ -1,0 +1,10 @@
+{
+  "parserOptions": {
+    "ecmaVersion": 8,
+    "sourceType": "module"
+  },
+  "rules": {
+    "semi": "error",
+    "no-trailing-spaces": 1
+  }
+}

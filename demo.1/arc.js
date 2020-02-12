@@ -17,7 +17,7 @@ export const makeId = () => {
   const irand = (range) => Math.floor(Math.random()*range);
   return `${irand(1e2)+1e1}-${irand(1e2)+1e1}`;
   //return `${irand(1e4)+1e3}-${irand(1e4)+1e3}-${irand(1e4)+1e3}-${irand(1e4)+1e3}`;
-}
+};
 
 // TODO(sjmiles): principle: Particles remain stupid, system integration happens in an owner (Host)
 
@@ -31,7 +31,11 @@ export class Host {
   }
   update(inputs) {
     const outputs = this.particleUpdate(inputs);
-    this.render(inputs);
+    let model = inputs;
+    if (inputs && outputs) {
+      model = shallowMerge(shallowMerge({}, inputs), outputs);
+    }
+    this.render(model);
     return outputs;
   }
   render(inputs) {
@@ -40,7 +44,7 @@ export class Host {
   renderModel(inputs) {
     //console.log(`Host::renderModel(${particle.name}::${particle.id})`);
     const {id, name, container} = this;
-    const {template, state} = this.particle;
+    const {template} = this.particle;
     const model = this.particleRender(inputs);
     this.composer.render({id, name, container, content: {template, model}});
   }
@@ -59,10 +63,17 @@ export class Store extends Data {
     this.id = id;
   }
   synchronize(stores) {
-    stores.forEach(store => this.apply(store.changes));
-    // extracting changes is destructive
-    const truth = this.changes;
-    stores.forEach(store => store.apply(truth));
+    let truth;
+    do {
+      // extracting changes is destructive
+      stores.forEach(store => this.apply(store.changes));
+      // extracting changes is destructive
+      truth = this.changes;
+      if (truth.length) {
+        stores.forEach(store => store.apply(truth));
+      }
+    } while (truth.length);
+    console.log('SYNCHRONIZED');
   }
 }
 
@@ -87,7 +98,10 @@ export class Arc extends Data {
     this.hosts.forEach(h => this.updateHost(h));
   }
   updateHost(host) {
-    host.update(this.truth);
+    const outputs = host.update(this.truth);
+    if (outputs && typeof outputs === 'object') {
+      this.maybeChange(doc => shallowMerge(doc, outputs));
+    }
   }
   addParticle(name, container, kind) {
     const kindClass = Particle.registry[kind];
@@ -98,3 +112,8 @@ export class Arc extends Data {
     }
   }
 }
+
+const shallowMerge = (obj, data) => {
+  Object.keys(data).forEach(key => obj[key] = data[key]);
+  return obj;
+};

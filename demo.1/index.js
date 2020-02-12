@@ -17,6 +17,7 @@ const prob = probability => Boolean(Math.random() < probability);
 const persist = new Store(0);
 persist.change(doc => {
   doc.list = ['Alpha', 'Beta', 'Gamma'];
+  doc.sorted = '';
 });
 
 const instantiateRecipe = (arc, recipe, container) => {
@@ -31,21 +32,19 @@ const instantiateRecipe = (arc, recipe, container) => {
   });
 };
 
-const arc0 = new Arc(device0, persist);
+const arc0 = new Arc(window.device0, persist);
 instantiateRecipe(arc0, {
   root: [{
     kind: 'Container',
     content: [{
       kind: 'Info'
     }]
+  }, {
+    kind: 'SortArray'
   }]
 });
 
-//const arc0 = new Arc(device0, persist);
-//arc0.addParticle('A', 'root', 'Container');
-//arc0.addParticle('B', 'content', 'Info');
-
-const arc1 = new Arc(device1, persist);
+const arc1 = new Arc(window.device1, persist);
 arc1.addParticle('A', 'root', 'Info');
 
 const update = (arc) => {
@@ -63,13 +62,13 @@ const update = (arc) => {
 
 const test = (iteration) => {
   iteration = iteration || 0;
-  if (iteration++ < 25) {
+  if (iteration-- >= 0) {
     setTimeout(() => {
       update(prob(0.5) ? arc0 : arc1);
       test(iteration);
     }, irand(200, 40));
   } else {
-    setTimeout(() => sync(), 200);
+    //setTimeout(() => sync(), 300);
   }
 };
 
@@ -77,12 +76,14 @@ const sync = () => {
   persist.synchronize([arc0, arc1]);
 };
 
-window.test.onclick = () => test();
+window.test.onclick = () => test(25);
 window.sync.onclick = () => sync();
 
 window.dispatchEvent = EventTarget.prototype.dispatchEvent = function(event) {
   console.log(event.type);
 };
 
-test();
-sync();
+window.persist = persist;
+window.stuff = {persist, arc0, arc1};
+
+test(25);
