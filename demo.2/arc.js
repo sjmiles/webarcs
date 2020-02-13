@@ -8,12 +8,10 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-//import {Particle} from './particle.js';
 import {Composer} from './composer.js';
 import {Data} from './data.js';
 import {Host} from './host.js';
 import {makeId, shallowMerge} from './utils.js';
-import {Hub} from './hub.js';
 
 export class Store extends Data {
   constructor(id) {
@@ -61,22 +59,10 @@ export class Arc extends Data {
       this.maybeChange(doc => shallowMerge(doc, outputs));
     }
   }
-  async addParticle(name, container) {
-    const host = new Host(name, container, this.composer);
-    host.onready = () => {
-      console.log('HOST READY');
-      this.hosts.push(host);
-      this.updateHost(host);
-    };
-    //const id = makeId();
-    //const config = await Hub.request({msg: 'create', name, id});
-    //console.log(`arc::addParticle: particle created: [${id}]:`, config);
-    // const kindClass = Particle.registry[kind];
-    // if (kindClass) {
-    //   const host = new Host(name, container, new kindClass(), this.composer);
-    //   this.hosts.push(host);
-    //   this.updateHost(host);
-    // }
+  async addParticle(kind, container) {
+    const host = await Host.createHostedParticle(kind, container, this.composer);
+    this.hosts.push(host);
+    this.updateHost(host);
   }
   hostById(id) {
     return this.hosts.find(h => h.id === id);

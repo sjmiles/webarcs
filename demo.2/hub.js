@@ -13,6 +13,7 @@ let worker;
 let dispatcher;
 const nob = {};
 const senders = {};
+const channels = {};
 
 export const Hub = class {
   static parse(json) {
@@ -20,9 +21,15 @@ export const Hub = class {
   }
   static init(injectedDispatcher, workerPath) {
     dispatcher = injectedDispatcher;
+    // TODO(sjmiles): there could be other remote-hub-clients (PECs?)
     worker = new Worker(workerPath || './worker.js');
     worker.onerror = e => this.onerror(e);
     worker.onmessage = e => this.onmessage(e);
+  }
+  static send(message) {
+    console.log('Hub::send', message);
+    // TODO(sjmiles): there could be other remote-hub-clients (PECs?)
+    worker.postMessage(message);
   }
   static onerror(e) {
     console.error(e.message, e);
@@ -30,25 +37,35 @@ export const Hub = class {
   static onmessage(e) {
     this.receive(e.data);
   }
-  static send(message) {
-    console.log('Hub::send', message);
-    worker.postMessage(message);
-  }
   // TODO(sjmiles): factor sender junk
   static receive(message) {
     console.log('Hub::receive', message);
-    const {msg, tid} = message;
-    if (tid) {
+    const {msg, tid, channelId} = message;
+    if (channelId) {
+      const channel = channels[channelId];
+      if (channel) {
+        channel.receive(message);
+      }
+      else {
+        console.warn('unknown channel: ', message);
+      }
+    }
+    else if (tid) {
       const resolve = senders[tid];
       if (resolve) {
         resolve(message);
         delete senders[tid];
       }
-    } else {
+      else {
+        console.warn('unknown transaction: ', message);
+      }
+    }
+    else {
       if (dispatcher[msg]) {
         dispatcher[msg](message);
-      } else {
-        console.warn('unknown message: ', message);
+      }
+      else {
+        console.warn('unknown message type: ', message);
       }
     }
   }
@@ -59,5 +76,19 @@ export const Hub = class {
       this.send(message);
       // TODO(sjmiles): reject on timeout?
     });
+  }
+  static openChannel(id, receiver) {
+    const channel = {
+      send: message => {
+        message.channelId = id;
+        this.send(message);
+      },
+      receive: receiver,
+      close: () => {
+        delete channels[id];
+      }
+    };
+    channels[id] = channel;
+    return channel;
   }
 };

@@ -12,32 +12,10 @@ import {Hub} from './hub.js';
 import {Arc, Store} from './arc.js';
 import {irand, prob} from './utils.js';
 
-// handles messages from the Hub
+// handles custom messages from the Hub
 const dispatcher = {
-  // created({id, configJSON}) {
-  //   const config = Hub.parse(configJSON);
-  //   particles[id] = config;
-  //   console.log(`ack: particle created: [${id}]; config [${Object.keys(config)}]`);
-  //   Hub.send({msg: 'update', id});
-  // },
-  render({id, model}) {
-    console.log(`App:render: [${id}]`, model);
-    let host;
-    [arc0, arc1].find(a => host = a.hostById(id));
-    //const host = arc0.hostById(id);
-    if (host) {
-      host.render(model);
-    }
-    //console.log(`App:render: [${id}]; content [${Object.keys(content)}]`);
-    //const particle = particles[id];
-    //composer.render({id, name: '', container: '', content: {template: particle.template, model: content}});
-  }
+  // no handlers
 };
-
-// some junk
-// const particles = [];
-// import {Composer} from './composer.js';
-// const composer = new Composer(window.device0);
 
 // initialize particle hub
 Hub.init(dispatcher);

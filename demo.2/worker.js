@@ -18,26 +18,26 @@ const dispatcher = {
       register(name, src);
     }
   },
-  create({tid, id, name}) {
-    const pclass = registry[name];
+  create({tid, id, kind}) {
+    const pclass = registry[kind];
     if (!pclass) {
-      console.warn(`unregistered class [${name}]`);
+      console.warn(`unregistered class [${kind}]`);
     }
     else {
       const particle = particles[id] = new pclass();
       particle.hostProxy = {
-        renderModel: (model) => postMessage({msg: 'render', id, model})
-      }
+        renderModel: (model) => postMessage({channelId: id, msg: 'render', id, model})
+      };
       const configJSON = JSON.stringify(particle.config);
       postMessage({msg: 'created', tid, id, configJSON});
     }
   },
-  update({tid, id, inputJSON}) {
-    const inputs = inputJSON ? JSON.parse(inputJSON) : null;
+  update({tid, id, inputs}) {
+    //const inputs = inputJSON ? JSON.parse(inputJSON) : null;
     const particle = getParticle(id);
     const outputs = particle.update(inputs);
-    const outputJSON = JSON.stringify(outputs);
-    postMessage({msg: 'output', tid, id, outputJSON});
+    //const outputJSON = JSON.stringify(outputs);
+    postMessage({msg: 'output', tid, id, outputs});
     console.log(`updated particle [${id}]`);
   }
 };

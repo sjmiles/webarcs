@@ -15,21 +15,28 @@ import {Hub} from './hub.js';
 // TODO(sjmiles): principle: Particles remain stupid, system integration happens in an owner (Host)
 
 export class Host {
-  constructor(kind, container, composer) {
+  static async createHostedParticle(kind, container, composer) {
+    const host = new Host(container, composer);
+    await host.createParticle(kind);
+    return host;
+  }
+  constructor(container, composer) {
     this.id = makeId();
-    this.kind = kind;
     this.container = container;
     this.composer = composer;
-    this.createParticle(this.kind, this.id);
+    this.channel = Hub.openChannel(this.id, message => this.receive(message));
   }
-  onready() {
-    throw('Host was not assigned an onready listener.');
+  dispose() {
+    this.channel.close();
   }
-  async createParticle(name, id) {
-    const response = await Hub.request({msg: 'create', name, id});
+  async createParticle(kind) {
+    const id = this.id;
+    const response = await Hub.request({msg: 'create', kind, id});
     this.config = JSON.parse(response.configJSON);
     console.log(`host::createParticle: particle [${id}] configured:`, this.config);
-    this.onready();
+  }
+  onready() {
+    throw('Host: nobody is listening to `onready`.');
   }
   async update(inputs) {
     const outputs = await this.particleUpdate(inputs);
@@ -38,20 +45,28 @@ export class Host {
     }
     return outputs;
   }
-  render(model) {
-    this.debounce = Xen.debounce(this.debounce, () => this.renderModel(model), 100);
+  // isolating 'things particle can do'
+  async particleUpdate(inputs) {
+    //const inputJSON = JSON.stringify(inputs);
+    const output = await Hub.request({msg: 'update', id: this.id, inputs});
+    console.log(output);
+    return output;
   }
-  renderModel(model) {
+  // messages from the Particle
+  receive(message) {
+    switch (message.msg) {
+      case 'render':
+        this.render(message.model);
+        break;
+    }
+  }
+  render(model) {
+    this.debounce = Xen.debounce(this.debounce, () => this._render(model), 100);
+  }
+  _render(model) {
     const {id, name, container} = this;
     const {template} = this.config;
     console.log(`Host[${id}]::renderModel(${JSON.stringify(model)})`);
     this.composer.render({id, name, container, content: {template, model}});
-  }
-  // isolating 'things particle can do'
-  async particleUpdate(inputs) {
-    const inputJSON = JSON.stringify(inputs);
-    const output = await Hub.request({msg: 'update', id: this.id, inputJSON});
-    console.log(output);
-    return output;
   }
 }
