@@ -8,22 +8,22 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Context} from './src/context.js';
-import {Store} from './src/store.js';
-import {Arc} from './src/arc.js';
-import {Recipe} from './src/recipe.js';
-import {Group} from './src/group.js';
+import {Context} from './src/ergo/context.js';
+import {Recipe} from './src/ergo/recipe.js';
+import {Group} from './src/ergo/group.js';
+import {Arc} from './src/core/arc.js';
+import {Data} from './src/core/data.js';
+import {irand, prob} from './src/core/utils.js';
 
-import {irand, prob} from './src/utils.js';
-
-// register particles (paths relative to worker.js :O)
-Context.registerParticle('Container', '../particles/Container.js');
-Context.registerParticle('Info', '../particles/Info.js');
-Context.registerParticle('SortArray', '../particles/SortArray.js');
-Context.registerParticle('Shops', '../particles/Shops.js');
+// register particles
+Context.registerParticle('Container', './particles/Container.js');
+Context.registerParticle('Info', './particles/Info.js');
+Context.registerParticle('SortArray', './particles/SortArray.js');
+Context.registerParticle('Shops', './particles/Shops.js');
 
 // create persistance storage
-const persist = new Store(0);
+//const persist = new Store(0);
+const persist = new Data();
 persist.change(doc => {
   doc.list = ['Alpha', 'Beta', 'Gamma'];
   doc.sortedJson = '';
@@ -84,7 +84,7 @@ const mutateTimes = count => {
 
 // world's worst UI
 
-window.test.onclick = () => mutateTimes(1);
+window.test.onclick = () => mutateTimes(15);
 //window.sync.onclick = () => synchronize();
 window.sync.hidden = true;
 window.arcs = {arc0, arc1, persist};

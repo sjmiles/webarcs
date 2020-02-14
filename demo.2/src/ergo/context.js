@@ -8,7 +8,7 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Hub} from './hub.js';
+import {Hub} from '../bus/hub.js';
 
 export const Context = class {
   static registerParticle(name, src) {

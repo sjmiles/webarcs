@@ -7,7 +7,7 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
-import {debounce} from './utils.js';
+import {debounce} from '../core/utils.js';
 
 const debounceIntervalMs = 200;
 
@@ -42,7 +42,7 @@ export const Group = class {
     this.debounce = debounce(this.debounce, () => this.change(), debounceIntervalMs);
   }
   change() {
-    console.warn('...processing change batch');
+    console.log('...processing change batch');
     try {
       this.changed.forEach(arc => this.arcChanged(arc));
       this.changed = [];

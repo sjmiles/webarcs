@@ -7,7 +7,7 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
-import {makeId} from './utils.js';
+import {makeId} from '../core/utils.js';
 
 let worker;
 let dispatcher;
@@ -22,7 +22,7 @@ export const Hub = class {
   static init(injectedDispatcher, workerPath) {
     dispatcher = injectedDispatcher;
     // TODO(sjmiles): there could be other remote-hub-clients (PECs?)
-    worker = new Worker(workerPath || './src/worker.js');
+    worker = new Worker(workerPath || './src/pec/worker.js');
     worker.onerror = e => this.onerror(e);
     worker.onmessage = e => this.onmessage(e);
   }

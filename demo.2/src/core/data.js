@@ -8,7 +8,7 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Automerge} from '../../automerge.js';
+import {Automerge} from '../../../automerge.js';
 
 export class Data {
   constructor() {

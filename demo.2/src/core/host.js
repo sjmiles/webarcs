@@ -8,7 +8,7 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Hub} from './hub.js';
+import {Hub} from '../bus/hub.js';
 import {debounce} from './utils.js';
 
 // TODO(sjmiles): principle: Particles remain stupid, system integration happens in an owner (Host)

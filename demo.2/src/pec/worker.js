@@ -12,6 +12,9 @@ self.importScripts('./particle.js');
 
 const dispatcher = {
   register({name, src}) {
+    if (src[0] === '.') {
+      src = `../../${src}`;
+    }
     if (!registry[name]) {
       register(name, src);
     }
