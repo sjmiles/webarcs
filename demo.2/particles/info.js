@@ -11,20 +11,23 @@
 self.defineParticle(({Particle}) => class extends Particle {
   get template() {
     return Particle.html`
-      <div style="padding: 8px;">
-        <button on-click="noPushClick">Do Not Push</button>
+      <div style="xpadding: 8px;">
+        <button on-click="noPushClick">Do Not Push</button><br>
+        <br>
         <div>Hola <b>{{name}}</b><!--, from <b>{{id}}</b>--></div>
-        <div>{{list}}</div>
-        <div>{{sorted}}</div>
-        <div>{{value}}</div>
+        <div style="padding: 8px; margin: 8px 0; border: 2px solid silver;">
+          <div><span>List: </span><span>{{list}}</span></div>
+          <div><span>Sorted: </span><span>{{sortedJson}}</span></div>
+        </div>
+        <div><span>#</span><span>{{value}}</span></div>
       </div>
     `;
   }
-  render({name, list, sorted, value}) {
+  render({name, list, sortedJson, value}) {
     return {
       name,
-      list: JSON.stringify(list),
-      sorted,
+      list: JSON.stringify(list, null, ' '),
+      sortedJson,
       value
     };
   }

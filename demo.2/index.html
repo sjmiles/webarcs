@@ -9,21 +9,23 @@
 
 <style>
   [device] {
-    padding: 6px;
+    padding: 12px;
     border: 2px solid silver;
     margin: 6px;
+  }
+  [label] {
+    display: inline-block;
+    padding-bottom: 6px;
   }
 </style>
 
 <div device id="device0">
-  <span>Device-0</span>
+  <span label>Device-0</span>
 </div>
 
 <div device id="device1">
-  <span>Device-1</span>
+  <span label>Device-1</span>
 </div>
 
 <script src="../node_modules/automerge/dist/automerge.js"></script>
 <script type="module" src="./app.js"></script>
-
-

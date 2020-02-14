@@ -22,7 +22,7 @@ export const Hub = class {
   static init(injectedDispatcher, workerPath) {
     dispatcher = injectedDispatcher;
     // TODO(sjmiles): there could be other remote-hub-clients (PECs?)
-    worker = new Worker(workerPath || './worker.js');
+    worker = new Worker(workerPath || './src/worker.js');
     worker.onerror = e => this.onerror(e);
     worker.onmessage = e => this.onmessage(e);
   }

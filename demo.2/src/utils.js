@@ -7,6 +7,9 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
+import {Xen} from '../../xen/xen-async.js';
+
+export const debounce = Xen.debounce;
 
 export const irand = (range) => Math.floor(Math.random()*range);
 export const prob = probability => Boolean(Math.random() < probability);

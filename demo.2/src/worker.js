@@ -8,8 +8,6 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-'use strict';
-
 self.importScripts('./particle.js');
 
 const dispatcher = {
@@ -28,15 +26,12 @@ const dispatcher = {
       particle.hostProxy = {
         renderModel: (model) => postMessage({channelId: id, msg: 'render', id, model})
       };
-      const configJSON = JSON.stringify(particle.config);
-      postMessage({msg: 'created', tid, id, configJSON});
+      postMessage({msg: 'created', tid, id, config: particle.config});
     }
   },
   update({tid, id, inputs}) {
-    //const inputs = inputJSON ? JSON.parse(inputJSON) : null;
     const particle = getParticle(id);
     const outputs = particle.update(inputs);
-    //const outputJSON = JSON.stringify(outputs);
     postMessage({msg: 'output', tid, id, outputs});
     console.log(`updated particle [${id}]`);
   }
@@ -67,7 +62,6 @@ const getParticle = id => {
   return particle;
 };
 
-
 //
 
 const registry = {};
@@ -75,7 +69,7 @@ const registry = {};
 const register = (name, src) => {
   if (!registry[name]) {
     self.defineParticle = defun => {
-      self.particleClass = defun({Particle});
+      self.particleClass = defun({Particle: self.Particle});
     };
     try {
       // TODO(sjmiles): 3P code (and possible HTTP transactions) invoked

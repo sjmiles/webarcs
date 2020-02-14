@@ -31,7 +31,7 @@ const Particle = class {
     return inputs;
   }
   renderModel(model) {
-    console.log(`particle::renderModel(${JSON.stringify(model)})`);
+    console.log(`particle::renderModel(${JSON.stringify(model || {})})`);
     this.hostProxy.renderModel(model);
   }
 };

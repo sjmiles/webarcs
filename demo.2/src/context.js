@@ -8,12 +8,19 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-self.defineParticle(({Particle}) => class extends Particle {
-  get template() {
-    return Particle.html`
-      <div style="padding: 12px; border: 3px solid blue;">
-        <div slot="content"></div>
-      </div>
-    `;
+import {Hub} from './hub.js';
+
+export const Context = class {
+  static registerParticle(name, src) {
+    Hub.send({msg: 'register', name, src});
   }
-});
+};
+
+// handles custom messages from the Hub
+Context.dispatcher = {
+  // no handlers
+};
+
+// initialize particle hub
+Hub.init(Context.dispatcher);
+

@@ -8,27 +8,53 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Hub} from './hub.js';
-import {Arc, Store} from './arc.js';
-import {irand, prob} from './utils.js';
+import {Context} from './src/context.js';
+import {Store} from './src/store.js';
+import {Arc} from './src/arc.js';
+import {Recipe} from './src/recipe.js';
+import {Group} from './src/group.js';
 
-// handles custom messages from the Hub
-const dispatcher = {
-  // no handlers
-};
+import {irand, prob} from './src/utils.js';
 
-// initialize particle hub
-Hub.init(dispatcher);
-
-// register particles
-Hub.send({msg: 'register', name: 'Container', src: './particles/container.js'});
-Hub.send({msg: 'register', name: 'Info', src: './particles/info.js'});
+// register particles (paths relative to worker.js :O)
+Context.registerParticle('Container', '../particles/Container.js');
+Context.registerParticle('Info', '../particles/Info.js');
+Context.registerParticle('SortArray', '../particles/SortArray.js');
+Context.registerParticle('Shops', '../particles/Shops.js');
 
 // create persistance storage
 const persist = new Store(0);
 persist.change(doc => {
   doc.list = ['Alpha', 'Beta', 'Gamma'];
-  doc.sorted = '';
+  doc.sortedJson = '';
+});
+
+// create a data-synchronization group
+const group = new Group(persist);
+
+// create an arc
+const arc0 = new Arc({name: 'arc0', root: window.device0});
+group.addArcs([arc0]);
+Recipe.instantiate(arc0, {
+  root: [{
+    particle: 'Container',
+    content: [{
+      particle: 'Info'
+    }]
+  }, {
+    particle: 'SortArray'
+  }]
+});
+
+// create an arc
+const arc1 = new Arc({name: 'arc1', root: window.device1});
+group.addArcs([arc1]);
+Recipe.instantiate(arc1, {
+  root: [{
+    particle: 'Info'
+  }, {
+    //particle: 'Shops'
+  }]
 });
 
 // data mutator for testing
@@ -36,13 +62,14 @@ const mutate = (arc) => {
   arc.change(doc => {
     doc.value = irand(9e3) + 1e3;
     doc.name = prob(0.5) ? 'Mundo' : 'Nadie';
-    if (prob(0.05)) {
+    if (prob(0.15)) {
       doc.list.splice(irand(doc.list.length), 1);
     }
-    if (prob(0.1)) {
+    if (prob(0.30)) {
       doc.list.push(['Delta', 'Epsilon', 'Iota'][irand(3)]);
     }
   });
+  arc.update();
 };
 
 const mutateTimes = count => {
@@ -52,24 +79,15 @@ const mutateTimes = count => {
       mutate(prob(0.5) ? arc0 : arc1);
       mutateTimes(count);
     }, irand(200, 40));
-  } else {
-    //setTimeout(() => sync(), 300);
   }
 };
 
-// create an arc
-const arc0 = new Arc(window.device0, persist);
-arc0.addParticle('Container');
-arc0.addParticle('Info');
+// world's worst UI
 
-// create an arc
-const arc1 = new Arc(window.device1, persist);
-arc1.addParticle('Info');
+window.test.onclick = () => mutateTimes(1);
+//window.sync.onclick = () => synchronize();
+window.sync.hidden = true;
+window.arcs = {arc0, arc1, persist};
 
-const sync = () => {
-  persist.synchronize([arc0, arc1]);
-};
+setTimeout(() => mutateTimes(15), 300);
 
-//mutate(arc0);
-window.test.onclick = () => mutateTimes(15);
-window.sync.onclick = () => sync();

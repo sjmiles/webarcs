@@ -8,7 +8,7 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Automerge} from '../automerge.js';
+import {Automerge} from '../../automerge.js';
 
 export class Data {
   constructor() {
@@ -21,15 +21,15 @@ export class Data {
   set truth(truth) {
     this._truth = truth;
   }
-  change(mutator) {
-    this.truth = this._change(mutator);
-  }
   maybeChange(mutator) {
     const applied = this._change(mutator);
     const changes = Automerge.getChanges(this.truth, applied);
     if (changes.length) {
       this.truth = applied;
     }
+  }
+  change(mutator) {
+    this.truth = this._change(mutator);
   }
   _change(mutator) {
     return Automerge.change(this.truth, mutator);

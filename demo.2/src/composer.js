@@ -7,7 +7,7 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
-import {Xen} from '../xen/xen-async.js';
+import {Xen} from '../../xen/xen-async.js';
 
 export class Composer {
   constructor(root) {
