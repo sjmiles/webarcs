@@ -8,12 +8,16 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-self.defineParticle(({Particle}) => class extends Particle {
-  get template() {
-    return Particle.html`
-      <div style="padding: 12px; border: 3px solid blue; margin: 8px;">
-        <div slot="content"></div>
-      </div>
-    `;
+export const Channel = class {
+  async register() {
   }
-});
+  async create() {
+  }
+  async update() {
+  }
+};
+
+export const Broker = class {
+  openChannel() {
+  }
+};

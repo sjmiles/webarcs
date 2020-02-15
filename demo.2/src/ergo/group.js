@@ -21,12 +21,10 @@ export const Group = class {
   dispose() {
     this.arcs.forEach(arc => arc.onchange = null);
   }
-  addArcs(arcs) {
-    this.arcs = this.arcs.concat(arcs);
-    arcs.forEach(arc => {
-      arc.merge(this.owner.truth);
-      arc.onchange = () => this.onchange(arc);
-    });
+  addArc(arc) {
+    this.arcs.push(arc);
+    arc.merge(this.owner.truth);
+    arc.onchange = () => this.onchange(arc);
   }
   onchange(arc) {
     if (!this.changed.includes(arc)) {
@@ -38,11 +36,11 @@ export const Group = class {
     return this.arcs.map(arc => ({[arc.name]: arc}));
   }
   wakeUp() {
-    console.log('debouncing change batch...');
+    console.log('Group::wakeUp(): debouncing change batch...');
     this.debounce = debounce(this.debounce, () => this.change(), debounceIntervalMs);
   }
   change() {
-    console.log('...processing change batch');
+    console.log('Group::chaned(): ...processing change batch');
     try {
       this.changed.forEach(arc => this.arcChanged(arc));
       this.changed = [];
@@ -51,24 +49,27 @@ export const Group = class {
     }
   }
   arcChanged(arc) {
+    console.log(`Group::[${arc.name}] changed`);
     //console.groupCollapsed(`${arc.name} changed`);
     //console.log(this.status());
     let changes = arc.changes;
     if (changes.length) {
       this.owner.apply(changes);
-      changes = this.owner.changes;
-      if (changes.length) {
-        this.arcs.forEach(alt => {
-          if (alt !== arc) {
-            alt.apply(changes);
-          }
-        });
-      }
-      console.log(this.status());
+      this.propagateChanges(arc);
     }
-    // go again! go again!
-    this.arcs.forEach(a => a.dirty && a.update());
     //console.groupEnd();
+    console.log(this.status());
+  }
+  propagateChanges(fromArc) {
+    const changes = this.owner.changes;
+    if (changes.length) {
+      this.arcs.forEach(alt => {
+        if (alt !== fromArc) {
+          alt.apply(changes);
+        }
+      });
+    }
+    console.log(this.status());
   }
   status() {
     const ownerTruthJson = JSON.stringify(this.owner.truth);

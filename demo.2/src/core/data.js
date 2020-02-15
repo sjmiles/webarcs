@@ -19,12 +19,14 @@ export class Data {
     return this._truth;
   }
   set truth(truth) {
+    this._changes = null;
     this._truth = truth;
   }
   maybeChange(mutator) {
     const applied = this._change(mutator);
     const changes = Automerge.getChanges(this.truth, applied);
     if (changes.length) {
+      console.log('Data::maybeChange: changes detected')
       this.truth = applied;
     }
   }
@@ -40,9 +42,17 @@ export class Data {
   merge(doc) {
     this.truth = Automerge.merge(this.truth, doc);
   }
+  peekChanges() {
+    if (!this._changes) {
+      this._changes = Automerge.getChanges(this.old, this.truth);
+    }
+    return this._changes;
+  }
   get changes() {
-    const changes = Automerge.getChanges(this.old, this.truth);
+    //const changes = Automerge.getChanges(this.old, this.truth);
+    const changes = this.peekChanges();
     this.old = this.truth;
+    this._changes = null;
     return changes;
   }
 }

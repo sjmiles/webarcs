@@ -16,13 +16,14 @@ import {Data} from './src/core/data.js';
 import {irand, prob} from './src/core/utils.js';
 
 // register particles
-Context.registerParticle('Container', './particles/Container.js');
-Context.registerParticle('Info', './particles/Info.js');
-Context.registerParticle('SortArray', './particles/SortArray.js');
-Context.registerParticle('Shops', './particles/Shops.js');
+Context.registerParticles({
+  Container: './particles/Container.js',
+  Info: './particles/Info.js',
+  SortArray: './particles/SortArray.js',
+  Shops: './particles/Shops.js'
+});
 
 // create persistance storage
-//const persist = new Store(0);
 const persist = new Data();
 persist.change(doc => {
   doc.list = ['Alpha', 'Beta', 'Gamma'];
@@ -32,10 +33,16 @@ persist.change(doc => {
 // create a data-synchronization group
 const group = new Group(persist);
 
-// create an arc
-const arc0 = new Arc({name: 'arc0', root: window.device0});
-group.addArcs([arc0]);
-Recipe.instantiate(arc0, {
+// create arcs
+
+const spawn = (name, root, recipe) => {
+  const arc = new Arc({name, root});
+  group.addArc(arc);
+  Recipe.instantiate(arc, recipe);
+};
+
+spawn('arc0', window.device0, {
+  // [slot]: [particles: {[slot]:...}]
   root: [{
     particle: 'Container',
     content: [{
@@ -46,37 +53,43 @@ Recipe.instantiate(arc0, {
   }]
 });
 
-// create an arc
-const arc1 = new Arc({name: 'arc1', root: window.device1});
-group.addArcs([arc1]);
-Recipe.instantiate(arc1, {
+spawn('arc1', window.device1, {
   root: [{
     particle: 'Info'
-  }, {
-    //particle: 'Shops'
+   }, {
+     particle: 'Shops'
   }]
 });
 
 // data mutator for testing
 const mutate = (arc) => {
   arc.change(doc => {
-    doc.value = irand(9e3) + 1e3;
-    doc.name = prob(0.5) ? 'Mundo' : 'Nadie';
-    if (prob(0.15)) {
-      doc.list.splice(irand(doc.list.length), 1);
-    }
-    if (prob(0.30)) {
-      doc.list.push(['Delta', 'Epsilon', 'Iota'][irand(3)]);
+    // sometimes do nothing
+    if (prob(0.9)) {
+      // swizzle 'value'
+      doc.value = irand(9e3) + 1e3;
+      // maybe swizzle 'name'
+      doc.name = prob(0.5) ? 'Mundo' : 'Nadie';
+      // maybe remove an item
+      if (prob(0.15)) {
+        doc.list.splice(irand(doc.list.length), 1);
+      }
+      // maybe add an item
+      if (prob(0.30)) {
+        doc.list.push(['Delta', 'Epsilon', 'Iota'][irand(3)]);
+      }
+    } else {
+      console.warn('NO MUTATIONS');
     }
   });
-  arc.update();
 };
 
 const mutateTimes = count => {
   count = count || 0;
-  if (count-- >= 0) {
+  if (count-- > 0) {
     setTimeout(() => {
-      mutate(prob(0.5) ? arc0 : arc1);
+      const arc = group.arcs[irand(group.arcs.length)];
+      mutate(arc);
       mutateTimes(count);
     }, irand(200, 40));
   }
@@ -84,10 +97,17 @@ const mutateTimes = count => {
 
 // world's worst UI
 
-window.test.onclick = () => mutateTimes(15);
-//window.sync.onclick = () => synchronize();
-window.sync.hidden = true;
-window.arcs = {arc0, arc1, persist};
+const dumpTruth = window.dumpTruth = () => {
+  window.truth.innerText = JSON.stringify(persist.truth, null, '  ');
+};
 
-setTimeout(() => mutateTimes(15), 300);
+window.test.onclick = () => mutateTimes(1);
+window.testn.onclick = () => mutateTimes(15);
+//window.sync.onclick = () => synchronize();
+window.dump.onclick = () => dumpTruth();
+
+window.sync.hidden = true;
+window.arcs = {persist, group};
+
+//setTimeout(() => mutateTimes(15), 300);
 

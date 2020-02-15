@@ -27,16 +27,17 @@ const dispatcher = {
     else {
       const particle = particles[id] = new pclass();
       particle.hostProxy = {
-        renderModel: (model) => postMessage({channelId: id, msg: 'render', id, model})
+        render: model => postMessage({channelId: id, msg: 'render', id, model}),
+        output: model => postMessage({channelId: id, msg: 'output', id, model})
       };
       postMessage({msg: 'created', tid, id, config: particle.config});
     }
   },
-  update({tid, id, inputs}) {
+  update({id, inputs}) {
     const particle = getParticle(id);
-    const outputs = particle.update(inputs);
-    postMessage({msg: 'output', tid, id, outputs});
-    console.log(`updated particle [${id}]`);
+    /*const outputs =*/ particle.requestUpdate(inputs);
+    //postMessage({msg: 'output', tid, id, outputs});
+    //console.log(`updated particle [${id}]`);
   }
 };
 

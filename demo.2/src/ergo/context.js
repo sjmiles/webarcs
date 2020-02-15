@@ -11,6 +11,9 @@
 import {Hub} from '../bus/hub.js';
 
 export const Context = class {
+  static registerParticles(particles) {
+    Object.keys(particles).forEach(key => this.registerParticle(key, particles[key]));
+  }
   static registerParticle(name, src) {
     Hub.send({msg: 'register', name, src});
   }
@@ -23,4 +26,3 @@ Context.dispatcher = {
 
 // initialize particle hub
 Hub.init(Context.dispatcher);
-

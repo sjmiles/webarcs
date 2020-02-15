@@ -7,6 +7,7 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
+
 import {makeId} from '../core/utils.js';
 
 let worker;
@@ -14,6 +15,9 @@ let dispatcher;
 const nob = {};
 const senders = {};
 const channels = {};
+
+const flags = {};
+const log = (flags.hub) ? console.log.bind(console) : () => {};
 
 export const Hub = class {
   static parse(json) {
@@ -27,7 +31,7 @@ export const Hub = class {
     worker.onmessage = e => this.onmessage(e);
   }
   static send(message) {
-    console.log('Hub::send', message);
+    log('Hub::send', message);
     // TODO(sjmiles): there could be other remote-hub-clients (PECs?)
     worker.postMessage(message);
   }
@@ -39,7 +43,7 @@ export const Hub = class {
   }
   // TODO(sjmiles): factor sender junk
   static receive(message) {
-    console.log('Hub::receive', message);
+    log('Hub::receive', message);
     const {msg, tid, channelId} = message;
     if (channelId) {
       const channel = channels[channelId];

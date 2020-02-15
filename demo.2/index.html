@@ -2,16 +2,14 @@
 
 <link href="../index.css" rel="stylesheet">
 
-<div style="padding: 8px;">
-  <button id="test">Modulate</button>
-  <button id="sync" Xhidden>Sync</button>
-</div>
-
 <style>
-  [device] {
+  [box], [device] {
     padding: 12px;
-    border: 2px solid silver;
-    margin: 6px;
+    border: 1px solid silver;
+    margin: 12px;
+  }
+  [device] {
+    border: 4px solid silver;
   }
   [label] {
     display: inline-block;
@@ -19,12 +17,24 @@
   }
 </style>
 
+<div style="padding: 8px;">
+  <button id="test">Modulate</button>
+  <button id="testn">Modulate x15</button>
+  <button id="sync">Sync</button>
+  <button id="dump">Dump Truth</button>
+</div>
+
 <div device id="device0">
   <span label>Device-0</span>
 </div>
 
 <div device id="device1">
   <span label>Device-1</span>
+</div>
+
+<div box>
+  <span label>Truth</span>
+  <pre id="truth"></pre>
 </div>
 
 <script src="../node_modules/automerge/dist/automerge.js"></script>

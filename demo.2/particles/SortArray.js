@@ -9,13 +9,15 @@
  */
 
 self.defineParticle(({Particle}) => class extends Particle {
-  get inputs() {
-    return ['list'];
+  get template() {
+    return Particle.html`
+      <div>{{sortedJson}}</div>
+    `;
   }
   update({list}) {
     if (list) {
       const sortable = Array.from(list);
-      sortable.sort();
+      sortable.sort().reverse();
       // returning the array itself caused CRDT sync failure
       // (essentially  `doc.arr = newArray` doesn't seem to work)
       // return JSON so CRDT can operate on it

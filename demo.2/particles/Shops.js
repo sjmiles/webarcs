@@ -22,8 +22,8 @@ self.defineParticle(({Particle}) => class extends Particle {
   get template() {
     return Particle.html`
 
-<div style="padding: 12px; border: 3px solid blue;">
-  <pre>{{places}}</pre>
+<div style="padding: 12px; border: 2px solid green;">
+  <pre>{{placesJson}}</pre>
 </div>
 
     `;
@@ -33,14 +33,15 @@ self.defineParticle(({Particle}) => class extends Particle {
       this.awaitPlaces();
     }
     super.update({places});
-    return {places: this.places};
+    return {placesJson: this.placesJson || null};
   }
   async awaitPlaces() {
     if (!this.fetching) {
       this.fetching = true;
       this.places = await this.fetchPlaces(location);
+      this.placesJson = JSON.stringify(this.places.map(place => place.name), null, ' ')
       console.log('Shops::', this.places);
-      this.renderModel(this.render({places: this.places}));
+      this.renderModel(this.render({placesJson: this.placesJson}));
     }
   }
   async fetchPlaces(location) {
@@ -60,10 +61,10 @@ self.defineParticle(({Particle}) => class extends Particle {
     //this.add('restaurants', restaurants);
     //this.setState({count: results.length});
   }
-  render({places}) {
-    if (places) {
+  render({placesJson}) {
+    if (placesJson) {
       return {
-        places: JSON.stringify(places.map(place => place.name), null, ' ')
+        placesJson
       };
     }
   }

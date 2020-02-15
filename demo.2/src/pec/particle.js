@@ -8,6 +8,8 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
+'use strict';
+
 const Particle = class {
   static get html() {
     return (strings, ...values) => (`${strings[0]}${values.map((v, i) => `${v}${strings[i+1]}`).join('')}`).trim();
@@ -17,22 +19,28 @@ const Particle = class {
       template: this.template
     };
   }
-  update(inputs) {
-    console.log(`particle::update(${JSON.stringify(inputs)})`);
-    const model = this.render(inputs);
-    this.renderModel(model);
-    //return outputs;
-  }
   // Not returned from `render` because templates can be preprocessed and cached. Can we generalize the concept?
   get template() {
     return Particle.html`&nbsp;`;
   }
-  render(inputs) {
-    return inputs;
+  requestUpdate(inputs) {
+    console.log(`> particle::requestUpdate(${JSON.stringify(inputs)})`);
+    const outputs = this.update(inputs);
+    this.hostProxy.output(outputs);
+    // TODO(sjmiles): presumptively render by including outputs
+    const merge = {...inputs, ...outputs};
+    const model = this.render(merge);
+    this.renderModel(model);
   }
   renderModel(model) {
-    console.log(`particle::renderModel(${JSON.stringify(model || {})})`);
-    this.hostProxy.renderModel(model);
+    console.log(`< particle::renderModel(${JSON.stringify(model || {})})`);
+    this.hostProxy.render(model);
+  }
+  update(/*inputs*/) {
+    //return outputs;
+  }
+  render(inputs) {
+    return inputs;
   }
 };
 

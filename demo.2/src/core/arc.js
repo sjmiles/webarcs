@@ -21,59 +21,55 @@ export class Arc extends Data {
     this.id = `arc(${name}:${makeId()})`;
     this.composer = new Composer(root);
   }
-  get truth() {
-    return super.truth;
+  log(msg) {
+    console.log(`${this.id}::${msg}`);
   }
-  set truth(truth) {
-    super.truth = truth;
-    // truth changes trigger update
-    //this.update();
-    this.dirty = true;
-  }
-  async update() {
-    if (this.updating) {
-      this.dirty = true;
-    } else {
-      //console.group(`${this.id}: updating`);
-      this.updating = true;
-      try {
-        do {
-          this.dirty = false;
-          const truth = this.truth;
-          for (var i=0, host; (host=this.hosts[i]); i++) {
-            await this.updateHost(host, truth);
-          }
-          //await Promise.all(this.hosts.map(h => this.updateHost(h, truth)));
-        } while (this.dirty);
-      }
-      finally {
-        this.updating = false;
-        //console.groupEnd();
-      }
-      this.changed();
-    }
-  }
-  changed() {
-    if (this.onchange) {
-      this.onchange(this);
-    }
-  }
-  async updateHost(host, truth) {
-    //console.group(`updateHost::${host.id}:`);
-    const outputs = await host.update(truth);
-    if (outputs && typeof outputs === 'object') {
-      this.maybeChange(doc => shallowMerge(doc, outputs));
-    }
-    //console.groupEnd();
-    console.log(`updateHost::${host.id}: done`);
-  }
+  // responsibility: hosts/particles
   async addParticle(kind, container) {
     const id = `${this.name || this.id}:${kind}(${makeId()})`;
     const host = await Host.createHostedParticle(id, kind, kind, container, this.composer);
+    host.onoutput = outputs => this.receiveHostOutput(host, outputs);
     this.hosts.push(host);
     this.updateHost(host, this.truth);
   }
   hostById(id) {
     return this.hosts.find(h => h.id === id);
+  }
+  // responsibility: truth
+  get truth() {
+    return super.truth;
+  }
+  set truth(truth) {
+    this.log('setting truth');
+    super.truth = truth;
+    if (this.peekChanges().length) {
+      this.update();
+    } else {
+      console.warn('skipped updating on empty changes!');
+    }
+  }
+  // responsibility: synchronize truth with hosts
+  update() {
+    this.updateHosts(this.truth);
+    this.changed();
+  }
+  updateHosts(truth) {
+    this.hosts.forEach(h => this.updateHost(h, truth));
+  }
+  updateHost(host, truth) {
+    console.log(`${this.id}::updateHost(${host.id})`);
+    host.update(truth);
+  }
+  // notify listener that we have changed
+  changed() {
+    if (this.onchange) {
+      this.onchange(this);
+    }
+  }
+  receiveHostOutput(host, outputs) {
+    console.log(`receiveHostOutput::${host.id}`, outputs);
+    if (outputs && typeof outputs === 'object') {
+      this.maybeChange(doc => shallowMerge(doc, outputs));
+    }
   }
 }

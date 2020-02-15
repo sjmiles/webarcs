@@ -28,16 +28,20 @@ export class Host {
   dispose() {
     this.closeChannel();
   }
+  // TODO(sjmiles): replace with event system?
+  onoutput() {
+  }
+  // actions provoked from priveleged-space
   async createParticle(name, kind) {
     this.config = await this.particleCreate(kind, this.id, name);
     console.log(`host::createParticle: particle [${this.id}] configured:`, this.config);
   }
-  async update(inputs) {
-    console.log(`xxxhost[${this.id}]::update:`);
-    const result = await this.particleUpdate(inputs);
-    //console.groupEnd();
-    console.log(`xxxhost[${this.id}]::update DONE`);
-    return result;
+  update(inputs) {
+    this.particleUpdate(inputs);
+  }
+  // actions provoke from particle-space
+  captureOutputs(outputs) {
+    this.onoutput(outputs);
   }
   render(model) {
     const {id, name, container} = this;
@@ -51,24 +55,31 @@ export class Host {
     this._debounceKey = debounce(this._debounceKey, () => this.render(model), 100);
   }
   //
-  // TODO(sjmiles): abstract Hub usage
+  // TODO(sjmiles): abstract away references to Hub
+  //
   // bus v
   openChannel() {
     this.channel = Hub.openChannel(this.id, message => this.receive(message));
+    //this.channel = this.broker.openChannel(this.id, message => this.receive(message));
   }
   closeChannel() {
     this.channel.close();
   }
   // messages to Particle-space
-  async particleUpdate(inputs) {
-    return (await Hub.request({msg: 'update', id: this.id, inputs})).outputs;
+  particleUpdate(inputs) {
+    Hub.request({msg: 'update', id: this.id, inputs});
+    //await this.channel.update({id: this.id, inputs});
   }
   async particleCreate(kind, id, name) {
     return (await Hub.request({msg: 'create', kind, id, name})).config;
+    //return (await this.channel.update({id: this.id, inputs})).config;
   }
   // messages from Particle-space
   receive(message) {
     switch (message.msg) {
+      case 'output':
+        this.captureOutputs(message.model);
+        break;
       case 'render':
         this.debouncedRender(message.model);
         break;
