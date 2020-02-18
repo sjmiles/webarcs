@@ -20,11 +20,15 @@ Context.registerParticles({
   Container: './particles/Container.js',
   Info: './particles/Info.js',
   SortArray: './particles/SortArray.js',
-  Shops: './particles/Shops.js'
+  Restaurants: './particles/Restaurants.js',
+  PlacesPhotos: './particles/PlacesPhotos.js',
+  TMDBSearch: './particles/TMDBSearch.js'
 });
 
 // create persistance storage
 const persist = new Data();
+
+// stuff some data in there
 persist.change(doc => {
   doc.list = ['Alpha', 'Beta', 'Gamma'];
   doc.sortedJson = '';
@@ -34,7 +38,6 @@ persist.change(doc => {
 const group = new Group(persist);
 
 // create arcs
-
 const spawn = (name, root, recipe) => {
   const arc = new Arc({name, root});
   group.addArc(arc);
@@ -47,6 +50,8 @@ spawn('arc0', window.device0, {
     particle: 'Container',
     content: [{
       particle: 'Info'
+    }, {
+      particle: 'TMDBSearch'
     }]
   }, {
     particle: 'SortArray'
@@ -56,8 +61,19 @@ spawn('arc0', window.device0, {
 spawn('arc1', window.device1, {
   root: [{
     particle: 'Info'
-   }, {
-     particle: 'Shops'
+  }, {
+     particle: 'Restaurants'
+  }]
+});
+
+spawn('arc2', window.device2, {
+  root: [{
+    particle: 'Container',
+    content: [{
+      particle: 'Info'
+    }],
+  }, {
+     particle: 'PlacesPhotos'
   }]
 });
 

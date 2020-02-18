@@ -27,6 +27,7 @@ const dispatcher = {
     else {
       const particle = particles[id] = new pclass();
       particle.hostProxy = {
+        kind,
         render: model => postMessage({channelId: id, msg: 'render', id, model}),
         output: model => postMessage({channelId: id, msg: 'output', id, model})
       };
@@ -72,17 +73,19 @@ const registry = {};
 
 const register = (name, src) => {
   if (!registry[name]) {
+    let particleClass = null;
     self.defineParticle = defun => {
-      self.particleClass = defun({Particle: self.Particle});
+      particleClass = defun({Particle: self.Particle});
     };
     try {
       // TODO(sjmiles): 3P code (and possible HTTP transactions) invoked
       // at this point: attack vectors are here.
       self.importScripts(src);
     } catch(x) {
+      console.error(x);
     }
-    if (self.particleClass) {
-      registry[name] = self.particleClass;
+    if (particleClass) {
+      registry[name] = particleClass;
       console.log(`worker: successfully registered [${name}]`);
     } else {
       console.warn(`worker: FAILED to register [${name}]`);

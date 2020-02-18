@@ -23,7 +23,7 @@ self.defineParticle(({Particle}) => class extends Particle {
     return Particle.html`
 
 <div style="padding: 12px; border: 2px solid green;">
-  <pre>{{placesJson}}</pre>
+  <pre>{{placeNames}}</pre>
 </div>
 
     `;
@@ -32,15 +32,14 @@ self.defineParticle(({Particle}) => class extends Particle {
     if (!places) {
       this.awaitPlaces();
     }
-    super.update({places});
-    return {placesJson: this.placesJson || null};
   }
   async awaitPlaces() {
     if (!this.fetching) {
       this.fetching = true;
       this.places = await this.fetchPlaces(location);
-      this.placesJson = JSON.stringify(this.places.map(place => place.name), null, ' ')
-      console.log('Shops::', this.places);
+      this.placesJson = JSON.stringify(this.places.map(({name, photos}) => ({name, photos})), null, ' ');
+      console.log('Restaurants::', this.places);
+      this.output({placesJson: this.placesJson});
       this.renderModel(this.render({placesJson: this.placesJson}));
     }
   }
@@ -54,18 +53,12 @@ self.defineParticle(({Particle}) => class extends Particle {
     const result = await response.json();
     const places = (result.results || []);
     return places;
-    // cap # of results
-    //const results = (places.results || []).slice(0, 5);
-    //const restaurants = places.map(p => this.placeToEntity(p));
-    //await this.clear('restaurants');
-    //this.add('restaurants', restaurants);
-    //this.setState({count: results.length});
   }
   render({placesJson}) {
     if (placesJson) {
-      return {
-        placesJson
-      };
+      const places = JSON.parse(placesJson);
+      const placeNames = JSON.stringify(places.map(({name}) => name), null, '  ');
+      return {placeNames};
     }
   }
 });

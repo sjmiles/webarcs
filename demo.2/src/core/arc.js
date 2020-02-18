@@ -17,8 +17,8 @@ export class Arc extends Data {
   constructor({name, root}) {
     super();
     this.hosts = [];
-    this.name = name;
-    this.id = `arc(${name}:${makeId()})`;
+    this.name = name || '';
+    this.id = `arc:${name}:${makeId()}`;
     this.composer = new Composer(root);
   }
   log(msg) {
@@ -26,9 +26,9 @@ export class Arc extends Data {
   }
   // responsibility: hosts/particles
   async addParticle(kind, container) {
-    const id = `${this.name || this.id}:${kind}(${makeId()})`;
-    const host = await Host.createHostedParticle(id, kind, kind, container, this.composer);
-    host.onoutput = outputs => this.receiveHostOutput(host, outputs);
+    const id = `${this.id}:${kind}(${makeId()})`;
+    const onoutput = (host, outputs) => this.receiveHostOutput(host, outputs);
+    const host = await Host.createHostedParticle(id, kind, kind, container, this.composer, onoutput);
     this.hosts.push(host);
     this.updateHost(host, this.truth);
   }
@@ -40,12 +40,17 @@ export class Arc extends Data {
     return super.truth;
   }
   set truth(truth) {
-    this.log('setting truth');
-    super.truth = truth;
-    if (this.peekChanges().length) {
+    //this.log('setting truth');
+    //const last = this.truth;
+    //super.truth = truth;
+    //if (this.peekChanges(this.truth, truth).length) {
+    if (JSON.stringify(this.truth) !== JSON.stringify(truth)) {
+    //if (this.peekChanges(this.old, truth).length) {
+      console.log(`${this.id}: truth changed, performing update`);
+      super.truth = truth;
       this.update();
     } else {
-      console.warn('skipped updating on empty changes!');
+      //console.warn('skipped updating on empty changes!');
     }
   }
   // responsibility: synchronize truth with hosts
@@ -60,7 +65,7 @@ export class Arc extends Data {
     console.log(`${this.id}::updateHost(${host.id})`);
     host.update(truth);
   }
-  // notify listener that we have changed
+  // change notifier
   changed() {
     if (this.onchange) {
       this.onchange(this);

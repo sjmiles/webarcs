@@ -19,8 +19,8 @@ export class Data {
     return this._truth;
   }
   set truth(truth) {
-    this._changes = null;
     this._truth = truth;
+    this._changes = null;
   }
   maybeChange(mutator) {
     const applied = this._change(mutator);
@@ -40,19 +40,22 @@ export class Data {
     this.truth = Automerge.applyChanges(this.truth, changes);
   }
   merge(doc) {
-    this.truth = Automerge.merge(this.truth, doc);
+    this.truth = this._merge(doc);
   }
-  peekChanges() {
-    if (!this._changes) {
-      this._changes = Automerge.getChanges(this.old, this.truth);
-    }
+  _merge(doc) {
+    return Automerge.merge(this.truth, doc);
+  }
+  peekChanges(from, to) {
+    //if (!this._changes) {
+      this._changes = Automerge.getChanges(from, to);
+    //}
     return this._changes;
   }
   get changes() {
     //const changes = Automerge.getChanges(this.old, this.truth);
-    const changes = this.peekChanges();
-    this.old = this.truth;
+    const changes = this.peekChanges(this.old, this.truth);
     this._changes = null;
+    this.old = this.truth;
     return changes;
   }
 }

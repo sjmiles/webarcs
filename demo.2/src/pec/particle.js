@@ -24,20 +24,25 @@ const Particle = class {
     return Particle.html`&nbsp;`;
   }
   requestUpdate(inputs) {
-    console.log(`> particle::requestUpdate(${JSON.stringify(inputs)})`);
+    console.log(`> particle::requestUpdate(${JSON.stringify(Object.keys(inputs || {}))})`);
     const outputs = this.update(inputs);
+    if (outputs) {
+      this.output(outputs);
+      // TODO(sjmiles): presumptively render by including outputs
+      const merge = {...inputs, ...outputs};
+      const model = this.render(merge);
+      this.renderModel(model);
+    }
+  }
+  update(inputs) {
+    this.renderModel(this.render(inputs));
+  }
+  output(outputs) {
     this.hostProxy.output(outputs);
-    // TODO(sjmiles): presumptively render by including outputs
-    const merge = {...inputs, ...outputs};
-    const model = this.render(merge);
-    this.renderModel(model);
   }
   renderModel(model) {
-    console.log(`< particle::renderModel(${JSON.stringify(model || {})})`);
+    console.log(`< particle::renderModel(${JSON.stringify(Object.keys(model || {}))})`);
     this.hostProxy.render(model);
-  }
-  update(/*inputs*/) {
-    //return outputs;
   }
   render(inputs) {
     return inputs;

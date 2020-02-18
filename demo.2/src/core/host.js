@@ -14,15 +14,16 @@ import {debounce} from './utils.js';
 // TODO(sjmiles): principle: Particles remain stupid, system integration happens in an owner (Host)
 
 export class Host {
-  static async createHostedParticle(id, name, kind, container, composer) {
-    const host = new Host(id, container, composer);
+  static async createHostedParticle(id, name, kind, container, composer, onoutput) {
+    const host = new Host(id, container, composer, onoutput);
     await host.createParticle(name, kind);
     return host;
   }
-  constructor(id, container, composer) {
+  constructor(id, container, composer, onoutput) {
     this.id = id;
     this.container = container;
     this.composer = composer;
+    this.onoutput = onoutput;
     this.openChannel();
   }
   dispose() {
@@ -41,7 +42,7 @@ export class Host {
   }
   // actions provoke from particle-space
   captureOutputs(outputs) {
-    this.onoutput(outputs);
+    this.onoutput(this, outputs);
   }
   render(model) {
     const {id, name, container} = this;
