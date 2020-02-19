@@ -22,12 +22,16 @@ export class Data {
     this._truth = truth;
     this._changes = null;
   }
+  toString() {
+    return JSON.stringify(this.truth);
+  }
   maybeChange(mutator) {
     const applied = this._change(mutator);
     const changes = Automerge.getChanges(this.truth, applied);
     if (changes.length) {
       console.log('Data::maybeChange: changes detected')
       this.truth = applied;
+      return true;
     }
   }
   change(mutator) {

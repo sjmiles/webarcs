@@ -24,7 +24,7 @@ const Particle = class {
     return Particle.html`&nbsp;`;
   }
   requestUpdate(inputs) {
-    console.log(`> particle::requestUpdate(${JSON.stringify(Object.keys(inputs || {}))})`);
+    //console.log(`> particle::requestUpdate(${JSON.stringify(Object.keys(inputs || {}))})`);
     const outputs = this.update(inputs);
     if (outputs) {
       this.output(outputs);
@@ -41,7 +41,7 @@ const Particle = class {
     this.hostProxy.output(outputs);
   }
   renderModel(model) {
-    console.log(`< particle::renderModel(${JSON.stringify(Object.keys(model || {}))})`);
+    //console.log(`< particle::renderModel(${JSON.stringify(Object.keys(model || {}))})`);
     this.hostProxy.render(model);
   }
   render(inputs) {

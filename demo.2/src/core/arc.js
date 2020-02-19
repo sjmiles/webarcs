@@ -72,9 +72,11 @@ export class Arc extends Data {
     }
   }
   receiveHostOutput(host, outputs) {
-    console.log(`receiveHostOutput::${host.id}`, outputs);
+    console.log(`receiveHostOutput::${host.id}`, Object.keys(outputs));
     if (outputs && typeof outputs === 'object') {
-      this.maybeChange(doc => shallowMerge(doc, outputs));
+      if (this.maybeChange(doc => shallowMerge(doc, outputs))) {
+        //this.changed();
+      }
     }
   }
 }

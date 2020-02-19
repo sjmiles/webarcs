@@ -50,8 +50,8 @@ spawn('arc0', window.device0, {
     particle: 'Container',
     content: [{
       particle: 'Info'
-    }, {
-      particle: 'TMDBSearch'
+    // }, {
+    //   particle: 'TMDBSearch'
     }]
   }, {
     particle: 'SortArray'
@@ -61,8 +61,8 @@ spawn('arc0', window.device0, {
 spawn('arc1', window.device1, {
   root: [{
     particle: 'Info'
-  }, {
-     particle: 'Restaurants'
+  // }, {
+  //    particle: 'Restaurants'
   }]
 });
 
@@ -72,13 +72,14 @@ spawn('arc2', window.device2, {
     content: [{
       particle: 'Info'
     }],
-  }, {
-     particle: 'PlacesPhotos'
+  // }, {
+  //    particle: 'PlacesPhotos'
   }]
 });
 
 // data mutator for testing
 const mutate = (arc) => {
+  console.log(`----> mutating ${arc.id}`);
   arc.change(doc => {
     // sometimes do nothing
     if (prob(0.9)) {
@@ -95,9 +96,10 @@ const mutate = (arc) => {
         doc.list.push(['Delta', 'Epsilon', 'Iota'][irand(3)]);
       }
     } else {
-      console.warn('NO MUTATIONS');
+      //console.warn('NO MUTATIONS');
     }
   });
+  //arc.changed();
 };
 
 const mutateTimes = count => {
@@ -107,7 +109,7 @@ const mutateTimes = count => {
       const arc = group.arcs[irand(group.arcs.length)];
       mutate(arc);
       mutateTimes(count);
-    }, irand(200, 40));
+    }, 100); //irand(200, 40));
   }
 };
 
@@ -118,7 +120,7 @@ const dumpTruth = window.dumpTruth = () => {
 };
 
 window.test.onclick = () => mutateTimes(1);
-window.testn.onclick = () => mutateTimes(15);
+window.testn.onclick = () => mutateTimes(3);
 //window.sync.onclick = () => synchronize();
 window.dump.onclick = () => dumpTruth();
 

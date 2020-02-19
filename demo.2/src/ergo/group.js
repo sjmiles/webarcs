@@ -28,6 +28,7 @@ export const Group = class {
   }
   onchange(arc) {
     if (!this.changed.includes(arc)) {
+      console.log(`Group::wakeUp():[${arc.id}] added to changed list`);
       this.changed.push(arc);
       this.wakeUp();
     }
@@ -40,41 +41,63 @@ export const Group = class {
     this.debounce = debounce(this.debounce, () => this.change(), debounceIntervalMs);
   }
   change() {
-    console.log('Group::chaned(): ...processing change batch');
+    console.group('Group::change(): ...processing change batch');
     try {
-      this.changed.forEach(arc => this.arcChanged(arc));
+      const changed = this.changed;
       this.changed = [];
+      changed.forEach(arc => this.arcChanged(arc));
     } finally {
       this.changing = false;
+      console.groupEnd();
     }
   }
   arcChanged(arc) {
-    console.log(`Group::[${arc.name}] changed`);
+    console.log(`Group::[${arc.name}] processing change`);
     //console.groupCollapsed(`${arc.name} changed`);
     //console.log(this.status());
     let changes = arc.changes;
     if (changes.length) {
+      console.log(`...applying changes to owner`);
       this.owner.apply(changes);
+      console.log('owner', this.owner.toString());
+      console.log(`...propagating changes`);
       this.propagateChanges(arc);
+    } else {
+      console.log(`CHANGE LIST EMPTY`);
     }
     //console.groupEnd();
-    console.log(this.status());
+    this.status();
   }
-  propagateChanges(fromArc) {
+  propagateChanges(triggeringArc) {
     const changes = this.owner.changes;
     if (changes.length) {
+      //const truth = this.owner.toString();
       this.arcs.forEach(alt => {
-        if (alt !== fromArc) {
+        if (alt !== triggeringArc) {
           alt.apply(changes);
+          console.log(alt.id, alt.toString());
+          // if (alt.toString() !== truth) {
+          //   console.error('data divergence');
+          //   debugger;
+          // }
         }
       });
     }
-    console.log(this.status());
+    this.status();
   }
   status() {
     const ownerTruthJson = JSON.stringify(this.owner.truth);
-    const flags = this.arcs.map(arc => `${arc.name}==truth ? ${JSON.stringify(arc.truth) == ownerTruthJson}`);
-    return flags.join('; ');
+    const flags = this.arcs.map(arc => JSON.stringify(arc.truth) == ownerTruthJson);
+    let logs = [];
+    let styles = [];
+    flags.forEach((flag, i) => {
+      logs.push(`${this.arcs[i].name}::%c${flag}%c`)
+      styles.push(
+        `${flag ? `color: green;` : `color: red; font-weight: bold`}`,
+        `color: default; font-weight: default;`
+      );
+    });
+    console.log(`Truth: ${logs.join('; ')}`, ...styles);
   }
   dump() {
     //const data = [arc0.truth, arc1.truth, persist.truth].map(s => JSON.stringify(s));

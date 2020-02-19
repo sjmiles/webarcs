@@ -52,7 +52,7 @@ export class Host {
     this.composer.render({id, name, container, content: {template, model}});
   }
   debouncedRender(model) {
-    console.log(`[${this.id}]::debouncedRender(${JSON.stringify(Object.keys(model || {}))})`);
+    //console.log(`[${this.id}]::debouncedRender(${JSON.stringify(Object.keys(model || {}))})`);
     this._debounceKey = debounce(this._debounceKey, () => this.render(model), 100);
   }
   //
