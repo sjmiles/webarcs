@@ -21,6 +21,18 @@ import {Sorter} from './particles/Sorter.js';
 import {TMDBSearch} from './particles/TMDBSearch.js';
 import {TMDBGrid} from './particles/TMDBGrid.js';
 
+import {Runtime} from './ergo/runtime.js';
+import {Unbus} from './devices/unbus.js';
+
+const runtime = new Runtime(Composer);
+const init = async () => {
+  const particle = await runtime.createParticle('a', 'a', Books, 'a', new Unbus());
+  console.log(particle);
+  particle.onoutput = output => console.log('particle output: ', output);
+  particle.update();
+};
+init();
+
 const truth = new Store('truth');
 const group = new Group('group', truth);
 

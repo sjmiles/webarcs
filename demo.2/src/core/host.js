@@ -11,10 +11,10 @@
 import {Hub} from '../bus/hub.js';
 import {debounce} from './utils.js';
 
-// TODO(sjmiles): principle: Particles remain stupid, system integration happens in an owner (Host)
+// TODO(sjmiles): principle: Particles kept ignorant, system knowledge resides in an owner (Host)
 
 export class Host {
-  static async createHostedParticle(id, name, kind, container, composer, onoutput) {
+  static async createParticle(id, name, kind, container, composer, onoutput) {
     const host = new Host(id, container, composer, onoutput);
     await host.createParticle(name, kind);
     return host;
@@ -40,7 +40,7 @@ export class Host {
   update(inputs) {
     this.particleUpdate(inputs);
   }
-  // actions provoke from particle-space
+  // actions provoked from particle-space
   captureOutputs(outputs) {
     this.onoutput(this, outputs);
   }

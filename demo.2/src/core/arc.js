@@ -24,7 +24,7 @@ export class Arc extends Data {
   log(msg) {
     console.log(`${this.id}::${msg}`);
   }
-  // responsibility: hosts/particles
+  // responsibility: particles
   async addParticle(kind, container) {
     const id = `${this.id}:${kind}(${makeId()})`;
     const onoutput = (host, outputs) => this.receiveHostOutput(host, outputs);

@@ -8,15 +8,7 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-export const Particle = class {
-  doUpdate(inputs) {
-    setTimeout(() => {
-      console.log('Particle update');
-      this.update(inputs);
-    }, 100);
-  }
-  update(inputs) {
-  }
-  output(outputs) {
-  }
+import {Particle} from '../core/particle.js';
+
+export const Noop = class extends Particle {
 };

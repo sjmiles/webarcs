@@ -8,15 +8,15 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-self.defineParticle(({Particle}) => class extends Particle {
-  get inputs() {
-    return ['list', 'key'];
+import {Host} from '../core/host.js';
+
+export const Runtime = class {
+  constructor({composerClass}) {
+    this.composerClass = composerClass;
   }
-  update({list, key}) {
-    key = key || 'name';
-    if (list) {
-      list.sort((a, b) => (a[key] < b[key]) ? -1 : (a[key] == b[key]) ? 0 : 1);
-    }
-    return list;
+  async createParticle(id, name, kind, container, bus) {
+    const host = new Host({id, container, bus});
+    await host.createParticle(name, kind);
+    return host;
   }
-});
+};
