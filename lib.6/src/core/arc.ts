@@ -8,13 +8,21 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
+/**
+ * @packageDocumentation
+ * @module core
+ */
+
 import {Store} from './store.js';
 import {debounce, deepEqual, makeId} from './utils.js';
 
 const renderDebounceIntervalMs = 200;
 
 /** Arc class */
-export const Arc = class extends Store {
+export class Arc extends Store {
+  public id: string;
+  public composer;
+  public particles: any[];
   /**
   * This method has hierarchical params
   * @param {String} name not used
@@ -24,12 +32,13 @@ export const Arc = class extends Store {
     super(name);
     this.id = `arc(${makeId()})`;
     this.composer = composer;
-    composer.onevent = (...args) => this.composerEvent(...args);
+    composer.onevent = (pid, eventlet) => this.composerEvent(pid, eventlet);
     this.particles = [];
   }
   get serializable() {
     // TODO(sjmiles): convert crdt doc to POJO
-    return {...this.truth};
+    return JSON.parse(JSON.stringify(this.truth));
+    //return {...this.truth};
   }
   onchange() {
     // override to listen to mutation events
@@ -37,7 +46,7 @@ export const Arc = class extends Store {
   update() {
     const inputs = this.serializable;
     console.log(`${this.name}: update(${Object.keys(inputs)})`);
-    this.particles.forEach(p => p.doUpdate(inputs));
+    this.particles.forEach((p: any) => p.doUpdate(inputs));
   }
   async addParticle(runtime, spec, container) {
     // `spec` is just a String for now

@@ -8,32 +8,34 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Store} from './core/store.js';
-import {Arc} from './core/arc.js';
-import {Group} from './ergo/group.js';
-import {irand, prob} from './core/utils.js';
+import {Store} from './js/core/store.js';
+import {Arc} from './js/core/arc.js';
+import {Group} from './js/ergo/group.js';
+import {irand, prob} from './js/core/utils.js';
+
+import {Runtime} from './js/ergo/runtime.js';
+import {Unbus} from './js/devices/unbus.js';
+import {Bus} from './js/devices/bus.js';
+import {WorkerHub} from './js/devices/worker/worker-hub.js';
+import {Host} from './js/devices/host.js';
+import {Composer} from './js/devices/dom/xen-dom-composer.js';
 
 import {Noop} from './particles/Noop.js';
 import {Books} from './particles/Books.js';
 import {Sorter} from './particles/Sorter.js';
 import {TMDBSearch} from './particles/TMDBSearch.js';
 import {TMDBGrid} from './particles/TMDBGrid.js';
-
-import {Runtime} from './ergo/runtime.js';
-import {Unbus} from './devices/unbus.js';
-import {Bus} from './devices/bus.js';
-import {WorkerHub} from './devices/worker/worker-hub.js';
-import {Host} from './devices/host.js';
-import {Composer} from './devices/dom/xen-dom-composer.js';
+import {TMDBDetail} from './particles/TMDBDetail.js';
 
 const runtime = new Runtime();
 
 // simple main-thread particles
-runtime.register('Noop', async () => new Noop());
-runtime.register('Books', async () => new Books());
-runtime.register('Sorter', async () => new Sorter());
-runtime.register('TMDBSearch', async () => new TMDBSearch());
-runtime.register('TMDBGrid', async () => new TMDBGrid());
+runtime.registerClass('Noop', Noop);
+runtime.registerClass('Books', Books);
+runtime.registerClass('Sorter', Sorter);
+runtime.registerClass('TMDBSearch', TMDBSearch);
+runtime.registerClass('TMDBGrid', TMDBGrid);
+runtime.registerClass('TMDBDetail', TMDBDetail);
 
 // factory for bus particles
 const createHostedParticle = async (id, kind, container, bus) => {
@@ -70,6 +72,8 @@ runtime.instantiate(arc, {
     particle: 'UnbusBooks'
   }, {
     particle: 'TMDBGrid'
+  }, {
+    particle: 'TMDBDetail'
   }]
 });
 

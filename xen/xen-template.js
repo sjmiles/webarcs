@@ -245,7 +245,7 @@ const _set = function(node, property, value, controller) {
     if (value && (value.$template || value.template)) {
       _setSubTemplate(node, value, controller);
     } else {
-      node.textContent = (value || '');
+      node.textContent = (value === null || value === undefined) ? '' : value;
     }
   } else if (property === 'unsafe-html') {
     node.innerHTML = value || '';

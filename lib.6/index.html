@@ -1,0 +1,42 @@
+<!doctype html>
+
+<link href="../index.css" rel="stylesheet">
+
+<style>
+  body {
+    padding: 16px;
+  }
+  button {
+    font-size: 16px;
+  }
+  [box], [device] {
+    padding: 12px;
+    border: 1px solid silver;
+    margin: 12px;
+  }
+  [device] {
+    border: 4px solid silver;
+  }
+  [label] {
+    display: inline-block;
+    padding-bottom: 6px;
+  }
+</style>
+
+<div device id="device0">
+  <span label>Device-0</span>
+</div>
+
+<div device id="device1">
+  <span label>Device-1</span>
+</div>
+
+<div device id="device2">
+  <span label>Device-2</span>
+</div>
+
+<button id="mutate">Mutate</button>
+<button id="mutateN">Mutate N</button>
+
+<script src="../node_modules/automerge/dist/automerge.js"></script>
+<script type="module" src="./app.js"></script>
