@@ -15,28 +15,22 @@ export const Bus = class {
   constructor(hub) {
     this.hub = hub;
   }
-  openChannel(listener) {
-    const receiver = message => this.receive(listener, message);
-    this.channel = this.hub.openChannel(this.id, receiver);
+  openChannel(id, listener) {
+    const receiver = message => listener(message);
+    this.channel = this.hub.openChannel(id, receiver);
   }
   closeChannel() {
     this.channel.close();
     this.channel = null;
   }
-  // messages received from Particle-space
-  receive(listener, message) {
-    // forward to handler `onMessageName` in listener
-    const handlerName = (s => `on${s.charAt(0).toUpperCase() + s.slice(1)}`)(message.msg);
-    const fn = listener && listener[handlerName];
-    if (fn) {
-      fn.call(listener, message.model);
-    }
-  }
   // messages sent to Particle-space
-  particleUpdate(inputs) {
-    this.hub.request({msg: 'update', id: this.id, inputs});
-  }
   async particleCreate(kind, id, name) {
     return (await this.hub.request({msg: 'create', kind, id, name})).config;
+  }
+  particleUpdate(id, inputs) {
+    this.hub.request({msg: 'update', id, inputs});
+  }
+  particleEvent(id, eventlet) {
+    this.hub.request({msg: 'event', id, eventlet});
   }
 };

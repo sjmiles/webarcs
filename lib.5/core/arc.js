@@ -9,29 +9,46 @@
  */
 
 import {Store} from './store.js';
-import {debounce, deepEqual} from './utils.js';
+import {debounce, deepEqual, makeId} from './utils.js';
+
+const renderDebounceIntervalMs = 200;
 
 export const Arc = class extends Store {
   constructor({name, composer}) {
     super(name);
+    this.id = `arc(${makeId()})`;
     this.composer = composer;
+    composer.onevent = (...args) => this.composerEvent(...args);
     this.particles = [];
   }
   get serializable() {
-    return JSON.parse(JSON.stringify(this.truth));
+    // TODO(sjmiles): convert crdt doc to POJO
+    return {...this.truth};
   }
-  addParticle(particle) {
-    particle.arc = this;
-    // TODO(sjmiles): critical override
-    particle.onoutput = outputs => this.particleChanged(particle, outputs);
-    this.particles.push(particle);
+  onchange() {
+    // override to listen to mutation events
   }
   update() {
     const inputs = this.serializable;
     console.log(`${this.name}: update(${Object.keys(inputs)})`);
     this.particles.forEach(p => p.doUpdate(inputs));
   }
-  particleChanged(particle, outputs) {
+  async addParticle(runtime, spec, container) {
+    // `spec` is just a String for now
+    const factory = runtime.registry[spec];
+    if (factory) {
+      const id = `${this.id}:${spec}(${makeId()})`;
+      const onoutput = outputs => this.particleOutput(particle, outputs);
+      const particle = await factory(id, onoutput);
+      this.particles.push(particle);
+      // TODO(sjmiles): this stuff needds to not be on particle, we'll need
+      // another map
+      particle.id = id;
+      particle.container = container;
+      particle.onoutput = onoutput;
+    }
+  }
+  particleOutput(particle, outputs) {
     if (outputs) {
       if (typeof outputs !== 'object') {
         console.warn('Arc::particleChanged: `outputs` must be an Object');
@@ -49,13 +66,6 @@ export const Arc = class extends Store {
         }
       }
     }
-  }
-  change(mutator) {
-    super.change(mutator);
-    this.onchange(this);
-  }
-  onchange() {
-    // override to listen to mutation events
   }
   mergeRawOutputs(outputs) {
     let changed = false;
@@ -83,16 +93,26 @@ export const Arc = class extends Store {
   }
   debouncedRender(particle, model) {
     //console.log(`[${this.id}]::debouncedRender(${JSON.stringify(Object.keys(model || {}))})`);
-    this._debounceRenderKey = debounce(this._debounceRenderKey, () => this.render(particle, model), 100);
+    particle._debounceRenderKey = debounce(particle._debounceRenderKey, () => this.render(particle, model), renderDebounceIntervalMs);
   }
   render(particle, model) {
     // TODO(sjmiles): `template` is device-specific; push template logic to the composer
     const {template} = particle.config;
     if (template) {
-      const {id, name, container} = this;
+      const {id, container} = particle;
       // because rendering is debounced, be careful using this log to study data-changes
       //console.log(`Host[${id}]::render(${JSON.stringify(model)})`);
-      this.composer.render({id, name, container, content: {template, model}});
+      this.composer.render({id, container, content: {template, model}});
     }
+  }
+  composerEvent(pid, eventlet) {
+    console.log(`[${pid}] sent [${eventlet.handler}] event`);
+    const particle = this.getParticleById(pid);
+    if (particle) {
+      particle.handleEvent(eventlet);
+    }
+  }
+  getParticleById(pid) {
+    return this.particles.find(p => p.id === pid);
   }
 };

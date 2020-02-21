@@ -15,8 +15,9 @@ export const Particle = class {
   // for subclasses to override
   get template() {
   }
-  // for subclasses to override
+  // subclasses may override
   update(/*inputs*/) {
+    this.output();
   }
   // subclasses may override
   render(inputs) {
@@ -24,9 +25,10 @@ export const Particle = class {
   }
   // for subclasses to invoke at will
   output(outputs) {
-    if (this.template) {
+    if (this.config.template) {
       // TODO(sjmiles): presumptively render by including outputs
       const merge = {...this.inputs, ...outputs};
+      outputs = outputs || {};
       // TODO(sjmiles): instead, divide output into channels
       outputs.$slot = this.render(merge);
     }
@@ -39,10 +41,18 @@ export const Particle = class {
     };
   }
   doUpdate(inputs) {
+    console.log(`${this.id}::doUpdate(${Object.keys(inputs)})`);
     this.inputs = inputs;
     this.update(inputs);
   }
   // owner overrides to listen here
   onoutput(/*outputs*/) {
+  }
+  handleEvent({handler, data}) {
+    if (this[handler]) {
+      this[handler]({data});
+    } else {
+      console.log(`[${this.id}] event handler [${handler}] not found`);
+    }
   }
 };

@@ -13,19 +13,22 @@
 export const Unbus = class {
   constructor() {
   }
-  openChannel(listener) {
+  openChannel(id, listener) {
     this.listener = listener;
   }
   closeChannel() {
     this.listener = null;
-  }
-  particleUpdate(inputs) {
-    this.particle.update(inputs);
   }
   async particleCreate(kind, id) {
     this.id = id;
     this.particle = new kind();
     this.particle.onoutput = model => this.listener({msg: 'output', model});
     return this.particle.config;
+  }
+  particleUpdate(inputs) {
+    this.particle.update(inputs);
+  }
+  particleEvent(eventlet) {
+    this.particle.handleEvent(eventlet);
   }
 };

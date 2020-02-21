@@ -8,17 +8,13 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Particle} from '../core/particle.js';
-
-export const Books = class extends Particle {
+export const particle = ({Particle}) =>
+class extends Particle {
   get template() {
-    return `<div style="padding: 6px 0;">{{books}}</div>`;
-  }
-  update() {
-    if (!this.finished) {
-      this.finished = true;
-      const books = ['Snails!', 'Dirt is my Friend', 'The Laundry Dilemma'];
-      this.output({books});
-    }
+    return Particle.html`
+      <div style="padding: 12px; border: 3px solid blue; margin: 8px;">
+        <div slot="content"></div>
+      </div>
+    `;
   }
 };

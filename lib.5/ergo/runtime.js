@@ -8,15 +8,16 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Host} from '../core/host.js';
+import {Recipe} from '../ergo/recipe.js';
 
 export const Runtime = class {
-  constructor({composerClass}) {
-    this.composerClass = composerClass;
+  constructor() {
+    this.registry = {};
   }
-  async createParticle(id, name, kind, container, bus) {
-    const host = new Host({id, container, bus});
-    await host.createParticle(name, kind);
-    return host;
+  register(name, ctor) {
+    this.registry[name] = ctor;
+  }
+  instantiate(arc, recipe) {
+    Recipe.instantiate(this, arc, recipe);
   }
 };

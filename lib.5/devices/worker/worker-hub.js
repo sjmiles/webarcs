@@ -8,7 +8,7 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {makeId} from '../core/utils.js';
+import {makeId} from '../../core/utils.js';
 
 let worker;
 let dispatcher;
@@ -19,22 +19,21 @@ const channels = {};
 const flags = {};
 const log = (flags.hub) ? console.log.bind(console) : () => {};
 
-export const SimpleHub = class {
-  static init() {
+export const WorkerHub = class {
+  static parse(json) {
+    return json ? JSON.parse(json) : nob;
   }
-  static openChannel(id, receiver) {
-    const channel = {
-      send: message => {
-        message.channelId = id;
-        this.send(message);
-      },
-      receive: receiver,
-      close: () => {
-        delete channels[id];
-      }
-    };
-    channels[id] = channel;
-    return channel;
+  static init(workerPath, injectedDispatcher) {
+    dispatcher = injectedDispatcher;
+    workerPath = workerPath || './devices/worker/worker.js';
+    worker = new Worker(workerPath, {type: 'module'});
+    worker.onerror = e => this.onerror(e);
+    worker.onmessage = e => this.onmessage(e);
+  }
+  static send(message) {
+    log('Hub::send', message);
+    // TODO(sjmiles): there could be other remote-hub-clients, subclass details into WorkerHub
+    worker.postMessage(message);
   }
   static onerror(e) {
     console.error(e.message, e);
@@ -81,5 +80,19 @@ export const SimpleHub = class {
       this.send(message);
       // TODO(sjmiles): reject on timeout?
     });
+  }
+  static openChannel(id, receiver) {
+    const channel = {
+      send: message => {
+        message.channelId = id;
+        this.send(message);
+      },
+      receive: receiver,
+      close: () => {
+        delete channels[id];
+      }
+    };
+    channels[id] = channel;
+    return channel;
   }
 };

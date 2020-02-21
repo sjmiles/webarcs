@@ -9,10 +9,8 @@
  */
 
 import {Store} from './core/store.js';
-import {Composer} from './devices/dom-composer.js';
 import {Arc} from './core/arc.js';
 import {Group} from './ergo/group.js';
-import {Recipe} from './ergo/recipe.js';
 import {irand, prob} from './core/utils.js';
 
 import {Noop} from './particles/Noop.js';
@@ -23,59 +21,86 @@ import {TMDBGrid} from './particles/TMDBGrid.js';
 
 import {Runtime} from './ergo/runtime.js';
 import {Unbus} from './devices/unbus.js';
+import {Bus} from './devices/bus.js';
+import {WorkerHub} from './devices/worker/worker-hub.js';
+import {Host} from './devices/host.js';
+import {Composer} from './devices/dom/xen-dom-composer.js';
 
-const runtime = new Runtime(Composer);
-const init = async () => {
-  const particle = await runtime.createParticle('a', 'a', Books, 'a', new Unbus());
-  console.log(particle);
-  particle.onoutput = output => console.log('particle output: ', output);
-  particle.update();
-};
-init();
+const runtime = new Runtime();
+
+// simple main-thread particles
+runtime.register('Noop', async () => new Noop());
+runtime.register('Books', async () => new Books());
+runtime.register('Sorter', async () => new Sorter());
+runtime.register('TMDBSearch', async () => new TMDBSearch());
+runtime.register('TMDBGrid', async () => new TMDBGrid());
+
+// factory for bus particles
+const createHostedParticle = async (id, kind, container, bus) => {
+  const host = new Host({id, container, bus});
+  await host.createParticle(name, kind);
+  return host;
+}
+
+// unbus particles
+runtime.register('UnbusBooks', async (id, container) => await createHostedParticle(id, Books, container, new Unbus()));
+
+// WorkerHub particles
+WorkerHub.init();
+WorkerHub.send({msg: 'register', name: 'Info', src: './particles.worker/Info.js'});
+runtime.register('Info', async (id, container) => await createHostedParticle(id, 'Info', container, new Bus(WorkerHub)));
+WorkerHub.send({msg: 'register', name: 'Container', src: './particles.worker/Container.js'});
+runtime.register('Container', async (id, container) => await createHostedParticle(id, 'Container', container, new Bus(WorkerHub)));
 
 const truth = new Store('truth');
+truth.change(doc => {
+  doc.list = ['Alpha', 'Beta'];
+});
+
 const group = new Group('group', truth);
 
 let arc;
 
 arc = new Arc({name: 'one', composer: new Composer(window.device0)});
 group.addArc(arc);
-Recipe.instantiate(arc, {
+runtime.instantiate(arc, {
   root: [{
-    particle: Sorter
+    particle: 'Sorter'
   }, {
-  //   particle: Books
-  // }, {
-    particle: TMDBGrid
+    particle: 'UnbusBooks'
+  }, {
+    particle: 'TMDBGrid'
   }]
 });
 
 arc = new Arc({name: 'two', composer: new Composer(window.device1)});
 group.addArc(arc);
-Recipe.instantiate(arc, {
+runtime.instantiate(arc, {
   root: [{
-    particle: TMDBSearch
+    particle: 'TMDBSearch'
   }, {
-    particle: Noop
+    particle: 'Container',
+    content: [{
+      particle: 'Info'
+    }]
   }]
 });
 
 arc = new Arc({name: 'three', composer: new Composer(window.device2)});
 group.addArc(arc);
-Recipe.instantiate(arc, {
+runtime.instantiate(arc, {
   root: [{
-    particle: Books
+    particle: 'Books'
   }]
 });
 
-group.status();
-
-truth.change(doc => {
-  doc.list = ['Alpha', 'Beta'];
-});
-group.sync();
-
 //
+
+// TODO(sjmiles): need idle-state tracking
+setTimeout(() => {
+  group.status();
+  group.sync();
+}, 1000);
 
 const stores = group.arcs;
 
@@ -104,7 +129,7 @@ const mutateN = n => {
   }
 };
 
-//mutateN(15);
-
 window.mutate.onclick = () => mutateRandomStore();
 window.mutateN.onclick = () => mutateN(10);
+
+window.arcs = {group};

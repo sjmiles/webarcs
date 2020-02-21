@@ -34,24 +34,25 @@
 // }
 
 export const Recipe = class {
-  static instantiate(arc, recipe, container) {
+  static instantiate(runtime, arc, recipe, container) {
     if (Array.isArray(recipe)) {
       recipe = {_: recipe};
     }
     Object.keys(recipe).forEach(key => {
+      const info = recipe[key];
       if (key === 'particle') {
         //console.log(`adding ${recipe.particle} particle`);
-        //arc.addParticle(recipe[key], container);
-        arc.addParticle(new recipe[key]);
+        arc.addParticle(runtime, info, container);
       } else {
-        const node = recipe[key];
+        const node = info;
         if (!Array.isArray(node)) {
           node = [node]
         }
         console.log(`populating [${key}]...`);
-        node.forEach(r => this.instantiate(arc, r, key));
+        node.forEach(r => this.instantiate(runtime, arc, r, key));
       }
     });
   }
 };
+
 

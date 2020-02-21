@@ -23,7 +23,11 @@ export const TMDBGrid = class extends Particle {
     return template;
   }
   update({tmdbResults}) {
-    this.output({tmdbResults});
+    const length = tmdbResults ? tmdbResults.length : 0;
+    if (length !== this.lastLength) {
+      this.lastLength = length;
+      this.output({tmdbResults});
+    }
   }
   render({tmdbResults}) {
     if (tmdbResults) {

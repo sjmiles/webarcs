@@ -27,6 +27,7 @@ export const Group = class {
   addArc(arc) {
     arc.onchange = () => this.arcChanged(arc);
     this.arcs.push(arc);
+    return arc;
   }
   arcChanged(arc) {
     if (!this.changed.includes(arc)) {

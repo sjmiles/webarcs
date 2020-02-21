@@ -7,21 +7,25 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
-import {Xen} from '../../xen/xen-async.js';
+
+import {Xen} from '../../../xen/xen-async.js';
 
 export class Composer {
   constructor(root) {
     this.root = root || document.body;
     this.slots = {};
   }
-  render({id, name, container, content: {template, model}}) {
-    console.log('render:', id, name, container, model);
+  render({id, container, content: {template, model}}) {
+    console.log('render:', {id, container, model: Object.keys(model || Object)});
     let slot = this.slots[id];
     if (!slot) {
       let parent = this.root;
-      if (container) {
-        const node = parent.querySelector(`[slot=${container}]`);
-        parent = node || parent;
+      if (container && container !== 'root') {
+        parent = parent.querySelector(`[slot=${container}]`);
+      }
+      if (!parent) {
+        console.warn(`container unavailable for slot`, id);
+        return;
       }
       const mapper = this.mapEvent.bind(this, id);
       slot = this.slots[id] = Xen.Template.stamp(template).appendTo(parent).events(mapper);
@@ -31,7 +35,12 @@ export class Composer {
   }
   mapEvent(pid, node, type, handler) {
     node.addEventListener(type, e => {
-      console.log(`${handler} event [${pid}]`);
+      const {key, value} = e.currentTarget;
+      const eventlet = {name, handler, data: {key, value}};
+      this.onevent(pid, eventlet);
     });
+  }
+  onevent(pid, eventlet) {
+    console.log(`[${pid}] sent [${eventlet.handler}] event`);
   }
 };
