@@ -45,8 +45,27 @@ export class Composer {
     }
     mapEvent(pid, node, type, handler) {
         node.addEventListener(type, e => {
-            const { key, value } = e.currentTarget;
-            const eventlet = { name, handler, data: { key, value } };
+            const data = { key: null, value: null };
+            // walk up the event path to find the topmost key/value data
+            const branch = e.composedPath();
+            for (let elt of branch) {
+                if ('key' in elt) {
+                    data.key = elt.key;
+                }
+                else if (elt.hasAttribute('key')) {
+                    data.key = elt.getAttribute('key');
+                }
+                if ('value' in elt) {
+                    data.value = elt.value;
+                }
+                else if (elt.hasAttribute('value')) {
+                    data.key = elt.getAttribute('value');
+                }
+                if (e.currentTarget === elt) {
+                    break;
+                }
+            }
+            const eventlet = { name, handler, data };
             this.onevent(pid, eventlet);
         });
     }

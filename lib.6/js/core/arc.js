@@ -25,7 +25,7 @@ export class Arc extends Store {
         super(name);
         this.id = `arc(${makeId()})`;
         this.composer = composer;
-        composer.onevent = (pid, eventlet) => this.composerEvent(pid, eventlet);
+        composer.onevent = (pid, eventlet) => this.onComposerEvent(pid, eventlet);
         this.particles = [];
     }
     get serializable() {
@@ -114,8 +114,8 @@ export class Arc extends Store {
             this.composer.render({ id, container, content: { template, model } });
         }
     }
-    composerEvent(pid, eventlet) {
-        console.log(`[${pid}] sent [${eventlet.handler}] event`);
+    onComposerEvent(pid, eventlet) {
+        console.log(`[${pid}] sent [${eventlet.handler}] event`, eventlet);
         const particle = this.getParticleById(pid);
         if (particle) {
             particle.handleEvent(eventlet);

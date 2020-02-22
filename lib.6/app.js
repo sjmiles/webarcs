@@ -10,6 +10,7 @@
 
 import {Store} from './js/core/store.js';
 import {Arc} from './js/core/arc.js';
+import {Particle} from './js/core/particle.js';
 import {Group} from './js/ergo/group.js';
 import {irand, prob} from './js/core/utils.js';
 
@@ -21,21 +22,33 @@ import {Host} from './js/devices/host.js';
 import {Composer} from './js/devices/dom/xen-dom-composer.js';
 
 import {Noop} from './particles/Noop.js';
-import {Books} from './particles/Books.js';
+import {Recipes} from './particles/Recipes.js';
 import {Sorter} from './particles/Sorter.js';
 import {TMDBSearch} from './particles/TMDBSearch.js';
-import {TMDBGrid} from './particles/TMDBGrid.js';
+import {particle as TMDBGrid} from './particles/TMDBGrid.js';
 import {TMDBDetail} from './particles/TMDBDetail.js';
+
+import {particle as Books} from './particles/Books.js';
 
 const runtime = new Runtime();
 
 // simple main-thread particles
 runtime.registerClass('Noop', Noop);
-runtime.registerClass('Books', Books);
 runtime.registerClass('Sorter', Sorter);
 runtime.registerClass('TMDBSearch', TMDBSearch);
-runtime.registerClass('TMDBGrid', TMDBGrid);
 runtime.registerClass('TMDBDetail', TMDBDetail);
+
+// factory for import particles
+const createImportParticle = async (factory, id, container) => {
+  const instance = new (factory({Particle}))();
+  // TODO(sjmiles): need a host concept to own privileged particle data
+  instance.id = container;
+  instance.$container = container;
+  return instance;
+};
+
+runtime.register('Books', async (id, container) => await createImportParticle(Books, id, container));
+runtime.register('TMDBGrid', async (id, container) => await createImportParticle(TMDBGrid, id, container));
 
 // factory for bus particles
 const createHostedParticle = async (id, kind, container, bus) => {
@@ -45,14 +58,20 @@ const createHostedParticle = async (id, kind, container, bus) => {
 };
 
 // unbus particles
-runtime.register('UnbusBooks', async (id, container) => await createHostedParticle(id, Books, container, new Unbus()));
+runtime.register('UnbusBooks', async (id, container) => await createHostedParticle(id, Recipes, container, new Unbus()));
 
 // WorkerHub particles
 WorkerHub.init();
-WorkerHub.send({msg: 'register', name: 'Info', src: './particles.worker/Info.js'});
-runtime.register('Info', async (id, container) => await createHostedParticle(id, 'Info', container, new Bus(WorkerHub)));
-WorkerHub.send({msg: 'register', name: 'Container', src: './particles.worker/Container.js'});
-runtime.register('Container', async (id, container) => await createHostedParticle(id, 'Container', container, new Bus(WorkerHub)));
+
+const registerWorkerParticle = (name) => {
+  WorkerHub.send({msg: 'register', name, src: `./particles.worker/${name}.js`});
+  runtime.register(name, async (id, container) => await createHostedParticle(id, name, container, new Bus(WorkerHub)));
+};
+
+registerWorkerParticle('Info');
+registerWorkerParticle('Container');
+
+// create some stuff, see what happens
 
 const truth = new Store('truth');
 truth.change(doc => {
@@ -69,11 +88,9 @@ runtime.instantiate(arc, {
   root: [{
     particle: 'Sorter'
   }, {
-    particle: 'UnbusBooks'
+    particle: 'Books'
   }, {
     particle: 'TMDBGrid'
-  }, {
-    particle: 'TMDBDetail'
   }]
 });
 
@@ -94,7 +111,9 @@ arc = new Arc({name: 'three', composer: new Composer(window.device2)});
 group.addArc(arc);
 runtime.instantiate(arc, {
   root: [{
-    particle: 'Books'
+    particle: 'UnbusBooks'
+  }, {
+    particle: 'TMDBDetail'
   }]
 });
 

@@ -21,18 +21,25 @@
     display: inline-block;
     padding-bottom: 6px;
   }
+  [row] {
+    display: flex;
+  }
+  [row] > * {
+    flex: 1;
+  }
 </style>
 
-<div device id="device0">
-  <span label>Device-0</span>
-</div>
 
-<div device id="device1">
-  <span label>Device-1</span>
-</div>
-
-<div device id="device2">
-  <span label>Device-2</span>
+<div row>
+  <div device id="device0">
+    <span label>Device-0</span>
+  </div>
+  <div device id="device1">
+    <span label>Device-1</span>
+  </div>
+  <div device id="device2">
+    <span label>Device-2</span>
+  </div>
 </div>
 
 <button id="mutate">Mutate</button>

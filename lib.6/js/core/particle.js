@@ -15,7 +15,7 @@ export class Particle {
     static get html() {
         return (strings, ...values) => (`${strings[0]}${values.map((v, i) => `${v}${strings[i + 1]}`).join('')}`).trim();
     }
-    // for subclasses to override
+    // subclasses may override
     get template() {
         return null;
     }
@@ -27,7 +27,6 @@ export class Particle {
     render(inputs) {
         return inputs;
     }
-    // for subclasses to invoke at will
     output(outputs) {
         if (this.config.template) {
             // TODO(sjmiles): presumptively render by including outputs
@@ -38,7 +37,7 @@ export class Particle {
         }
         this.onoutput(outputs);
     }
-    // owner calls below here
+    // public calls below here
     get config() {
         return {
             template: this.template
@@ -49,7 +48,7 @@ export class Particle {
         this.inputs = inputs;
         this.update(inputs);
     }
-    // owner overrides to listen here
+    // override instance method to listen here
     onoutput(outputs) {
     }
     handleEvent({ handler, data }) {
