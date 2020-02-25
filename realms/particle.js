@@ -11,7 +11,7 @@
  * @packageDocumentation
  * @module core
  */
-export class Particle {
+(class Particle {
     static get html() {
         return (strings, ...values) => (`${strings[0]}${values.map((v, i) => `${v}${strings[i + 1]}`).join('')}`).trim();
     }
@@ -59,5 +59,4 @@ export class Particle {
             //console.log(`[${this.id}] event handler [${handler}] not found`);
         }
     }
-}
-;
+});

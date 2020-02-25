@@ -8,15 +8,16 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Particle} from '../js/core/particle.js';
+import {Particle} from '../../js/core/particle.js';
 
 const template = Particle.html`
 
 <style>
   [card] {
-    height: 240px;
-    width: 400px;
+    height: 400px;
+    /* width: 400px; */
     background-size: cover;
+    background-position: center top;
     vertical-align: bottom;
   }
   [scrim] {

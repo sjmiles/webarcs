@@ -15,6 +15,19 @@ export class Particle {
     static get html() {
         return (strings, ...values) => (`${strings[0]}${values.map((v, i) => `${v}${strings[i + 1]}`).join('')}`).trim();
     }
+    get config() {
+        return {
+            template: this.template
+        };
+    }
+    doUpdate(inputs) {
+        //console.log(`${this.id}::doUpdate(${Object.keys(inputs)})`);
+        this.inputs = inputs;
+        this.update(inputs);
+    }
+    // override instance method to listen here
+    onoutput(outputs) {
+    }
     // subclasses may override
     get template() {
         return null;
@@ -36,20 +49,6 @@ export class Particle {
             outputs.$slot = this.render(merge);
         }
         this.onoutput(outputs);
-    }
-    // public calls below here
-    get config() {
-        return {
-            template: this.template
-        };
-    }
-    doUpdate(inputs) {
-        //console.log(`${this.id}::doUpdate(${Object.keys(inputs)})`);
-        this.inputs = inputs;
-        this.update(inputs);
-    }
-    // override instance method to listen here
-    onoutput(outputs) {
     }
     handleEvent({ handler, data }) {
         if (this[handler]) {

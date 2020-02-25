@@ -1,0 +1,86 @@
+<!doctype html>
+
+<script type="module">
+  import Realm from 'https://cdn.jsdelivr.net/npm/realms-shim@1.2.2/dist/realms-shim.esm.js'
+  console.log(Realm);
+  //
+  const r = Realm.makeRootRealm();
+  console.log(r);
+  //
+  const channel = msg => {
+    switch (msg.type) {
+      case 'log':
+        console.log(msg.log);
+        break;
+      case 'fetch':
+        console.log(msg.resolver);
+        setTimeout(() => msg.resolver('text'), 100);
+        break;
+    }
+  };
+  const safeChannelFactory = r.evaluate(`
+    (function safeChannelFactory(unsafeChannel) {
+      return function safeChannel(...args) {
+        unsafeChannel(...args);
+      }
+    })
+  `);
+  // Create a safe function
+  const safeChannel = safeChannelFactory(channel);
+  // Create isolated class
+  const remotes = r.evaluate(`(function() {
+    const log = log => channel({type: 'log', log});
+    class Foo {
+      constructor() {
+        log('I am foo');
+      }
+      async foo() {
+        log('Foo.fetch()');
+        const unsafeValue = await this.fetch();
+        log(\`...results: \${unsafeValue}\`);
+        return true;
+      }
+      async fetch() {
+        let resolver;
+        const p = new Promise((resolve) => resolver = resolve);
+        channel({type: 'fetch', resolver});
+        return p;
+      }
+    };
+    return {Foo};
+  })()`, {channel: safeChannel});
+  console.log(remotes);
+  //
+  const {Foo} = remotes;
+  //console.log(Foo);
+  //
+  const f = new Foo();
+  (async () => {
+    console.log(await f.foo());
+  })();
+  //console.log(f);
+  //
+  let pclass;
+  const createParticle = async () => {
+    pclass = pclass || await (await fetch('./particle.js')).text();
+    const clzz = await (await fetch('./particles.realms/Books.js')).text();
+    const c = Realm.makeCompartment();
+    const Particle = r.evaluate(`${pclass}`);
+    const Books = r.evaluate(`${clzz}`, {Particle});
+    const p = new Books();
+    return {c, p};
+  };
+  //
+  (async () => {
+    const response = await fetch('./particle.js');
+    const code = await response.text();
+    //console.log(code);
+    const Particle = r.evaluate(`${code}`);
+    //console.log(Particle);
+    //
+    const host = await createParticle();
+    console.log(host);
+  })();
+
+</script>
+

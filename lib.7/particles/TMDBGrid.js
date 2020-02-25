@@ -12,19 +12,17 @@ export const particle = ({Particle}) => {
 
 const template = Particle.html`
 
-  <div style="padding: 12px; border: 2px solid green;">
-    <div unsafe-html="{{tileHtml}}" on-click="onTileClick"></div>
+  <div style="padding: 12px;">
+    <!-- <div unsafe-html="{{tileHtml}}" on-click="onTileClick"></div> -->
+    <div on-click="onTileClick">{{tiles}}</div>
   </div>
 
-`;
-
-const tileTemplate = (id, name, poster) => Particle.html`
-
-<div key="${id}" style="display: inline-block; width: 128px; height: 142px; overflow: hidden; text-align: center; margin: 4px; border: 1px dotted gray; padding: 4px;">
-  <img height="128" src="${poster}">
-  <div style="font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${name}</div>
-</div>
-
+  <template tile>
+    <div key="{{id}}" style="display: inline-block; width: 128px; height: 142px; overflow: hidden; text-align: center; margin: 4px; border: 1px dotted gray; padding: 4px;">
+      <img height="128" src="{{poster}}">
+      <div style="font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{name}}</div>
+    </div>
+  </template>
 `;
 
 return class extends Particle {
@@ -43,17 +41,22 @@ return class extends Particle {
     if (tmdbResults) {
       const sorted = tmdbResults.slice(0);
       sorted.sort((a, b) => -String(a.date).localeCompare(String(b.date)));
-      const tileHtml = this.renderTileHtml(sorted);
-      return {tileHtml};
+      const tiles = this.renderTiles(sorted);
+      return {
+        tiles
+      };
     }
   }
-  renderTileHtml(results) {
-    // TODO(sjmiles): html should not be accepted without a sanitizer
-    const tiles = results.map(t => {
-      const poster = `https://xenonjs.com/services/http/php/tmdb-image.php?w342${t.poster_path}`;
-      return tileTemplate(t.id, t.name, poster);
-    }).join('');
-    return tiles;
+  renderTiles(results) {
+    const models = results.map(t => ({
+      id: t.id,
+      name: t.name,
+      poster: `https://xenonjs.com/services/http/php/tmdb-image.php?w342${t.poster_path}`
+    }));
+    return {
+      $template: 'tile',
+      models
+    };
   }
   onTileClick(e) {
     const {data: {key}} = e;
@@ -62,4 +65,6 @@ return class extends Particle {
     //console.warn(key, item);
     this.output({tmdbSelection: item});
   }
-};};
+};
+
+};

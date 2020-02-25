@@ -11,16 +11,19 @@
 import {Store} from './js/core/store.js';
 import {Arc} from './js/core/arc.js';
 import {Particle} from './js/core/particle.js';
-import {Group} from './js/ergo/group.js';
 import {irand, prob} from './js/core/utils.js';
 
+import {Group} from './js/ergo/group.js';
 import {Runtime} from './js/ergo/runtime.js';
+
 import {Unbus} from './js/devices/unbus.js';
 import {Bus} from './js/devices/bus.js';
 import {WorkerHub} from './js/devices/worker/worker-hub.js';
 import {Host} from './js/devices/host.js';
-import {Composer} from './js/devices/dom/xen-dom-composer.js';
 
+import {createRealmsParticle} from './js/devices/realms/realms.js';
+
+import {Composer} from './js/devices/dom/xen-dom-composer.js';
 import {Noop} from './particles/Noop.js';
 import {Recipes} from './particles/Recipes.js';
 import {Sorter} from './particles/Sorter.js';
@@ -37,6 +40,9 @@ runtime.registerClass('Noop', Noop);
 runtime.registerClass('Sorter', Sorter);
 runtime.registerClass('TMDBSearch', TMDBSearch);
 runtime.registerClass('TMDBDetail', TMDBDetail);
+
+// realms particles
+runtime.register('Realms.Books', async (id, container) => await createRealmsParticle(Books, id, container));
 
 // factory for import particles
 const createImportParticle = async (factory, id, container) => {
@@ -102,7 +108,9 @@ runtime.instantiate(arc, {
   }, {
     particle: 'Container',
     content: [{
-      particle: 'Info'
+      particle: 'Info',
+    }, {
+      particle: 'Realms.Books'
     }]
   }]
 });

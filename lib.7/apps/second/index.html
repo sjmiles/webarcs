@@ -1,0 +1,40 @@
+<!doctype html>
+
+<link href="../index.css" rel="stylesheet">
+
+<style>
+  body {
+    padding: 16px;
+    /* max-width: 100vw; */
+  }
+  button {
+    font-size: 16px;
+  }
+  [box], [device] {
+    box-sizing: border-box;
+    margin-top: 12px;
+    border: 1px solid #eeeeee;
+  }
+  [device] {
+    border-width: 4px;
+  }
+  [label] {
+    background-color: #eeeeee;
+    display: inline-block;
+    padding: 6px;
+  }
+</style>
+
+<div row>
+  <div device id="device">
+    <span label>UI Device</span>
+  </div>
+</div>
+
+<script src="../../../node_modules/automerge/dist/automerge.js"></script>
+
+<script src="../../particles/realms/particle.js"></script>
+<!-- TODO(sjmiles): explain the scoping here (i.e. how is it global but not on `window`?) -->
+<script>window.Particle = Particle;</script>
+
+<script type="module" src="./app.js"></script>
