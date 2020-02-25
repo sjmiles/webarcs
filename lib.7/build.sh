@@ -1,3 +1,3 @@
 #!/bin/sh
 tsc
-./doc.sh
+#./doc.sh

@@ -10,12 +10,7 @@
 
 import Realm from '../../../../realms-shim.esm.js'
 
-//let root;
 let particleSource;
-
-// const requireRealm = () => {
-//   return root || (root = Realm.makeRootRealm());
-// };
 
 const makeCompartment = () => {
   return Realm.makeCompartment();
@@ -31,7 +26,6 @@ export const realmsParticle = name => {
 
 // factory for import particles
 const createRealmsParticle = async (name, id, container) => {
-  //const realm = requireRealm();
   const compartment = makeCompartment();
   const baseCode = await requireParticle();
   const Particle = compartment.evaluate(`${baseCode}`);

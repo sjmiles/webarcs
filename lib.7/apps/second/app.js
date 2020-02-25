@@ -8,34 +8,29 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-// import {Store} from '../../js/core/store.js';
-// import {Group} from '../../js/ergo/group.js';
 import {Composer} from '../../js/devices/dom/xen-dom-composer.js';
 import {Arc} from '../../js/core/arc.js';
 import {initContext} from '../context.js';
 
 const app = async () => {
   const runtime = await initContext();
-
   const arc = new Arc({name: 'one', composer: new Composer(window.device)});
   await runtime.instantiate(arc, {
+    // slot: Array
     root: [{
+      // particle shorthand
       particle: 'Books'
     }, {
+      // particle longhand
       particle: {
+        // particle kinds are registered with runtime
         kind: 'TMDBSearch',
+        // binds particle::query to arc::tmdbQuery
         query: 'tmdbQuery'
       }
-    // }, {
-    //   particle: 'Columns',
-    //   left: [{
-    //     particle: 'TMDBGrid'
-    //   }],
-    //   right: [{
-    //     particle: 'TMDBDetail'
-    //   }]
     }, {
       particle: 'Scroller',
+      // slot: Array
       content: [{
         particle: 'TMDBGrid'
       }]
@@ -44,7 +39,5 @@ const app = async () => {
     }]
   });
   arc.update();
-
 };
-
-setTimeout(() => app(), 1000);
+app();

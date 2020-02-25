@@ -19,15 +19,15 @@ export class Bus {
   constructor(hub) {
     this.hub = hub;
   }
+  // Bus job one: own a channel on the hub
   openChannel(id, listener) {
-    const receiver = message => listener(message);
-    this.channel = this.hub.openChannel(id, receiver);
+    this.channel = this.hub.openChannel(id, message => listener(message));
   }
   closeChannel() {
     this.channel.close();
     this.channel = null;
   }
-  // messages sent to Particle-space
+  // Bus job two: convert function calls to messages
   async particleCreate(kind, id, name) {
     return (await this.channel.request({msg: 'create', kind, id, name})).config;
   }
@@ -37,4 +37,5 @@ export class Bus {
   particleEvent(id, eventlet) {
     this.channel.request({msg: 'event', id, eventlet});
   }
+  // TODO(sjmiles): Bus job three: convert messages to function calls on listener
 };
