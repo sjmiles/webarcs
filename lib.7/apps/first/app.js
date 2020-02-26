@@ -10,7 +10,7 @@
 
 import {Store} from '../../js/core/store.js';
 import {Arc} from '../../js/core/arc.js';
-import {irand, prob} from '../../js/core/utils.js';
+import {irand, prob} from '../../js/utils/utils.js';
 import {Composer} from '../../js/devices/dom/xen-dom-composer.js';
 import {Group} from '../../js/ergo/group.js';
 import {initContext} from '../context.js';
@@ -103,11 +103,8 @@ window.mutateN.onclick = () => mutateN(10);
 
 window.arcs = {group};
 
-// TODO(sjmiles): need idle-state tracking
-//setTimeout(() => {
-  group.status();
-  group.sync();
-//}, 10);
+group.status();
+group.sync();
 
 };
 app();

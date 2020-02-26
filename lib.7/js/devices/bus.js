@@ -17,6 +17,7 @@ export class Bus {
     }
     // Bus job one: own a channel on the hub
     openChannel(id, listener) {
+        this.id = id;
         this.channel = this.hub.openChannel(id, message => listener(message));
     }
     closeChannel() {
@@ -24,14 +25,14 @@ export class Bus {
         this.channel = null;
     }
     // Bus job two: convert function calls to messages
-    async particleCreate(kind, id, name) {
-        return (await this.channel.request({ msg: 'create', kind, id, name })).config;
+    async particleCreate(kind) {
+        return (await this.channel.request({ msg: 'create', kind })).config;
     }
-    particleUpdate(id, inputs) {
-        this.channel.request({ msg: 'update', id, inputs });
+    particleUpdate(inputs) {
+        this.channel.request({ msg: 'update', inputs });
     }
-    particleEvent(id, eventlet) {
-        this.channel.request({ msg: 'event', id, eventlet });
+    particleEvent(eventlet) {
+        this.channel.request({ msg: 'event', eventlet });
     }
 }
 ;

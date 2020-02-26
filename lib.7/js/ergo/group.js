@@ -12,8 +12,8 @@
  * @module ergo
  */
 import { Arc } from '../core/arc.js';
-import { debounce, deepEqual } from '../core/utils.js';
-import { logFlags } from '../core/log.js';
+import { debounce, deepEqual } from '../utils/utils.js';
+import { logFlags } from '../utils/log.js';
 const changeDebounceIntervalMs = 100;
 export class Group {
     constructor(name, truth) {

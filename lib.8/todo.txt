@@ -1,0 +1,2 @@
+x separate $slot and render-content into sections in output packets
+- make logging system

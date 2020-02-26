@@ -12,7 +12,7 @@
  * @module core
  */
 import { Automerge } from '../../../automerge.js';
-import { deepEqual } from './utils.js';
+import { deepEqual, deepUndefinedToNull } from '../utils/utils.js';
 export class Store {
     constructor(name) {
         this.name = name;
@@ -63,6 +63,8 @@ export class Store {
                 if (deepEqual(truth, value)) {
                     return;
                 }
+                // TODO(sjmiles): stopgap: deeply convert undefined values to null
+                deepUndefinedToNull(value);
                 doc[key] = value;
                 changed = true;
             });

@@ -12,26 +12,26 @@
  * @module devices
  */
 import { Particle } from '../core/particle.js';
+import { makeId } from '../utils/utils.js';
 export class Host extends Particle {
-    constructor({ id, container, bus }) {
+    constructor({ bus }) {
         super();
-        this.id = id;
-        this.container = container;
-        this.bus = bus;
-        this.bus.openChannel(id, message => this.dispatch(message));
+        this.id = makeId();
+        bus.openChannel(this.id, message => this.dispatch(message));
+        this.channel = bus;
     }
     dispose() {
-        this.bus.closeChannel();
+        this.channel.closeChannel();
     }
     get config() {
         return this.particleConfig;
     }
-    async createParticle(name, kind) {
-        this.particleConfig = await this.bus.particleCreate(kind, this.id, name);
-        console.log(`Host::createParticle: particle [${this.id}] configured:`, this.config);
+    async createParticle(kind) {
+        this.particleConfig = await this.channel.particleCreate(kind);
+        console.log(`Host::createParticle: particle [${kind}] configured:`, this.config);
     }
-    update(inputs) {
-        this.bus.particleUpdate(this.id, inputs);
+    requestUpdate(inputs) {
+        this.channel.particleUpdate(inputs);
     }
     dispatch(message) {
         const fn = this[message.msg];
@@ -40,12 +40,12 @@ export class Host extends Particle {
         }
     }
     handleEvent(eventlet) {
-        this.bus.particleEvent(this.id, eventlet);
+        this.channel.particleEvent(eventlet);
     }
 }
 ;
-export const createHostedParticle = async (id, kind, container, bus) => {
-    const host = new Host({ id, container, bus });
-    await host.createParticle(name, kind);
+export const createHostedParticle = async (kind, bus) => {
+    const host = new Host({ bus });
+    await host.createParticle(kind);
     return host;
 };

@@ -10,29 +10,25 @@
 import { Particle } from '../../core/particle.js';
 const root = '../../../particles';
 const registry = {};
-const requireParticleFactory = async (name) => {
-    let factory = registry[name];
+export const literalParticle = particleClass => {
+    return async () => new particleClass();
+};
+const requireParticleFactory = async (kind) => {
+    let factory = registry[kind];
     if (!factory) {
-        factory = (await import(`${root}/${name}.js`)).particle;
-        registry[name] = factory;
+        factory = (await import(`${root}/${kind}.js`)).particle;
+        registry[kind] = factory;
     }
     return factory;
 };
-export const importParticle = async (name) => {
-    const factory = await requireParticleFactory(name);
-    return async (id, container) => await createImportParticle(factory, id, container);
+export const importParticle = async (kind) => {
+    const factory = await requireParticleFactory(kind);
+    return async () => await createImportParticle(factory);
 };
-// export const registerImportParticle = async (runtime, name) => {
-//   const factory = await requireParticleFactory(name);
-//   runtime.register(name, async (id, container) => await createImportParticle(factory, id, container));
-// };
-/*export*/ const createImportParticle = async (factory, id, container) => {
-    const instance = new (factory({ Particle }))();
-    // TODO(sjmiles): need a host concept to own privileged particle data
-    instance.id = id;
-    instance.container = container;
-    return instance;
+const injections = {
+    fetch,
+    log: (...stuff) => console.log(`[$Particle]:`, ...stuff)
 };
-export const literalParticle = particleClass => {
-    return async () => new particleClass();
+const createImportParticle = async (factory) => {
+    return new (factory({ Particle, ...injections }))();
 };

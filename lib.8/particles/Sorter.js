@@ -7,5 +7,17 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
-const Particle = window['Particle'];
-export { Particle };
+
+export const particle = ({Particle}) => {
+
+return class extends Particle {
+  update({list}) {
+    if (list) {
+      const sorted = list.slice(0);
+      sorted.sort().reverse();
+      this.output({sorted});
+    }
+  }
+};
+
+};

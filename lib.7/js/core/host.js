@@ -11,6 +11,34 @@
  * @packageDocumentation
  * @module core
  */
-export class Particle {
+import { Particle } from './particle.js';
+/**
+ * Host provides a facade for Particle.
+ * Host owns metadata (e.g. `id`, `container`) that the Particle
+ * itself is not allowed to access.
+ */
+export class Host extends Particle {
+    constructor(particle, id, container) {
+        super();
+        this.id = id;
+        this.container = container;
+        this.particle = particle;
+        particle.onoutput = output => this.output(output);
+    }
+    output(output) {
+        this.onoutput(output);
+    }
+    get config() {
+        return this.particle.config;
+    }
+    requestUpdate(inputs) {
+        return this.particle.requestUpdate(inputs);
+    }
+    render(inputs) {
+        return this.particle.render(inputs);
+    }
+    handleEvent(eventlet) {
+        return this.particle.handleEvent(eventlet);
+    }
 }
 ;

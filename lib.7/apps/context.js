@@ -39,7 +39,7 @@ export const initContext = async (noworker) => {
   runtime.register('TMDBDetail', await importParticle('TMDBDetail'));
 
   // unbus particles
-  runtime.register('UnbusRecipes', async (id, container) => await createHostedParticle(id, Recipes, container, new Unbus()));
+  runtime.register('UnbusRecipes', async () => await createHostedParticle(Recipes, new Unbus()));
 
   // WorkerHub particles
   if (!noworker) {

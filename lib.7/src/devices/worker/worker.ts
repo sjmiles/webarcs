@@ -16,15 +16,15 @@
 import {Particle} from '../../core/particle.js';
 
 const dispatcher = {
-  register({tid, name, src}) {
+  register({tid, kind, src}) {
     if (src[0] === '.') {
       src = `../../../${src}`;
     }
-    if (!registry[name]) {
-      register(name, src);
+    if (!registry[kind]) {
+      register(kind, src);
     }
-    //console.log(`Worker::register('${tid}', '${name}', '${src}')`);
-    postMessage({msg: 'registered', tid}, null);
+    //console.log(`Worker::register('${tid}', '${kind}', '${src}')`);
+    postMessage({tid, msg: 'registered'}, null);
 
   },
   async create({tid, id, kind}) {
@@ -34,16 +34,14 @@ const dispatcher = {
     }
     else {
       const particle = particles[id] = new pclass();
-      // TODO(sjmiles): only for logging, inject prebuilt logger instead
-      particle.id = id;
-      particle.onoutput = model => postMessage({channelId: id, msg: 'output', id, model}, null);
+      particle.onoutput = model => postMessage({channelId: id, msg: 'onoutput', id, model}, null);
       console.log(`Worker::created('${tid}', '${id}', '${kind}')`);
       postMessage({msg: 'created', tid, id, config: particle.config}, null);
     }
   },
   update({id, inputs}) {
     const particle = getParticle(id);
-    particle.doUpdate(inputs);
+    particle.requestUpdate(inputs);
   },
   event({id, eventlet}) {
     const particle = getParticle(id);

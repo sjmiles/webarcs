@@ -10,6 +10,7 @@
 
 import {Composer} from '../../js/devices/dom/xen-dom-composer.js';
 import {Arc} from '../../js/core/arc.js';
+
 import {initContext} from '../context.js';
 
 const app = async () => {

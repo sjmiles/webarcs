@@ -7,10 +7,7 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
-/**
- * @packageDocumentation
- * @module core
- */
+;
 export class Particle {
     static get html() {
         return (strings, ...values) => (`${strings[0]}${values.map((v, i) => `${v}${strings[i + 1]}`).join('')}`).trim();
@@ -19,11 +16,6 @@ export class Particle {
         return {
             template: this.template
         };
-    }
-    doUpdate(inputs) {
-        //console.log(`${this.id}::doUpdate(${Object.keys(inputs)})`);
-        this.inputs = inputs;
-        this.update(inputs);
     }
     // override instance method to listen here
     onoutput(outputs) {
@@ -40,11 +32,18 @@ export class Particle {
     render(inputs) {
         return inputs;
     }
+    requestUpdate(inputs) {
+        this.inputs = inputs;
+        this.update(inputs);
+    }
+    // default output performs render merging
     output(outputs) {
+        // merge output-model and render-model into a output-packet
         const output = {
             outputs,
             slot: null
         };
+        // TODO(sjmiles): insteadask Particle if it shouldRender instead
         if (this.config.template) {
             // TODO(sjmiles): presumptively render by including outputs
             const merge = { ...this.inputs, ...outputs };

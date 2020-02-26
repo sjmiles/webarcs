@@ -13,7 +13,7 @@
  */
 import { Bus } from '../bus.js';
 import { createHostedParticle } from '../host.js';
-import { makeId } from '../../core/utils.js';
+import { makeId } from '../../utils/utils.js';
 let worker;
 let dispatcher;
 const nob = {};
@@ -22,9 +22,9 @@ const channels = {};
 const logFlags = { hub: true };
 const log = (logFlags.hub) ? console.log.bind(console) : () => { };
 export class WorkerHub {
-    static async importParticle(name) {
-        await WorkerHub.request({ msg: 'register', name, src: `./particles/${name}.js` });
-        return async (id, container) => await createHostedParticle(id, name, container, new Bus(WorkerHub));
+    static async importParticle(kind) {
+        await WorkerHub.request({ msg: 'register', kind, src: `./particles/${kind}.js` });
+        return async () => await createHostedParticle(kind, new Bus(WorkerHub));
     }
     static parse(json) {
         return json ? JSON.parse(json) : nob;
@@ -90,6 +90,7 @@ export class WorkerHub {
     static openChannel(id, receiver) {
         const channel = {
             send: message => {
+                message.id = id;
                 message.channelId = id;
                 this.send(message);
             },
@@ -98,6 +99,8 @@ export class WorkerHub {
                 delete channels[id];
             },
             request: async (message) => {
+                message.id = id;
+                message.channelId = id;
                 return this.request(message);
             }
         };

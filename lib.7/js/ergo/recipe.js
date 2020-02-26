@@ -40,24 +40,25 @@ export class Recipe {
         if (Array.isArray(recipe)) {
             recipe = { _: recipe };
         }
-        Promise.all(Object.keys(recipe).map(async (key) => {
-            let info = recipe[key];
-            if (key === 'particle') {
-                if (typeof info === 'string') {
-                    info = { kind: info };
-                }
-                console.log(`recipe: adding ${recipe.particle} particle`);
-                await runtime.addParticle(arc, info.kind, container);
-            }
-            else {
-                let node = info;
-                if (!Array.isArray(node)) {
-                    node = [node];
-                }
-                console.log(`recipe: populating [${key}]...`);
-                Promise.all(node.map(r => this.instantiate(runtime, arc, r, key)));
-            }
+        await Promise.all(Object.keys(recipe).map(async (key) => {
+            await this.instantiateRecipeNode(runtime, arc, key, recipe[key], container);
         }));
     }
+    static async instantiateRecipeNode(runtime, arc, key, info, container) {
+        if (key === 'particle') {
+            if (typeof info === 'string') {
+                info = { kind: info };
+            }
+            console.log(`recipe: adding ${info.kind} particle`);
+            await runtime.addParticle(arc, info.kind, container);
+        }
+        else {
+            let node = info;
+            if (!Array.isArray(node)) {
+                node = [node];
+            }
+            console.log(`recipe: populating [${key}]...`);
+            await Promise.all(node.map(r => this.instantiate(runtime, arc, r, key)));
+        }
+    }
 }
-;
