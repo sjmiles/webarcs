@@ -14,6 +14,7 @@
  */
 
 import {Automerge} from '../../../automerge.js';
+import {deepEqual} from './utils.js';
 
 interface AutomergeDocument {}
 interface AutomergeChanges {}
@@ -34,11 +35,15 @@ export class Store {
   toString() {
     return `[${this.name}]: ${Object.keys(this.truth)}`;
   }
+  toSerializable() {
+    // TODO(sjmiles): convert crdt doc to POJO
+    return JSON.parse(JSON.stringify(this.truth));
+  }
   protected setTruth(truth: AutomergeDocument) {
     this.truth = truth;
-    this.update();
+    this.onchange();
   }
-  protected update() {
+  protected onchange() {
   }
   change(mutator: Mutator) {
     this.truth = Automerge.change(this.truth, mutator);
@@ -50,5 +55,28 @@ export class Store {
     const changes = Automerge.getChanges(this.old, this.truth);
     this.old = this.truth;
     return changes;
+  }
+  mergeRawData(outputs) {
+    let changed = false;
+    this.change(doc => {
+      Object.keys(outputs).forEach(key => {
+        let value = outputs[key];
+        if (value === undefined) {
+          // downstream APIs, e.g. `automerge` and 'firebase', tend to dislike undefined values
+          // TODO(sjmiles): we could ignore `undefined` by returning here, which has interesting properties,
+          // but I worry it would violate expectations.
+          //return;
+          value = null;
+        }
+        const truth = doc[key];
+        // TODO(sjmiles): perform potentially expensive dirty-checking here
+        if (deepEqual(truth, value)) {
+          return;
+        }
+        doc[key] = value;
+        changed = true;
+      });
+    });
+    return changed;
   }
 };

@@ -17,7 +17,7 @@ export const Recipes = class extends Particle {
   update() {
     if (!this.finished) {
       this.finished = true;
-      const recipes = [`It Ain't Feet`, `Hairy/Crunchy`, `Maybe It's the Texture`];
+      const recipes = [`It Ain't Feet`, `Hairy/Crunchy`, `Maybe It's the Texture?`];
       this.output({recipes});
     }
   }

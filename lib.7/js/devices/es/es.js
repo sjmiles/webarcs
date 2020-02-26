@@ -26,13 +26,13 @@ export const importParticle = async (name) => {
 //   const factory = await requireParticleFactory(name);
 //   runtime.register(name, async (id, container) => await createImportParticle(factory, id, container));
 // };
-export const createImportParticle = async (factory, id, container) => {
+/*export*/ const createImportParticle = async (factory, id, container) => {
     const instance = new (factory({ Particle }))();
     // TODO(sjmiles): need a host concept to own privileged particle data
     instance.id = id;
-    instance.$container = container;
+    instance.container = container;
     return instance;
 };
-export const literalParticle = clss => {
-    return async () => new clss();
+export const literalParticle = particleClass => {
+    return async () => new particleClass();
 };

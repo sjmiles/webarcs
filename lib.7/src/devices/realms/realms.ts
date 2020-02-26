@@ -17,7 +17,16 @@ const makeCompartment = () => {
 };
 
 const requireParticle = async () => {
-  return particleSource || (particleSource = `(${await (await fetch('../../particles/realms/particle.js')).text()})`);
+  if (!particleSource) {
+    let moduleText = await (await fetch('../../js/core/core-particle.js')).text();
+    // TODO(sjmiles): gross
+    const preamble = moduleText.indexOf('class Particle');
+    moduleText = moduleText.slice(preamble, -2);
+    particleSource = `(${moduleText})`;
+    //console.log(particleSource);
+  }
+  //return particleSource || (particleSource = `(${await (await fetch('../../particles/realms/particle.js')).text()})`);
+  return particleSource;
 };
 
 export const realmsParticle = name => {
@@ -29,10 +38,13 @@ const createRealmsParticle = async (name, id, container) => {
   const compartment = makeCompartment();
   const baseCode = await requireParticle();
   const Particle = compartment.evaluate(`${baseCode}`);
-  const implCode = await (await fetch(`../../particles/realms/${name}.js`)).text();
+  let implCode = await (await fetch(`../../particles/${name}.js`)).text();
+  // TODO(sjmiles): gross #2
+  implCode = implCode.slice(implCode.indexOf('('));
   //console.log(implCode);
-  const Impl = compartment.evaluate(`${implCode}`, {Particle});
-  const particle = new Impl();
+  const impl = compartment.evaluate(`${implCode}`, {Particle});
+  const ctor = impl({Particle});
+  const particle = new ctor();
   // TODO(sjmiles): need a host concept to own privileged particle data
   particle.id = id;
   particle.$container = container;

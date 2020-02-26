@@ -8,7 +8,8 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Particle} from '../../js/core/particle.js';
+
+export const particle = ({Particle}) => {
 
 const template = Particle.html`
 
@@ -41,7 +42,7 @@ const template = Particle.html`
 
 `;
 
-export const TMDBDetail = class extends Particle {
+return class extends Particle {
   get template() {
     return template;
   }
@@ -61,4 +62,6 @@ export const TMDBDetail = class extends Particle {
       };
     }
   }
+};
+
 };

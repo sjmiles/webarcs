@@ -8,12 +8,12 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Particle} from '../../js/core/particle.js';
+export const particle = ({Particle}) => {
 
 const log = (...args) => console.log('[TMDBSearch]::', ...args);
 const service = `http://xenonjs.com/services/http/php/tmdb.php`;
 
-export const TMDBSearch = class extends Particle {
+return class extends Particle {
   update({query}) {
     query = 'star trek';
     if (query && query !== this.query) {
@@ -61,4 +61,6 @@ export const TMDBSearch = class extends Particle {
       date: first_air_date || release_date
     };
   }
+};
+
 };

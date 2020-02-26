@@ -11,7 +11,8 @@
  * @packageDocumentation
  * @module ergo
  */
-import { Recipe } from '../ergo/recipe.js';
+import { Recipe } from './recipe.js';
+import { makeId } from '../core/utils.js';
 export class Runtime {
     constructor() {
         this.registry = {};
@@ -19,11 +20,23 @@ export class Runtime {
     register(name, factory) {
         this.registry[name] = factory;
     }
-    registerClass(name, clss) {
-        this.register(name, async () => new clss());
-    }
     async instantiate(arc, recipe) {
         await Recipe.instantiate(this, arc, recipe);
+    }
+    async addParticle(arc, spec, container) {
+        // `spec` is just a String for now
+        const factory = this.registry[spec];
+        if (factory) {
+            const id = `${arc.id}:${spec}(${makeId()})`;
+            const onoutput = outputs => arc.particleOutput(particle, outputs);
+            const particle = await factory(id, container);
+            arc.addParticle(particle);
+            // TODO(sjmiles): this stuff needs to not be on particle, we need another map
+            particle.id = id;
+            particle.container = container;
+            particle.onoutput = onoutput;
+            console.log(`added ${id}`);
+        }
     }
 }
 ;

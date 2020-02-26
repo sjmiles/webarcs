@@ -19,98 +19,52 @@ import {debounce, deepEqual, makeId} from './utils.js';
 const renderDebounceIntervalMs = 200;
 
 /** Arc class */
-export class Arc extends Store {
+export class Arc {
   public id: string;
   private composer;
   private particles: any[];
+  private store;
   /**
   * This method has hierarchical params
-  * @param {String} name not used
   * @param {Composer} composer slot composer to use for rendering
   */
-  constructor({name, composer}) {
-    super(name);
+  constructor({composer}) {
+    this.particles = [];
     this.id = `arc(${makeId()})`;
     this.composer = composer;
     composer.onevent = (pid, eventlet) => this.onComposerEvent(pid, eventlet);
-    this.particles = [];
-  }
-  get serializable() {
-    // TODO(sjmiles): convert crdt doc to POJO
-    return JSON.parse(JSON.stringify(this.truth));
-    //return {...this.truth};
+    this.store = new Store(`${this.id}:store`);
+    this.store.onchange = () => this.update();
   }
   public onchange() {
     // override to listen to mutation events
     this.update();
   }
   public update() {
-    const inputs = this.serializable;
-    console.log(`${this.name}: update(${Object.keys(inputs)})`);
+    const inputs = this.store.toSerializable();
+    console.log(`${this.id}: update(${Object.keys(inputs)})`);
     this.particles.forEach((p: any) => p.doUpdate(inputs));
   }
-  public async addParticle(runtime, spec, container) {
-    // `spec` is just a String for now
-    const factory = runtime.registry[spec];
-    if (factory) {
-      const id = `${this.id}:${spec}(${makeId()})`;
-      const onoutput = outputs => this.particleOutput(particle, outputs);
-      const particle = await factory(id, onoutput);
-      this.particles.push(particle);
-      // TODO(sjmiles): this stuff needds to not be on particle, we'll need
-      // another map
-      particle.id = id;
-      particle.container = container;
-      particle.onoutput = onoutput;
-      console.log(`added ${id}`);
-    }
+  public async addParticle(particle) {
+    this.particles.push(particle);
   }
   public getParticleById(pid) {
     return this.particles.find(p => p.id === pid);
   }
-  private particleOutput(particle, outputs) {
-    console.log(`${this.name}: particleOutput(${particle.id}, ${Object.keys(outputs)})`);
-    if (outputs) {
-      if (typeof outputs !== 'object') {
-        console.warn('Arc::particleChanged: `outputs` must be an Object');
-      } else {
-        // extract render-channel data from outputs
-        if (`$slot` in outputs) {
-          const model = outputs.$slot;
-          // TODO(sjmiles): won't work if `outputs` is frozen, in that case we'll have to create a mutated copy
-          delete outputs.$slot;
-          this.debouncedRender(particle, model);
-        }
-        // true if `outputs` has new data
-        if (this.mergeRawOutputs(outputs)) {
-          this.onchange();
-        }
+  public particleOutput(particle, output) {
+    if (output) {
+      const {slot, outputs} = output;
+      console.log(`${this.id}: particleOutput(${particle.id}, ${Object.keys(outputs || Object)})`);
+      // process render-channel data
+      if (slot) {
+        const model = slot;
+        this.debouncedRender(particle, model);
+      }
+      // true if merging `outputs` changes `store`
+      if (outputs && this.store.mergeRawData(outputs)) {
+        this.onchange();
       }
     }
-  }
-  private mergeRawOutputs(outputs) {
-    let changed = false;
-    this.change(doc => {
-      Object.keys(outputs).forEach(key => {
-        let value = outputs[key];
-        if (value === undefined) {
-          // downstream APIs, e.g. `automerge` and 'firebase', tend to dislike undefined values
-          // TODO(sjmiles): we could ignore `undefined` by returning here, which has interesting properties,
-          // but I worry it would violate expectations.
-          //return;
-          value = null;
-        }
-        const truth = doc[key];
-        // TODO(sjmiles): perform potentially expensive dirty-checking here
-        // test structures
-        if (deepEqual(truth, value)) {
-          return;
-        }
-        doc[key] = value;
-        changed = true;
-      });
-    });
-    return changed;
   }
   private debouncedRender(particle, model) {
     //console.log(`[${this.id}]::debouncedRender(${JSON.stringify(Object.keys(model || {}))})`);

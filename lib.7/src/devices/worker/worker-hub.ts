@@ -28,7 +28,7 @@ const log = (logFlags.hub) ? console.log.bind(console) : () => {};
 
 export class WorkerHub {
   static async importParticle(name) {
-    await WorkerHub.request({msg: 'register', name, src: `./particles/worker/${name}.js`});
+    await WorkerHub.request({msg: 'register', name, src: `./particles/${name}.js`});
     return async (id, container) => await createHostedParticle(id, name, container, new Bus(WorkerHub));
   }
   static parse(json) {

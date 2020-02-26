@@ -16,36 +16,37 @@ import {WorkerHub} from '../js/devices/worker/worker-hub.js';
 import {realmsParticle} from '../js/devices/realms/realms.js';
 import {importParticle, literalParticle} from '../js/devices/es/es.js';
 
-import {Noop} from '../particles/raw/Noop.js';
 import {Recipes} from '../particles/raw/Recipes.js';
-import {Sorter} from '../particles/raw/Sorter.js';
-import {TMDBSearch} from '../particles/raw/TMDBSearch.js';
-import {TMDBDetail} from '../particles/raw/TMDBDetail.js';
 
-export const initContext = async () => {
+export const initContext = async (noworker) => {
   console.time('initContext');
 
   const runtime = new Runtime();
 
   // simple main-thread particles
-  runtime.register('Noop', literalParticle(Noop));
-  runtime.register('Sorter', literalParticle(Sorter));
-  runtime.register('TMDBSearch', literalParticle(TMDBSearch));
-  runtime.register('TMDBDetail', literalParticle(TMDBDetail));
+  runtime.register('Recipes', literalParticle(Recipes));
 
   // dynamic main-thread particles
-  runtime.register('Books', await importParticle('Books'));
-  runtime.register('Columns', await importParticle('Columns'));
-  runtime.register('TMDBGrid', await importParticle('TMDBGrid'));
+  runtime.register('Noop', await importParticle('Noop'));
   runtime.register('Scroller', await importParticle('Scroller'));
+  runtime.register('Columns', await importParticle('Columns'));
+  //
+  runtime.register('Sorter', await importParticle('Sorter'));
+  runtime.register('Books', await importParticle('Books'));
+  //
+  runtime.register('TMDBSearch', await importParticle('TMDBSearch'));
+  runtime.register('TMDBGrid', await importParticle('TMDBGrid'));
+  runtime.register('TMDBDetail', await importParticle('TMDBDetail'));
 
   // unbus particles
-  runtime.register('UnbusBooks', async (id, container) => await createHostedParticle(id, Recipes, container, new Unbus()));
+  runtime.register('UnbusRecipes', async (id, container) => await createHostedParticle(id, Recipes, container, new Unbus()));
 
   // WorkerHub particles
-  WorkerHub.init();
-  runtime.register('Container', await WorkerHub.importParticle('Container'));
-  runtime.register('Info', await WorkerHub.importParticle('Info'));
+  if (!noworker) {
+    WorkerHub.init();
+    runtime.register('Container', await WorkerHub.importParticle('Container'));
+    runtime.register('Info', await WorkerHub.importParticle('Info'));
+  }
 
   // realms particles
   runtime.register('Realms.Books', realmsParticle('Books'));

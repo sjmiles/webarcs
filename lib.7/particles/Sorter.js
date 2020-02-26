@@ -8,7 +8,16 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Particle} from '../../js/core/particle.js';
+export const particle = ({Particle}) => {
 
-export const Noop = class extends Particle {
+return class extends Particle {
+  update({list}) {
+    if (list) {
+      const sorted = list.slice(0);
+      sorted.sort().reverse();
+      this.output({sorted});
+    }
+  }
+};
+
 };

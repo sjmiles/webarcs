@@ -38,6 +38,8 @@ await runtime.instantiate(arc, {
   }, {
     particle: 'Books'
   }, {
+    particle: 'Noop'
+  }, {
     particle: 'TMDBGrid'
   }]
 });
@@ -61,7 +63,7 @@ arc = new Arc({name: 'three', composer: new Composer(window.device2)});
 group.addArc(arc);
 await runtime.instantiate(arc, {
   root: [{
-    particle: 'UnbusBooks'
+    particle: 'UnbusRecipes'
   }, {
     particle: 'TMDBDetail'
   }]

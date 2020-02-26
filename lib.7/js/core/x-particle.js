@@ -7,15 +7,5 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
-
-import {Particle} from '../../js/core/particle.js';
-
-export const Sorter = class extends Particle {
-  update({list}) {
-    if (list) {
-      const sorted = list.slice(0);
-      sorted.sort().reverse();
-      this.output({sorted});
-    }
-  }
-};
+const Particle = window['Particle'];
+export { Particle };

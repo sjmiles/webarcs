@@ -17,6 +17,7 @@ export class Composer {
     constructor(root) {
         this.root = root || document.body;
         this.slots = {};
+        this.pendingPackets = [];
     }
     render(packet) {
         const { id, container, content: { template, model } } = packet;
@@ -28,13 +29,25 @@ export class Composer {
                 parent = parent.querySelector(`[slot=${container}]`);
             }
             if (!parent) {
-                console.warn(`container unavailable for slot`, id);
+                this.pendingPackets.push(packet);
+                //console.warn(`container unavailable for slot`, id);
                 return;
             }
             slot = this.generateSlot(id, template, parent);
             this.slots[id] = slot;
         }
         slot.set(model);
+        this.processPendingPackets();
+    }
+    processPendingPackets() {
+        const packets = this.pendingPackets;
+        if (packets.length) {
+            this.pendingPackets = [];
+            packets.forEach(packet => this.render(packet));
+            // if (this.pendingPackets.length == 0) {
+            //   console.warn('YAY, cleaned up pendingPackets');
+            // }
+        }
     }
     generateSlot(id, template, parent) {
         const slot = Xen.Template

@@ -11,7 +11,7 @@
  * @packageDocumentation
  * @module devices
  */
-import { Particle } from '../../core/core-particle.js';
+import { Particle } from '../../core/particle.js';
 const dispatcher = {
     register({ tid, name, src }) {
         if (src[0] === '.') {

@@ -47,7 +47,7 @@ export class Recipe {
                     info = { kind: info };
                 }
                 console.log(`recipe: adding ${recipe.particle} particle`);
-                await arc.addParticle(runtime, info.kind, container);
+                await runtime.addParticle(arc, info.kind, container);
             }
             else {
                 let node = info;
