@@ -1,0 +1,92 @@
+<html>
+  <head>
+    <script src="https://unpkg.com/automerge@0.12.1/dist/automerge.js"></script>
+    <script src="https://unpkg.com/peerjs@1.1.0/dist/peerjs.min.js"></script>
+    <script src="https://unpkg.com/cuid@2.1.6/dist/cuid.min.js"></script>
+  </head>
+  <body>
+    <h2>Automerge CRDT's synced with PeerJS</h2>
+    <hr />
+    <h4>Actor ID: <span id="actorId"></span></h4>
+    <form id='peerForm'>
+      <input name="peerId" placeholder="Peer ID" />
+      <button type="submit">Connect</button>
+      <br />
+      <pre id="peersEl" style="margin: 1em; padding:1em;">{}</pre>
+    </form>
+    <hr />
+    <input id="docIdEl" placeholder="Document ID" />
+    <button id="incrEl">Increment</button>
+    <pre id="docs" style="margin: 1em; padding:1em;">{}</pre>
+    <script type="module">
+      import {Perge} from './perge.js';
+
+      const docs = document.getElementById('docs')
+      const actorEl = document.getElementById('actorId')
+      const incrEl = document.getElementById('incrEl')
+      const docIdEl = document.getElementById('docIdEl')
+      const peerForm = document.getElementById('peerForm')
+      const peersEl = document.getElementById('peersEl')
+
+      const getDocId = () => docIdEl.value || 'default'
+
+      // Unique ID for this user
+      const actorId = cuid()
+      actorEl.innerText = actorId
+
+      // Instantiate a PeerJS connection
+      const peerInstance = new Peer(actorId)
+      console.log(`initiated PeerJs instance for [${actorId}]`);
+
+      // Instantiate an Automerge.DocSet
+      let docSet = new Automerge.DocSet()
+
+      // Instantiate Perge library
+      const instance = new Perge(actorId, {
+        decode: JSON.parse, // msgpack or protobuf would also be a good option
+        encode: JSON.stringify,
+        peerInstance: peerInstance,
+        docSet: docSet
+      })
+
+      // This handler gets invoked whenever the DocSet is updated, useful for re-rendering views.
+      instance.subscribe(() => {
+        docs.innerText = JSON.stringify(docSet.docs, null ,2)
+      })
+      console.log(`subscribed to perge instance for [${actorId}]`);
+
+      // subscribe returns an unsubscribe function
+      // const unsubscribeFromFoo = instance.subscribe('foo', (doc) => {
+      //   console.log('foo', doc)
+      //   if(doc.counter.value === 10) {
+      //     unsubscribeFromFoo()
+      //     console.log('unsubscribed from foo!')
+      //   }
+      // })
+
+      incrEl.onclick = () => {
+        const id = getDocId()
+        // Update the document
+        const doc = instance.select(id)(
+          Automerge.change,
+          'increase counter',
+          doc => {
+            if (!doc.counter) doc.counter = new Automerge.Counter()
+            else doc.counter.increment()
+          }
+        )
+      }
+
+      peerForm.onsubmit = (e) => {
+        e.preventDefault()
+        const formData = new FormData(peerForm)
+        const peerId = formData.get('peerId')
+        instance.connect(peerId, peerInstance.connect(peerId))
+        console.log(`connected to perge instance for [${peerId}]`);
+        peersEl.innerText = JSON.stringify(
+          Array.from(peerInstance._connections.keys()
+        ), null, 2)
+      }
+    </script>
+  </body>
+</html>

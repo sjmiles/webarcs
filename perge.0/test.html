@@ -1,0 +1,21 @@
+<!doctype html>
+
+<script src="https://unpkg.com/automerge@0.12.1/dist/automerge.js"></script>
+<script src="https://unpkg.com/peerjs@1.1.0/dist/peerjs.min.js"></script>
+<script src="https://unpkg.com/cuid@2.1.6/dist/cuid.min.js"></script>
+
+<h2>Automerge CRDT's synced with PeerJS</h2>
+<hr />
+<h4>Actor ID: <span id="actorId"></span></h4>
+<form id='peerForm'>
+  <input name="peerId" placeholder="Peer ID" />
+  <button type="submit">Connect</button>
+  <br />
+  <pre id="peers" style="margin: 1em; padding:1em;">{}</pre>
+</form>
+<hr />
+<input id="docId" placeholder="Document ID" />
+<button id="increment">Increment</button>
+<pre id="docs" style="margin: 1em; padding:1em;">{}</pre>
+
+<script src="index.js" type="module"></script>
