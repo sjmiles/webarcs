@@ -7,57 +7,30 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
-import {Params} from '../params.js';
-import {makeId, irand} from './utils.js';
+import {irand} from './utils.js';
+import {deviceId} from './device.js';
+import {database} from '../firebase.js';
 
 // globals (grr)
 const {Automerge} = window;
 
-// identification
-
-let deviceId = Params.getParam('device');
-if (!deviceId) {
-  deviceId = makeId();
-  Params.setParam('device', deviceId);
-}
-Params.prefix = `${deviceId}:`;
-
-//let actorId = Params.fetchValue('actorId');
-//if (!actorId) {
-const actorId = makeId();
-//  Params.storeValue('actorId', actorId);
-//}
-
-//
-
-//import {Peer} from './peer.js';
-
-// var peer = new Peer();
-// peer.on('open', function(id) {
-//   msg('peer ID is' + id);
-// });
-
-//
-
-// processing junk
-
-import {database} from '../firebase.js';
-
 const dbroot = database.ref(`webarcs/v0/`);
 const rendezvous = dbroot.child('rendezvous');
 const profile = dbroot.child('profile');
+const channels = dbroot.child('channels');
+const docs = dbroot.child('docs');
 
 let peers = [];
 let peerConnections = {};
 
 const ring = (peer, id) => {
   // ring ... ring
-  rendezvous.child(peer).child(id).set('ring');
+  rendezvous.child(peer).child(id).set('ring' + (irand(100) + 100));
 };
 
 const listen  = (id) => {
   // ring ... ring
-  rendezvous.child(id).on('value', snap => {
+  rendezvous.child(id).once('value', snap => {
     const value = snap.val();
     console.log(`listen.on('value'): ${id}:`, value);
     if (value) {
@@ -68,35 +41,19 @@ const listen  = (id) => {
       connectPeers(peers);
     }
   });
+  rendezvous.child(id).on('child_changed', snap => {
+    console.warn('peer re-ringed: ', snap.key);
+    const conn = connections[snap.key];
+    if (conn) {
+      console.warn('closing old connection');
+      delete connections[snap.key];
+      conn.off();
+      //channels.child(snap.key).child(deviceId).remove();
+    }
+    console.warn('re-connecting');
+    connect(deviceId, docSet, snap.key);
+  });
 };
-
-// const setDatastore = (id, data) => {
-//   console.log(`setDatastore: ${id}: data`);
-//   rendezvous.child(id).set(data);
-// };
-
-// const observeDatastore = peer => {
-//   console.log(`observeDatastore: ${peer}`);
-//   rendezvous.child(peer).on('value', snap => {
-//     const value = snap.val();
-//     console.log(`observeDatastore.on('value'): ${peer}:`, value);
-//   });
-// };
-
-// const addPeer = id => {
-//   if (id && !peers.includes(id)) {
-//     peers.push(id);
-//     showPeers();
-//     Params.storeJsonValue('peers', peers);
-//     observeDatastore(id);
-//   }
-// };
-
-// const connectToPeer = id => {
-//   //instance.connect(id);
-//   //console.log(`connected to perge instance for [${id}]`);
-//   showPeers();
-// };
 
 const showPeers = () => {
   peersElt.innerText = JSON.stringify(peers, null, 2);
@@ -110,12 +67,100 @@ const msg = msg => {
 
 // signalling
 
-const {actorIdElt, addPeerElt, writeProfileElt, connectElt, peerIdElt, peersElt, connectedPeersElt, docsElt, docIdElt, incrElt, log} = window;
+const {actorIdElt, addPeerElt, writeProfileElt, peerIdElt, peersElt,
+  connectedPeersElt, docsElt, mutateElt, log, nameElt} = window;
 
 actorIdElt.innerText = deviceId;
-
-//setDatastore(deviceId, `all my children (${actorId}`);
 listen(deviceId);
+showPeers();
+document.body.style.opacity = 1;
+
+const connectPeers = (peers) => {
+  peers.forEach(p => {
+    if (!peerConnections[p]) {
+      //console.log(`listening to [profile/${p}/]`);
+      const c = peerConnections[p] = {
+        $listener: profile.child(p).on('value', snap => {
+          //console.log(`value from [profile/${p}/]`);
+          const value = snap.val();
+          c.value = value;
+          showPeers();
+        })
+      };
+    }
+  });
+  peers.forEach(peer => connect(deviceId, docSet, peer));
+};
+
+const connections = {};
+
+const connect = (id, docSet, peer) => {
+  // a channel under our `id` for `peer`
+  const ours = channels.child(id).child(peer);
+  const connection = connections[peer] = new Automerge.Connection(docSet, msg => {
+    console.log(`sending to ${ours.ref.toString()}`, msg);
+    ours.set(JSON.stringify(msg));
+  });
+  // a channel under `peer` for our `id`
+  const theirs = channels.child(peer).child(id);
+  // evacipate stale data
+  theirs.remove();
+  // on opening the connection, the doc-set is iterated
+  // and connection does maybeSendChanges for each doc
+  connection.open();
+  const listener = theirs.on('value', snap => {
+    // consume this message
+    //theirs.remove();
+    // extract the data
+    const msg = JSON.parse(snap.val());
+    console.log(`received from ${theirs.ref.toString()}`, msg);
+    if (msg) {
+      connection.receiveMsg(msg);
+      dump();
+    }
+  });
+  connection.off = () => {
+    theirs.off('value', listener);
+    connection.close();
+  };
+  return connection;
+};
+
+const mutate = () => {
+  let doc = docSet.getDoc('a') || Automerge.init();
+  doc = Automerge.change(doc, doc => {
+    let color;
+    do {
+      color = ['red', 'green', 'blue', 'yellow', 'cyan'][irand(5)];
+    } while (doc.color === color)
+    doc.color = color;
+  });
+  docSet.setDoc('a', doc);
+};
+
+const docSet = new Automerge.DocSet();
+nameElt.onchange = ({target: {value}}) => {
+  let doc = docSet.getDoc(deviceId) || Automerge.init();
+  doc = Automerge.change(doc, doc => {
+    doc.profile = `My name is ${value}`;
+    //docSet.setDoc(deviceId, Automerge.from({profile: `My name is ${value}`}));
+  });
+  docSet.setDoc(deviceId, doc);
+}
+//mutate();
+
+const dump = window.dump = () => {
+  const serial = JSON.stringify(docSet.docs, null, 2);
+  docsElt.innerText = serial;
+};
+
+docSet.registerHandler((docId, doc) => {
+  dump();
+  const serial = JSON.stringify(docSet.docs);
+  docs.child(deviceId).set(serial);
+});
+
+//setTimeout(mutate, 1000);
 
 addPeerElt.onclick = () => {
   //addPeer(peerIdElt.value.trim());
@@ -125,54 +170,21 @@ addPeerElt.onclick = () => {
 writeProfileElt.onclick = () => {
   const data = `Hello, I am ${deviceId}, I like ${['pie', 'cake', 'glue', 'air'][irand(4)]}`;
   profile.child(deviceId).set(data);
-  console.log(`wrote [profile/${deviceId}/${JSON.stringify(data)}]`);
+  //console.log(`wrote [profile/${deviceId}/${JSON.stringify(data)}]`);
 };
 
-// let peers = Params.fetchJsonValue('peers') || [];
-showPeers();
-
-// connectElt.onclick = () => {
-//   peers.forEach(id => observeDatastore(id));
-// };
-
-document.body.style.opacity = 1;
-
-const connectPeers = (peers) => {
-  peers.forEach(p => {
-    if (!peerConnections[p]) {
-      console.log(`listening to [profile/${p}/]`);
-      const c = peerConnections[p] = {
-        $listener: profile.child(p).on('value', snap => {
-          console.log(`value from [profile/${p}/]`);
-          const value = snap.val();
-          c.value = value;
-          showPeers();
-        })
-      };
+const mutateN = () => {
+  let i = 10;
+  const it = () => {
+    mutate();
+    if (--i) {
+      setTimeout(it, irand(300) + 150);
     }
-  });
-  peers.forEach(peer => connect(peer, docSet));
-};
-//connectPeers(peers);
-
-const channels = dbroot.child('channels');
-const connections = {};
-
-const connect = (id, docSet, peer) => {
-  const connection = connections[id] = new Automerge.Connection(docSet, msg => {
-    console.log(msg);
-    //channels.child(peer).set(msg);
-  });
-  connection.open();
-  return connection;
+  };
+  it();
 };
 
-const docSet = new Automerge.DocSet();
-
-setTimeout(() => {
-  let doc = Automerge.init();
-  doc = Automerge.change(doc, doc => {
-    doc.color = ['red', 'green', 'blue'][irand(3)];
-  });
-  docSet.setDoc('a', doc);
-}, 1000);
+mutateElt.onclick = () => {
+  mutate();
+  //mutateN();
+};

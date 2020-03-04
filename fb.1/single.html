@@ -9,12 +9,18 @@
   }
 </style>
 
-<h2>Automerge CRDT's synced with Firebase</h2>
+<h2>Automerge CRDT's synced via Firebase</h2>
+<hr>
+
+<button id="mutateElt">Mutate</button>
+
+<pre id="docsElt" style="margin: 1em; padding:1em;">{}</pre>
+<br>
 <hr>
 
 <!-- <label><input id="autoElt" type="checkbox">Autoconnect</label> -->
-<!-- <h4>What's your name?</h4>
-<input id="nameElt" placeholder="Name" /> -->
+<h4>What's your name?</h4>
+<input id="nameElt" placeholder="Name" />
 
 <h4>Actor ID: <span id="actorIdElt"></span></h4>
 <input id="peerIdElt" placeholder="Peer ID">
@@ -30,15 +36,12 @@
 
 <!-- <input id="docIdElt" placeholder="Document ID" />
 <button id="incrElt">Increment</button>
-<pre id="docsElt" style="margin: 1em; padding:1em;">{}</pre>
 <br>
 <hr> -->
-
 <button id="writeProfileElt">Write Profile</button>
 
-<script src="https://unpkg.com/automerge@0.12.1/dist/automerge.js"></script>
-<script src="https://unpkg.com/peerjs@1.1.0/dist/peerjs.min.js"></script>
-<!-- <script src="https://unpkg.com/cuid@2.1.6/dist/cuid.min.js"></script> -->
+<!-- <script src="https://unpkg.com/automerge@0.12.1/dist/automerge.js"></script> -->
+<script src="../automerge-0.12.1.js"></script>
 
 <script type="module" src="./index.js"></script>
 
