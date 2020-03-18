@@ -1,0 +1,46 @@
+<!doctype html>
+
+<link href="../index.css" rel="stylesheet">
+<style>
+  body {
+    padding: 12px;
+    opacity: 0;
+    transition: opacity 100ms ease-out;
+  }
+</style>
+
+<h2>Automerge CRDT's synced via Firebase</h2>
+<hr>
+
+<button id="mutateElt">Mutate</button>
+
+<pre id="docsElt" style="margin: 1em; padding:1em;">{}</pre>
+<br>
+<hr>
+
+<!-- <label><input id="autoElt" type="checkbox">Autoconnect</label> -->
+<h4>What's your name?</h4>
+<input id="nameElt" placeholder="Name" /><br>
+<br>
+<hr>
+
+<!-- <button id="writeProfileElt">Write Profile</button> -->
+<!-- <input id="docIdElt" placeholder="Document ID" />
+<button id="incrElt">Increment</button>
+<br>
+<hr> -->
+
+<h4>Actor ID: <span id="actorIdElt"></span></h4>
+<input id="peerIdElt" placeholder="Peer ID">
+<button id="addPeerElt">Add</button>
+<h5>Known Peers</h5>
+<pre id="peersElt" style="margin: 1em; padding:1em;">[]</pre>
+<h5>Connected Peers</h5>
+<pre id="connectedPeersElt" style="margin: 1em; padding:1em;">[]</pre>
+<!-- <button id="connectElt">Connect to Saved Peers</button> -->
+<br>
+<hr>
+
+<script src="../automerge-0.12.1.js"></script>
+<script type="module" src="./index.js"></script>
+

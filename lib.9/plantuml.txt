@@ -1,0 +1,43 @@
+@startuml
+
+title WebArcs Diagram
+
+package "Core" {
+    Arc o-- Host : 1..n
+    Particle <|-- Host
+    class Store
+    class Host
+    note left: affordance for privileged data
+}
+
+class Store {
+    + toSerializable()
+    + change()
+    + apply()
+    + consumeChanges()
+    + mergeRawData()
+}
+
+class Arc << (A, orchid) >> {
+    + store
+    + update()
+    + addHost()
+    + getHostById()
+    + onchange()
+}
+
+class Host << (H, lightblue) >> {
+    + id
+    + container
+    + get config
+    + update()
+    + onoutput()
+}
+
+class Particle << (P, #FF7700) >> {
+    + get config
+    + update()
+    + onoutput()
+}
+
+@enduml

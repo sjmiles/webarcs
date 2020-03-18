@@ -8,5 +8,4 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-const {Automerge} = window;
-export {Automerge};
+export const logFlags = {groupStatus: true, render: true};

@@ -8,5 +8,5 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-const {Automerge} = window;
-export {Automerge};
+import {ArcDesigner} from './src/arc-designer.js';
+window.customElements.define('arc-designer', ArcDesigner);

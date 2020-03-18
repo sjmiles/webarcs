@@ -7,6 +7,16 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
+import {Params} from '../js/utils/params.js';
+import {makeId} from '../js/utils/utils.js';
 
-const {Automerge} = window;
-export {Automerge};
+// device identification
+
+let deviceId = Params.getParam('device');
+if (!deviceId) {
+  deviceId = makeId();
+  Params.setParam('device', deviceId);
+}
+Params.prefix = `${deviceId}:`;
+
+export {deviceId};

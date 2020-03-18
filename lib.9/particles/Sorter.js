@@ -8,5 +8,16 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-const {Automerge} = window;
-export {Automerge};
+export const particle = ({Particle}) => {
+
+return class extends Particle {
+  update({list}) {
+    if (list) {
+      const sorted = list.slice(0);
+      sorted.sort().reverse();
+      this.output({sorted});
+    }
+  }
+};
+
+};

@@ -8,5 +8,27 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-const {Automerge} = window;
-export {Automerge};
+export const particle = ({Particle}) => {
+
+const template = Particle.html`
+
+<style>
+  [container] {
+    white-space: nowrap;
+    overflow-x: scroll;
+  }
+</style>
+
+<div container>
+  <div slot="content"></div>
+</div>
+
+`;
+
+return class extends Particle {
+  get template() {
+    return template;
+  }
+};
+
+};

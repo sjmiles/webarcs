@@ -1,0 +1,79 @@
+<!doctype html>
+
+<link href="../index.css" rel="stylesheet">
+
+<style>
+  button {
+    font-size: 16px;
+  }
+  body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  [columns] {
+    display: flex;
+    overflow: hidden;
+  }
+  [column] {
+    flex: 1;
+    /* border: 2px solid magenta; */
+    overflow: auto scroll;
+  }
+  [box], [device] {
+    box-sizing: border-box;
+    margin-bottom: 12px;
+    padding: 6px;
+    border: 1px solid #eeeeee;
+  }
+  [device] {
+    border-width: 6px;
+  }
+  [label] {
+    background-color: #eeeeee;
+    display: inline-block;
+    padding: 6px 10px 6px 8px;
+    margin: -6px 0 4px -6px;
+    border-bottom-right-radius: 12px;
+  }
+  /* [slot] {
+    border: 3px solid magenta;
+  } */
+  #dump {
+    font-size: 9px;
+    /* overflow: auto; */
+  }
+</style>
+
+<div columns>
+
+  <div column style="flex: 2;">
+    <div row>
+      <div box>
+        <span label>Device</span>
+        <div><span style="color: green; font-size: 28px; vertical-align: middle;">&bull;&nbsp;</span><span id="deviceIdElt"></span></div>
+      </div>
+    </div>
+    <div row>
+      <div device>
+        <span label>Peers</span>
+        <div id="peersElt"></div>
+      </div>
+    </div>
+    <div row>
+      <div device id="device" slot="device">
+        <span label>UI Device</span>
+      </div>
+    </div>
+  </div>
+
+  <div column>
+    <pre id="dump"></pre>
+  </div>
+
+</div>
+<script src="../../../node_modules/automerge/dist/automerge.js"></script>
+
+<script type="module" src="./app.js"></script>
