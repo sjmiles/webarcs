@@ -1,0 +1,50 @@
+<!--
+@license
+Copyright 2020 Google LLC.
+This code may only be used under the BSD style license found at
+http://polymer.github.io/LICENSE.txt
+Code distributed by Google as part of this project is also
+subject to an additional IP rights grant found at
+http://polymer.github.io/PATENTS.txt
+-->
+<!doctype html>
+
+<link href="../index.css" rel="stylesheet">
+
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    overflow: hidden;
+  }
+  [flex-container] {
+    display: flex;
+    height: 100vh;
+  }
+  [flex] {
+    flex: 1;
+  }
+  [border] {
+    border: 1px solid blue;
+  }
+  thumb-grid {
+    width: 336px;
+  }
+  [holder] {
+    margin: 2px;
+    width: 160px;
+    height: 120px;
+    background-color: silver;
+  }
+  /* thumb-view {
+  } */
+</style>
+
+<div flex-container>
+  <div flex id="mainView"></div>
+  <thumb-grid id="thumbsGrid"></thumb-grid>
+</div>
+
+<script src="https://unpkg.com/automerge@0.13.0"></script>
+<script type="module" src="./index.js"></script>

@@ -63,6 +63,7 @@ export const Comms = class {
       conn = new Automerge.Connection(docSet, msg => actor.send(peer, msg));
       conn.open();
       actor.connections[peer] = conn;
+      log('connection opened', peer);
     }
     actor.onreceive = (peer, msg) => {
       const conn = actor.connections[peer];

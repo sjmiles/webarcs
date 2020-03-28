@@ -57,27 +57,39 @@ const app = async () => {
   log(`DEVICE is ${deviceId}`);
   Comms.init(deviceId)
   const runtime = await initContext();
-  const arc = new Arc({id: 'multi-arc', name: 'one', composer: new Composer(window.device)});
-  const docsChanged = () => {
-    const corpus = Object.keys(arc.stores).map(name => ({name, truth: arc.stores[name].truth}));
-    dump.innerHTML = JSON.stringify(corpus, null, 2);
-    arc.update();
-  };
+  const composer = new Composer(window.device);
+  const arc = new Arc({id: 'multi-arc', name: 'one', composer});
   // if the arc changes, update the docSet
   arc.onchange = () => {
     log('arc::onchange', arc.id);
-    Comms.docSet.setDoc(arc.stores.public.id, arc.stores.public.truth);
+    // TODO(sjmiles): doesn't invoke ondocsetchange: in general need to document things that trigger events
+    try {
+      Comms.docSet.setDoc(arc.stores.public.id, arc.stores.public.truth);
+    } catch(x) {
+      log.error(`[${arc.id}]: Comms.docSet.setDoc exception`);
+      log.error(x);
+    }
     //Comms.docSet.setDoc(arc.stores.private.id, arc.stores.private.truth);
     docsChanged();
   };
   // if the docSet changes, update the arc
   Comms.ondocsetchange = (docSet, docId, doc) => {
     log('ondocsetchange');
+    // TODO(sjmiles): 'docsetchange' event and 'docsChanged' are not 1:1, rationalize
     if (docId === arc.stores.public.id) {
       log('arc public doc changed at docSet', docId);
       arc.stores.public.truth = doc;
       docsChanged();
     }
+  };
+  // if the docs change, update the arc
+  const docsChanged = () => {
+    dumpStores();
+    arc.update();
+  };
+  const dumpStores = () => {
+    const corpus = Object.keys(arc.stores).map(name => ({name, truth: arc.stores[name].truth}));
+    dump.innerHTML = JSON.stringify(corpus, null, 2);
   };
   // instantiate our one recipe
   await runtime.instantiate(arc, recipe);

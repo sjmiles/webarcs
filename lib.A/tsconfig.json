@@ -3,10 +3,10 @@
     "module": "esnext",
     "target": "esnext",
     //"allowJs": true,
-    "rootDir": "./lib/src",
+    "rootDir": "./lib/ts",
     "outDir": "./lib/js"
   },
   "include": [
-    "./lib/src/**/*"
+    "./lib/ts/**/*"
   ]
 }

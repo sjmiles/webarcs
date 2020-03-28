@@ -21,11 +21,9 @@ const renderDebounceIntervalMs = 200;
 
 class DataNexus {
   public id: string;
-  //public docSet;
   public stores;
   constructor(id) {
     this.id = id;
-    //this.docSet = new Automerge.DocSet();
     this.stores = {};
     this.addStore('public');
     this.addStore('private');
@@ -33,7 +31,6 @@ class DataNexus {
   private addStore(name) {
     const store = new Store(`${this.id}:store(${name})`);
     store.onchange = () => this.onstoreschange(name);
-    //this.docSet.setDoc(store.id, store);
     this.stores[name] = store;
   }
   onstoreschange(name) {
@@ -56,6 +53,8 @@ class HostNexus extends DataNexus {
     this.hosts = [];
     this.hnlog = logFactory(logFactory.flags.all, `HostNexus[${id}]`, 'green') as any;
   }
+  public onchange() {
+  }
   public getHostById(pid) {
     return this.hosts.find(p => p.id === pid);
   }
@@ -63,6 +62,23 @@ class HostNexus extends DataNexus {
     this.hosts.push(host);
   }
   protected updateHost(host, inputs) {
+    const hostInputs = this.computeHostInputs(host, inputs);
+    this.hnlog(`updateHost[${host.id}]: inputs are ${JSON.stringify(Object.keys(hostInputs))}`);
+    host.requestUpdate(hostInputs);
+  }
+  protected mergeOutputs(host, outputs) {
+    const hostOutputs = this.computeHostOutputs(host, outputs);
+    if (Object.keys(hostOutputs.private).length) {
+      this.hnlog(`mergeOutputs[${host.id}]: produced private data`, Object.keys(hostOutputs.private));
+    }
+    // `mergeRawData` is true if merging changes the store
+    const publicChanged = this.mergeRawData(this.stores.public, hostOutputs.public);
+    const privateChanged = this.mergeRawData(this.stores.private, hostOutputs.private);
+    if (publicChanged || privateChanged) {
+      this.onchange();
+    }
+  }
+  protected computeHostInputs(host, inputs) {
     const hostInputs = {};
     // ad-hoc data translation
     Object.keys(host.spec).forEach(name => {
@@ -82,47 +98,43 @@ class HostNexus extends DataNexus {
         hostInputs[name] = inputs[sourceName];
       }
     });
-    this.hnlog(`updateHost[${host.id}]: inputs are ${JSON.stringify(Object.keys(hostInputs))}`);
-    host.requestUpdate(hostInputs);
+    return hostInputs;
   }
-  protected mergeOutputs(host, outputs) {
-    // ad-hoc data translation
-    const privat = {};
-    const publik = {};
-    Object.keys(outputs).forEach(name => {
-      let target = publik;
-      let targetName = name;
-      const propSpec = host.spec[name];
-      if (propSpec) {
-        // name bindings
-        if (typeof propSpec === 'string') {
-          targetName = propSpec;
-        }
-        // output distribution
-        else if (propSpec.private) {
-          target = privat;
-        }
-        if (propSpec.collection) {
-          const data = target === publik ? this.stores.public : this.stores.private;
-          if (!data[targetName]) {
-            this.hnlog(`mergeOutputs: creating table [${targetName}]`);
-            data.createTable(targetName, ['id']);
-          }
+  protected computeHostOutputs(host, outputs) {
+    const hostOutputs = {
+      private: {},
+      public: {}
+    };
+    Object.keys(outputs).forEach(name => this.computeHostOutputProperty(name, host, outputs, hostOutputs));
+    return hostOutputs;
+  }
+  computeHostOutputProperty(name, host, outputs, hostOutputs) {
+    let target = hostOutputs.public;
+    let targetName = name;
+    let propSpec = host.spec[name];
+    if (propSpec) {
+      // convert shorthand propSpec to dictionary
+      if (typeof propSpec === 'string') {
+        propSpec = {target: propSpec};
+      }
+      // name binding
+      if (propSpec.target) {
+        targetName = propSpec.target;
+      }
+      // output distribution
+      if (propSpec.private) {
+        target = hostOutputs.private;
+      }
+      // Collection support
+      if (propSpec.collection) {
+        const data = target === hostOutputs.public ? this.stores.public : this.stores.private;
+        if (!data[targetName]) {
+          this.hnlog(`mergeOutputs: creating table [${targetName}]`);
+          data.createTable(targetName, ['id']);
         }
       }
-      target[targetName] = outputs[name];
-    });
-    if (Object.keys(privat).length) {
-      this.hnlog(`mergeOutputs[${host.id}]: produced private data`, Object.keys(privat));
     }
-    // `mergeRawData` is true if merging changes the store
-    let changed = this.mergeRawData(this.stores.public, publik);
-    changed = this.mergeRawData(this.stores.private, privat) || changed;
-    if (changed) {
-      this.onchange();
-    }
-  }
-  public onchange() {
+    target[targetName] = outputs[name];
   }
 }
 

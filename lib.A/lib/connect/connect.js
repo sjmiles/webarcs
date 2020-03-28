@@ -20,8 +20,9 @@ const rendezvous = dbroot.child('rendezvous');
 // used to wrap FB callbacks so we can get off the FB call stack (for debugging)
 const async = task => {
   return async (...args) => {
-    await Promise.resolve();
-    task(...args);
+    //await Promise.resolve();
+    //task(...args);
+    setTimeout(() => task(...args), 0);
   };
 };
 
@@ -58,6 +59,7 @@ export const Actor = class {
     }));
   }
   ring(peer) {
+    log(`Actor[${this.id}]: ringing [${peer}] on channel [${this.sessionId}]`);
     rendezvous.child(peer).child(this.id).set(this.sessionId);
   }
   open(remoteSessionId) {
