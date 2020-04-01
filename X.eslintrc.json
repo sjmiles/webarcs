@@ -1,0 +1,109 @@
+{
+  // "extends": [
+  //   "eslint:recommended",
+  //   "google"
+  // ],
+
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module"
+  },
+
+  "plugins": [
+    "header",
+    "import"
+  ],
+
+  "rules": {
+    // Things we want beyond the defaults
+    "header/header": [
+      "error",
+      "block", [
+        "*",
+        " * @license",
+        // Matches many variants of Google Inc/LLC, with (c) or without, with ARR or not
+        {
+          "pattern":  " \\* Copyright (\\(c\\) )?\\d{4} Google (Inc|LLC)\\.( All rights reserved\\.)?",
+          "template": " * Copyright 2019 Google LLC."
+        },
+        " * This code may only be used under the BSD style license found at",
+        " * http://polymer.github.io/LICENSE.txt",
+        " * Code distributed by Google as part of this project is also",
+        " * subject to an additional IP rights grant found at",
+        " * http://polymer.github.io/PATENTS.txt",
+        " "
+      ]
+    ],
+
+    "no-trailing-spaces": 1,
+    "eol-last": 1,
+
+    // Things we do, but probably shouldn't.
+    "no-console": "off",
+    "no-throw-literal": "off",
+    "brace-style": "off",
+    "camelcase": "off",
+    "no-unused-vars": "off",
+    "new-cap": "off",
+    "arrow-parens": "off", // puts parens around single arg arrow functions
+    "no-undef": 1, // Particles use importScripts+globals, need to move to JS modules to fix
+    "no-empty-pattern": "off", // No {} in patterns, but sometimes we use {} to denote an unused argument?
+    "require-atomic-updates": "off",
+    "no-prototype-builtins": "off",
+    "operator-linebreak": "off",
+
+    // eslint-config-google 0.10.0 introduced indent checks
+    // most projects are opting for prettier instead, so disable
+    "indent": "off",
+
+    // Things we don't care about.
+    "require-jsdoc": "off",
+    "valid-jsdoc": "off",
+    "quote-props": "off",
+    "guard-for-in": "off",
+    "padded-blocks": "off",
+    "spaced-comment": "off",
+    "block-spacing": "off",
+    "max-len": "off",
+    "comma-dangle": "off",
+    "linebreak-style": "off",
+    "no-multi-spaces": "off",
+    "keyword-spacing": [1, {"before": true, "after": true}],
+    "no-constant-condition": "off",
+
+    // Always require .js extension for imported files, but not for node packages.
+    "import/extensions": [1, "always", {"ignorePackages": true}]
+  },
+  "env": {
+    "browser": true,
+    "node": true,
+    "es6": true,
+    "worker": true,
+    "mocha": true
+  },
+  // Typescript configuration
+  "overrides": [
+    {
+      "files": ["**/*.ts"],
+      "excludedFiles": ["src/gen/**/*.ts"],
+      "parser":  "@typescript-eslint/parser",  // Specifies the ESLint parser
+      "parserOptions":  {
+        // TODO(lindner): For now this option causes severe slowdown. See following issue for updates
+        //   https://github.com/typescript-eslint/typescript-eslint/issues/389
+        // and re-enable
+        // "project": "tsconfig.json"
+      },
+      "rules": {
+        // add typescript specific rules here
+        "strict": "error"
+      }
+    },
+    {
+      "files": ["**/*test*/**/*.[jt]s"],
+      "rules": {
+        // disable for mocha usages
+        "no-invalid-this": "off"
+      }
+    }
+  ]
+}

@@ -47,8 +47,8 @@ export const makeId = (pairs?, digits?, delim?) => {
   pairs = pairs || 2;
   digits = digits || 2;
   delim = delim || '-';
-  const range = Math.pow(10, digits);
-  const min = Math.pow(10, digits-1) - 1;
+  const min = Math.pow(10, digits - 1);
+  const range = Math.pow(10, digits) - min;
   const result = [];
   for (let i=0; i<pairs; i++) {
     result.push(`${irand(range - min) + min}`);

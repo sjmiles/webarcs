@@ -8,16 +8,11 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-export class ArcEnvironment {
-  constructor(id, composer, database) {
-    this.id = id;
-    this.composer = composer;
-    this.database = database;
-  }
-}
+import {ThumbGrid} from './thumb-grid.js';
+import {ThumbView} from './thumb-view.js';
 
-export class Composer {
-  constructor(root) {
-    this.root = root;
-  }
-};
+window.customElements.define('thumb-view', ThumbView);
+window.customElements.define('thumb-grid', ThumbGrid);
+
+window.thumbsGrid.bigView = window.mainView;
+

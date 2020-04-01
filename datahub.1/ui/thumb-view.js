@@ -13,85 +13,59 @@ const template = Xen.html`
 <style>
   :host {
     display: inline-block;
+    width: 160px;
+    height: 120px;
     overflow: hidden;
-    cursor: pointer;
-    background-color: white;
+    border: 6px solid silver;
+    background-color: #eeeeee;
+    user-select: none;
   }
   [content] {
+    width: 5000px; /* TODO(sjmiles): punted clipping problem */
     height: 100%;
     transform-origin: left top;
+    zoom: 0.5;
+    pointer-events: none;
   }
 </style>
+
 <div content xen:style="{{contentStyle}}">
-  <slot></slot>
+  <slot>
+    <div style="display: flex; width: 320px; height: 100%; align-items: center; justify-content: center; color: #666;"><span>(zoomed)<span></div>
+  </slot>
 </div>
 `;
 
-export class ThumbableView extends Xen.Async {
+export class ThumbView extends Xen.Async {
   get template() {
     return template;
   }
-  embiggen(target, w, h) {
-    w = w || '';
-    h = h || '';
-    this.state = {zoom: 1.0, w, h, display: 'block'};
-    target.appendChild(this);
-    this.style.pointerEvents = null;
+  embiggen(target) {
+    // w = w || '';
+    // h = h || '';
+    //this.state = {zoom: 1.0, w, h, display: 'block'};
+    //target.appendChild(this);
+    //this.style.pointerEvents = null;
+    this.child = this.firstElementChild;
+    target.appendChild(this.child);
   }
-  smallify(target, w, h) {
-    w = w || 160;
-    h = h || 120;
-    this.state = {zoom: 0.5, w, h, display: 'inline-block'};
+  smallify() {
+    // w = w || 160;
+    // h = h || 120;
+    // this.state = {zoom: 0.5, w, h, display: 'inline-block'};
+    // this.style.pointerEvents = 'none';
+    this.child = this.child || this.firstElementChild;
     // use memoized smallify target
-    target = target || this.container;
-    target.appendChild(this);
-    this.container = target;
-    this.style.pointerEvents = 'none';
+    //this.container = target || this.container;
+    // this.container.appendChild(this);
+    this.appendChild(this.child);
   }
-  render(props, {display, w, h, zoom}) {
-    this.style.width = w ? `${w}px` : '';
-    this.style.height = h ? `${h}px` : '';
-    this.style.display = display;
-    return {
-      contentStyle: {zoom}
-    };
-  }
-};
-
-const thumbGridTemplate = Xen.html`
-<style>
-  :host {
-    display: flex;
-    flex-wrap: wrap;
-    align-content: flex-start;
-  }
-  * {
-    box-sizing: border-box;
-  }
-</style>
-<slot></slot>
-`;
-
-export class ThumbGrid extends Xen.Async {
-  get template() {
-    return thumbGridTemplate;
-  }
-  addThumb() {
-    const holder = this.appendChild(document.createElement('div'));
-    holder.setAttribute('holder', '');
-    holder.onclick = e => this.selectThumb(thumb);
-    const thumb = document.createElement('thumb-view');
-    thumb.setAttribute('thumb', '');
-    thumb.smallify(holder);
-    return thumb;
-  }
-  selectThumb = thumb => {
-    if (this.bigView && thumb !== this.embiggened) {
-      if (this.embiggened) {
-        this.embiggened.smallify();
-      }
-      thumb.embiggen(this.bigView);
-      this.embiggened = thumb;
-    }
-  };
-};
+  // render(props, {display, w, h, zoom}) {
+  //   this.style.width = w ? `${w}px` : '';
+  //   this.style.height = h ? `${h}px` : '';
+  //   this.style.display = display;
+  //   return {
+  //     contentStyle: {zoom}
+  //   };
+  // }
+}

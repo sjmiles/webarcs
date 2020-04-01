@@ -8,19 +8,11 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {ThumbableView, ThumbGrid} from './thumb-view.js';
+import {ThumbGrid} from './thumb-grid.js';
+import {ThumbView} from './thumb-view.js';
 
-window.customElements.define('thumb-view', ThumbableView);
+window.customElements.define('thumb-view', ThumbView);
 window.customElements.define('thumb-grid', ThumbGrid);
 
-export const addThumb = () => {
-  thumbsGrid.bigView = mainView;
-  return thumbsGrid.addThumb();
-};
+window.thumbsGrid.bigView = window.mainView;
 
-window.testGrid = () => {
-  for (let i=0; i<10; i++) {
-    const thumb = addThumb();
-    thumb.content.innerHTML = `Hey Yo, #${i}!`;
-  }
-};

@@ -29,24 +29,34 @@ const entryTemplate = Xen.html`
   <pre style="padding: 4px; border: 1px dotted silver; margin: 0;"><i>{{time}}</i> <span>{{entry}}</span></pre>
 `;
 
-const iterate = (collection, renderer, template) => {
-  return !collection ? null : {models: Object.values(collection).map(renderer), template};
-};
+// const iterate = (collection, renderer, template) => {
+//   return !collection ? null : {models: Object.values(collection).map(renderer), template};
+// };
 
-export class ChatRead extends Xen.Async {
+export class ChatList extends Xen.Async {
   static get observedAttributes() {
     return ['entries'];
   }
-  constructor() {
-    super();
-    this.renderEntries = entries => iterate(entries, this.renderEntry, entryTemplate);
-  }
+  // constructor() {
+  //   super();
+  //   this.renderEntries = entries => iterate(entries, this.renderEntry, entryTemplate);
+  // }
   get template() {
     return template;
   }
   render({entries}, {}) {
     return {
-      entries: this.renderEntries(entries)
+      entries: entries ? this.renderEntries(entries) : null
+    };
+  }
+  renderEntries(entries) {
+    const models = Object.values(entries)
+      .sort((a, b) => a.time - b.time)
+      .map(this.renderEntry)
+      ;
+    return {
+      template: entryTemplate,
+      models
     };
   }
   renderEntry({userid, time, msg}) {
@@ -55,4 +65,4 @@ export class ChatRead extends Xen.Async {
       entry: `[${userid}] ${msg}`
     };
   }
-};
+}

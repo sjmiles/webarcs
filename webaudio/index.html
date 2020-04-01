@@ -1,0 +1,32 @@
+<!doctype html>
+
+<script>
+  //const peer = new RTCPeerConnection();
+
+  // we got MediaStream from mic - this code will play it via Web Audio
+  function gotStream(stream) {
+    // Web Audio - create context
+    window.AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioContext = new AudioContext();
+    // Web Audio works with audio nodes that can be attached to each other
+    let mediaStreamSource = audioContext.createMediaStreamSource(stream);
+    // Let’s playback our stream
+    mediaStreamSource.connect(audioContext.destination);
+  }
+
+  //navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia;
+  //navigator.getUserMedia({audio:true}, gotStream, function(){});
+
+  async function go() {
+    let stream = null;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      gotStream(stream);
+    } catch(err) {
+      /* handle the error */
+    }
+  };
+
+  go();
+
+</script>
