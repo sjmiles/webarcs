@@ -8,13 +8,13 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Store} from './db/store.js';
+import {Store} from '../db/store.js';
 
 const entriesName = `entries:shared:[Chat2Entry]`;
 
 export const installChat2Recipe = (device, arc, targetId) => {
   // cheat way to get a human-readable-name
-  const userid = device.id;
+  const userid = device.id.split(':').shift();
   // are we already bound to a store?
   if (!targetId) {
     let target = (Object.values(device.chat2s || Object))[0];

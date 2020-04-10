@@ -8,8 +8,8 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Store} from './db/store.js';
-import {EditProfile} from './particles/edit-profile.js';
+import {Store} from '../db/store.js';
+import {EditProfile} from '../particles/edit-profile.js';
 
 const eltName = 'edit-profile';
 window.customElements.define(eltName, EditProfile);

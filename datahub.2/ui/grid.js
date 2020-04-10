@@ -16,3 +16,9 @@ window.customElements.define('thumb-grid', ThumbGrid);
 
 window.thumbsGrid.bigView = window.mainView;
 
+import {DeviceView} from './device-view.js';
+import {ArcView} from './arc-view.js';
+
+window.customElements.define('device-view', DeviceView);
+window.customElements.define('arc-view', ArcView);
+

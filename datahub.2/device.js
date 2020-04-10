@@ -18,10 +18,6 @@ export class Device extends ArcEnvironment {
   constructor(id, composer, database) {
     super(id, composer, database);
     this.arcs = {};
-    this.id = id;
-    this.composer = composer;
-    this.database = database;
-    //this.reify();
     // hacky
     this.database.onchange = () => this.view && this.view._invalidate();
   }

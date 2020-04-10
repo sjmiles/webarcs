@@ -14,15 +14,17 @@ const thumbGridTemplate = Xen.html`
 <style>
   :host {
     display: block;
+    flex-wrap: wrap;
   }
   [container] {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: inherit;
     align-content: flex-start;
   }
   [container] > * {
     box-sizing: border-box;
     cursor: pointer;
+    flex-shrink: 0;
   }
 </style>
 <div container on-click="onClick">
@@ -66,7 +68,7 @@ export class ThumbGrid extends Xen.Async {
     }
   }
   onSlotChange(e) {
-    console.group('onSlotChange');
+    //console.group('onSlotChange');
     const nodes = e.currentTarget.assignedNodes();
     nodes.forEach(thumb => {
       if (thumb.localName === 'thumb-view') {
@@ -80,7 +82,7 @@ export class ThumbGrid extends Xen.Async {
       }
     });
     // probably should trim dangling thumbs here too
-    console.groupEnd();
+    //console.groupEnd();
   }
   onClick(e) {
     if (e.target.localName === 'thumb-view') {

@@ -14,6 +14,7 @@ const template = Xen.html`
   :host {
     display: block;
     padding: 4px;
+    font-size: 18px;
   }
   [entries] {
     margin-top: 4px;

@@ -20,7 +20,7 @@ const template = Xen.html`
   [outer] {
     overflow: hidden;
     height: 90%;
-    background-color: #f8f8f8;
+    background-color: #f4f4f4;
   }
   [header] {
     padding: 8px;
@@ -30,9 +30,11 @@ const template = Xen.html`
     margin: 4px 0;
     display: flex;
     align-items: center;
+    white-space: nowrap;
   }
   [toolbar] > * {
     margin-right: 4px;
+    white-space: nowrap;
   }
   [content] {
     padding: 8px;
@@ -51,7 +53,7 @@ const template = Xen.html`
 </style>
 <div outer xen:style="{{outerStyle}}">
   <div header>
-    <div>#<span>{{id}}</span></div>
+    <div><span>{{id}}</span></div>
     <div toolbar>
       <button on-click="onDestroyArcClick">Destroy Arc</button>
       <button disabled>Other</button>
@@ -80,7 +82,7 @@ export class ArcView extends Xen.Async {
   render({arc}) {
     if (arc) {
       return {
-        id: arc.id,
+        id: `${arc.meta.recipe || 'Generic'} (#${arc.id})`,
         info: this.renderInfo(arc),
         suggestions: this.renderSuggestions(arc)
       };

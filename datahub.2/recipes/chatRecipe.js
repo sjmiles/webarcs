@@ -8,8 +8,15 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Store} from './db/store.js';
-import {mergeRawData} from './dataplex.js';
+import {Store} from '../db/store.js';
+import {mergeRawData} from '../dataplex.js';
+
+import {ChatList} from '../particles/chat-list.js';
+import {ChatWrite} from '../particles/chat-write.js';
+import {ChatMerge} from '../particles/chat-merge.js';
+window.customElements.define('chat-list', ChatList);
+window.customElements.define('chat-write', ChatWrite);
+window.customElements.define('chat-merge', ChatMerge);
 
 const entriesName = `entries:shared:[ChatEntry]`;
 const mergedName = `merged:local:[ChatEntry]`;
@@ -81,7 +88,7 @@ const chatMergeConsumerFactory = (arc, targetStore) => {
   return output => {
     if (output) {
       const {merged} = output;
-      console.log('merged', merged);
+      //console.log('merged', merged);
       const neo = mergeRawData(targetStore.data, {entries: merged});
       if (neo) {
         targetStore.data = neo;

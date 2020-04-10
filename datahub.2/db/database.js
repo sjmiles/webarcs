@@ -21,7 +21,10 @@ export class Database {
   onchange(id, doc) {
   }
   require(id) {
-    return this.get(id) || this.create(id);
+    if (this.get(id)) {
+      return id;
+    }
+    return this.create(id);
   }
   get storeIds() {
     return [...this.docSet.docIds];
@@ -93,4 +96,4 @@ export class Database {
       });
     }
   }
-};
+}

@@ -89,7 +89,7 @@ export class EditProfile extends Xen.Async {
     this.output({
       profile: {
         name: state.name,
-        avatarUrl: state.avatarUrl || `../user-128x128.png`
+        avatarUrl: state.avatarUrl || `../assets/user-128x128.png`
       }
     });
   }

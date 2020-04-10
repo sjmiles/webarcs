@@ -41,6 +41,7 @@ export class Arc {
     }
   }
   makeStoreId(name) {
+    //return `${this.env.id}:${this.id}:store=${name}`;
     return `${this.id}:store=${name}`;
   }
   getStore(name) {

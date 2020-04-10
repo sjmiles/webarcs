@@ -1,0 +1,51 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100vh;
+}
+
+[flex-container] {
+  display: flex;
+  flex: 1;
+  overflow: auto;
+}
+
+[flex] {
+  flex: 1;
+}
+
+[border] {
+  border: 1px solid blue;
+}
+
+[toolbar] {
+  display: flex;
+  align-items: center;
+  height: 38px;
+  padding: 8px;
+  border-bottom: 1px solid silver;
+}
+
+[toolbar] > * {
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+[toolbar] > [disabled] {
+  color: silver;
+}
+
+/*
+#mainView {
+  overflow: auto;
+  margin-right: 1px;
+}
+#mainView > device-view {
+  flex: 1;
+}
+*/

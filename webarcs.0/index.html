@@ -1,0 +1,40 @@
+<!doctype html>
+
+<link href="../index.css" rel="stylesheet">
+<link href="./ui/main.css" rel="stylesheet">
+
+<style>
+  body {
+    font-family: sans-serif;
+    font-size: 12px;
+    display: flex;
+  }
+  body {
+    --ui-bg-1: #ffffff;
+    --ui-bg-2: #e0e0e0;
+    --ui-bg-3: #ebebeb;
+    --ui-bg-4: #f4f4f4;
+    --ui-bg-hi-1: lightblue;
+  }
+  peers-view {
+    width: 120px;
+    background-color: var(--ui-bg-2);
+    /* border: 1px solid magenta; */
+  }
+  [toolbar] {
+    background-color: var(--ui-bg-2);
+  }
+</style>
+
+<div toolbar>
+  <span disabled>Arcs Web</span>
+  <!-- <button id="connectButton">Connect</button> -->
+</div>
+
+<div flex-container>
+  <peer-view flex id="peerView"></peer-view>
+  <peers-view id="peersView"></peers-view>
+</div>
+
+<script src="../node_modules/automerge/dist/automerge.js"></script>
+<script src="./index.js" type="module"></script>

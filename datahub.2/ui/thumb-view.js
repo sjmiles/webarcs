@@ -17,21 +17,23 @@ const template = Xen.html`
     height: 120px;
     overflow: hidden;
     border: 6px solid silver;
+    border-radius: 4px;
     background-color: #eeeeee;
     user-select: none;
+    margin: 1px;
   }
   [content] {
-    width: 5000px; /* TODO(sjmiles): punted clipping problem */
+    /* width: 5000px; TODO(sjmiles): punted clipping problem */
     height: 100%;
     transform-origin: left top;
-    zoom: 0.5;
+    zoom: 0.25;
     pointer-events: none;
   }
 </style>
 
 <div content xen:style="{{contentStyle}}">
   <slot>
-    <div style="display: flex; Xwidth: 100%; height: 100%; align-items: center; justify-content: center; color: #666;"><span>(zoomed)<span></div>
+    <div style="display: flex; height: 100%; align-items: center; justify-content: center; color: #666;"><span>(zoomed)<span></div>
   </slot>
 </div>
 `;

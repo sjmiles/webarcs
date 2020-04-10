@@ -18,7 +18,7 @@ export class ChatMerge extends Xen.Async {
     super();
   }
   update({other, entries}) {
-    console.log('adding other to entries', other, entries);
+    //console.log('adding other to entries', other, entries);
     this.output({
       merged: {...entries, ...other}
     });

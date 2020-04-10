@@ -17,6 +17,8 @@ const template = Xen.html`
   :host {
     display: block;
     box-sizing: border-box;
+    font-size: 0.8em;
+    background-color: #e4e4e4;
   }
   [outer] {
     overflow: hidden;
@@ -33,6 +35,7 @@ const template = Xen.html`
   [toolbar] > * {
     margin-right: 8px;
     cursor: pointer;
+    white-space: nowrap;
   }
   [toolbar] > [disabled] {
     color: silver;
@@ -42,12 +45,44 @@ const template = Xen.html`
     padding: 8px;
   }
   [banner] {
-    background-color: #eeeef8;
     font-size: 110%;
     padding: 8px;
   }
   [arcscontainer] {
+    background-color: #eeeeee;
     /* border: 2px solid gray; */
+  }
+  thumb-grid {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  thumb-view {
+    flex-shrink: 0;
+    flex-grow: 0;
+  }
+  avatar {
+    display: inline-block;
+    /* margin: 0 8px 0 2px; */
+    margin-right: 10px;
+    height: 36px; /* wtf css? */
+  }
+  avatar > img {
+    box-sizing: border-box;
+    width: 36px;
+    height: 36px;
+    border: 2px solid rgba(64, 64, 64, 0.35);
+    border-radius: 50%;
+  }
+  [row] {
+    display: flex;
+    align-items: center;
+  }
+  [notification] {
+    /* padding: 6px; */
+    cursor: pointer;
+    border-radius: 128px;
+    border: 1px solid #e0e0e0;
+    background-color: white;
   }
 </style>
 <div outer xen:style="{{outerStyle}}">
@@ -78,11 +113,23 @@ const template = Xen.html`
     <div content unsafe-html="{{content}}"></div>
   </div>
 
-</div>
+  <div banner>Notifications</div>
+    <div style="background-color: #eeeeee; padding: 12px 12px 4px;">
+      <div>{{notifications}}</div>
+    </div>
+  </div>
 `;
 
 const thumbViewTemplate = Xen.html`
   <thumb-view><arc-view arc="{{arc}}"></arc-view></thumb-view>
+`;
+
+const notificationViewTemplate = Xen.html`
+  <div style="padding: 0 0 8px;">
+    <div row notification on-click="onNotificationClick" key="{{key}}">
+      <avatar><img src="{{avatarUrl}}"></avatar> <span unsafe-html="{{msg}}"></span>
+    </div>
+  </div>
 `;
 
 export class DeviceView extends Xen.Async {
@@ -106,6 +153,7 @@ export class DeviceView extends Xen.Async {
         id: device.id,
         content: this.renderDatabaseHtml(device.database),
         thumbViews: this.renderThumbViews(device.arcs),
+        notifications: this.renderNotifications(device.chat2s || [])
       };
     }
     return model;
@@ -124,8 +172,23 @@ export class DeviceView extends Xen.Async {
       models: Object.values(arcs).map(arc => ({arc}))
     };
   }
+  renderNotifications(chats) {
+    const notifications = chats.map(({user}, i) => ({
+      key: i,
+      avatarUrl: '../assets/44.png',
+      msg: `<b>${user.split(':')[0]}</b> has shared a chat. Click to join.`
+    }));
+    return {
+      template: notificationViewTemplate,
+      models: notifications
+    };
+  }
   onTabSelect(e) {
     const selected = e.currentTarget.value;
     this.state = {selected};
+  }
+  onNotificationClick({currentTarget: {key}}) {
+    this.props.device.onNotificationClick(this.props.device.chat2s[key]);
+    //console.warn(this.props.device.chat2s[key]);
   }
 }

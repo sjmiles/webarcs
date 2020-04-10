@@ -13,23 +13,11 @@ import {Composer} from './arcs/composer.js';
 import {Planner} from './planner.js';
 import {Device} from './device.js';
 
-import {ChatList} from './particles/chat-list.js';
-import {ChatWrite} from './particles/chat-write.js';
-import {ChatMerge} from './particles/chat-merge.js';
-import {installChatRecipe} from './chatRecipe.js';
-import {installChat2Recipe} from './chat2Recipe.js';
-import {installEditProfileRecipe} from './editProfileRecipe.js';
-
-window.customElements.define('chat-list', ChatList);
-window.customElements.define('chat-write', ChatWrite);
-window.customElements.define('chat-merge', ChatMerge);
+import {installChatRecipe} from './recipes/chatRecipe.js';
+import {installChat2Recipe} from './recipes/chat2Recipe.js';
+import {installEditProfileRecipe} from './recipes/editProfileRecipe.js';
 
 import './ui/grid.js';
-import {DeviceView} from './ui/device-view.js';
-import {ArcView} from './ui/arc-view.js';
-
-window.customElements.define('device-view', DeviceView);
-window.customElements.define('arc-view', ArcView);
 
 import {makeId} from './utils.js';
 
@@ -41,6 +29,7 @@ const newDevice = (persona, deviceId, color) => {
   const composer = new Composer(root);
   const device = new Device(id, composer, database);
   device.color = color;
+  device.onNotificationClick = info => onDeviceNotificationClick(device, info);
   //
   newDeviceUi(device, root);
   // TODO(sjmiles): have to do this here for `onchange` chaining to work, which is dumb
@@ -69,6 +58,7 @@ const newDeviceUi = (device, root) => {
   thumb.appendChild(view);
   // thumb-view goe into thumb-grid
   window.thumbsGrid.appendChild(thumb);
+  window.thumbsGrid.selected = thumb;
 };
 
 const onNewChatArcClick = view => {
@@ -81,15 +71,20 @@ const onNewChatArcClick = view => {
 const onNewChat2ArcClick = view => {
   const arc = createArc({id: makeId(), device: view.device});
   installRecipe(view.device, arc, {recipe: 'chat2Recipe'});
-  // TODO(sjmiles): defining what a 'triggering-change' is, and triggering it correctly, is important
   arc.onchange();
 };
 
 const onNewProfileArcClick = view => {
   const arc = createArc({id: makeId(), device: view.device});
   installRecipe(view.device, arc, {recipe: 'editProfileRecipe'});
-  // TODO(sjmiles): defining what a 'triggering-change' is, and triggering it correctly, is important
   arc.onchange();
+};
+
+const onDeviceNotificationClick = (device/*, info*/) => {
+  const arc = createArc({id: makeId(), device});
+  installRecipe(device, arc, {recipe: 'chat2Recipe'});
+  arc.onchange();
+  device.planner.plan();
 };
 
 const newPlanner = device => {

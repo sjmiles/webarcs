@@ -41,6 +41,7 @@ export class Store {
     return doc;
   }
   static meta(id) {
+    // <arcid>:<storeName>:<tag,tag>:<type>
     const parts = id.split(':');
     return {
       arcId: parts[0],
