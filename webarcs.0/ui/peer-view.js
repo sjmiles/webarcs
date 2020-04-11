@@ -56,11 +56,12 @@ const template = Xen.Template.html`
 </div>
 
 <cx-tabs on-select="onTabSelect">
-  <cx-tab selected>Launcher</cx-tab>
-  <cx-tab>Arc</cx-tab>
+  <cx-tab>Home</cx-tab>
+  <cx-tab selected>Arc</cx-tab>
   <cx-tab>Database</cx-tab>
 </cx-tabs>
 
+<div page show$="{{showArc}}"><slot></slot></div>
 <pre page show$="{{showDatabase}}" database unsafe-html="{{database}}"></pre>
 `;
 
@@ -75,6 +76,11 @@ export class PeerView extends Xen.Async {
   get template() {
     return template;
   }
+  getInitialState() {
+    return {
+      selected: 1
+    };
+  }
   render({peer}, {selected}) {
     return {
       ...peer,
@@ -83,6 +89,7 @@ export class PeerView extends Xen.Async {
         models: this.renderPeers(peer)
       },
       database: peer.dev.context.dump(),
+      showArc: (selected === 1),
       showDatabase: (selected === 2)
     };
   }

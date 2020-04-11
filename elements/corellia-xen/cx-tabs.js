@@ -23,6 +23,7 @@ const template = Xen.Template.html`
     --cx-tab-bar-display: none;
   }
 </style>
+
 <slot on-tab-connect="_onTabConnect" on-tab-select="_onTabSelect"></slot>
 <cx-tab-slider from="{{from}}" to="{{to}}" on-tab-slider-done="_onSliderDone"></cx-tab-slider>
 

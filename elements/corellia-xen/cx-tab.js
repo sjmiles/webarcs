@@ -61,6 +61,12 @@ class CxTab extends Xen.Base {
     this._async(() => {
       this._fire('tab-connect', null, this, {bubbles: true});
     });
+    // triggering selection gets tangled up in animation concerns (?)
+    // setTimeout(() => {
+    //   if (this._props.selected) {
+    //     this._onSelectedClick();
+    //   }
+    // }, 400);
   }
   _setProperty(name, value) {
     if (name === 'selected') {

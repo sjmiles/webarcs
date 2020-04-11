@@ -55,7 +55,7 @@ const recipe = {
 
 const app = async () => {
   log(`DEVICE is ${deviceId}`);
-  Comms.init(deviceId)
+  Comms.init(deviceId);
   const runtime = await initContext();
   const composer = new Composer(window.device);
   const arc = new Arc({id: 'multi-arc', name: 'one', composer});

@@ -11,12 +11,15 @@
 import {Store} from '../core/store.js';
 import {Database} from '../core/database.js';
 import {EventEmitter} from '../core/event-emitter.js';
+import {logger, logFilters} from '../utils/log.js';
 
 const {Automerge} = window;
 
 // rendezvous system
 const hubs = [];
 window.hubs = hubs;
+
+const log = logger([logFilters.hub], 'hub', 'green');
 
 export class Endpoint {
   constructor(id, sourceId) {
@@ -29,7 +32,7 @@ export class Endpoint {
     // endpoint (id) = carl
     // startpoint (sourceId) = moe
     //
-    //console.log('Endpoint: seeking peer', this.id);
+    //log('Endpoint: seeking peer', this.id);
     // find 'carl' hub
     //const hub = hubs.find(hub => hub.device.id === this.id && hub.connections); // && hub.connections[sourceId]);
     //
@@ -43,7 +46,7 @@ export class Endpoint {
       // find connection to 'moe' inside of 'carl' hub
       this.connection = hub.connections[sourceId];
       if (this.connection) {
-        //console.log(`Endpoint: found open socket to`, sourceId);
+        //log(`Endpoint: found open socket to`, sourceId);
         this.open = true;
         // do not try again
         return;
@@ -57,7 +60,7 @@ export class Endpoint {
     setTimeout(() => this.listenForPeer(sourceId, delay), delay*1e3);
   }
   send(msg) {
-    console.log(`send to %c[${this.id}]%c: `, 'font-weight: bold', 'font-weight: normal', msg);
+    log(`send to %c[${this.id}]%c: `, 'font-weight: bold', 'font-weight: normal', msg);
     this.connection.receive(msg);
   }
 }
@@ -69,7 +72,7 @@ export class Connection {
     this.endpoint = new Endpoint(peer, hub.device.id);
     this.database = this.initDatabase(this.hub, this.endpoint);
     this.conn = new Automerge.Connection(this.database.truth, msg => this.send(msg));
-    //console.log(`connecting to [${endpoint.id}] ...`);
+    //log(`connecting to [${endpoint.id}] ...`);
     this.open();
   }
   initDatabase(hub, endpoint) {
@@ -97,23 +100,23 @@ export class Connection {
     throw 'connection not open';
   }
   connecting(msg) {
-    //console.log(`messages pending (connecting to ${this.endpoint.id})`);
+    //log(`messages pending (connecting to ${this.endpoint.id})`);
     this.pending.push(msg);
   }
   connected() {
-    //console.log(`... connected to [${this.endpoint.id}]`);
+    //log(`... connected to [${this.endpoint.id}]`);
     this.send = this.sendToEndpoint;
     this.pending.forEach(msg => this.send(msg));
     this.pending = null;
   }
   sendToEndpoint(msg) {
-    //console.log(`send to %c[${this.endpoint.id}]%c: `, 'font-weight: bold', 'font-weight: normal', msg);
+    //log(`send to %c[${this.endpoint.id}]%c: `, 'font-weight: bold', 'font-weight: normal', msg);
     this.endpoint.send(msg);
   }
   receive(msg) {
     // TODO(sjmiles): simulate asynchrony of a real communication channel
     setTimeout(() => {
-      console.log(`%c[${this.hub.device.id}]%c received: `, 'font-weight: bold', 'font-weight: normal', msg);
+      log(`%c[${this.hub.device.id}]%c received: `, 'font-weight: bold', 'font-weight: normal', msg);
       this.conn.receiveMsg(msg);
       let doc = this.database.docs.get(msg.docId);
       if (doc) {
@@ -135,7 +138,7 @@ export class Hub extends EventEmitter {
     this.connections = this.connectPeers(this.peerStore.truth);
   }
   deviceChanged(device, docId) {
-    console.log(`${device.id}: sharing`, docId);
+    log(`${device.id}: sharing`, docId);
     const store = device.context.get(docId);
     Object.values(device.hub.connections).forEach(
       c => c.database.add(store)
@@ -171,7 +174,7 @@ export class Hub extends EventEmitter {
     Object.values(this.connections).forEach(iter);
   }
   captureStores(database) {
-    //this.forEachConnection(c => c.database.forEachStore(store => !database.get(store.id) && console.log('capture', store)));
+    //this.forEachConnection(c => c.database.forEachStore(store => !database.get(store.id) && log('capture', store)));
     this.forEachConnection(c => c.database.forEachStore(store => database.add(store)));
   }
 }

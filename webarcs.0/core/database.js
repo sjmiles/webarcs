@@ -58,7 +58,7 @@ export class Database extends AbstractStore {
     if (!this.listeners[store.id]) {
       //console.log(`[${this.id}]: listening for set-truth on [${store.id}]`);
       this.listeners[store.id] = store.listen('set-truth', () => {
-        console.log(`[${store.id}]: set-truth, updating [${this.id}]`);
+        //console.log(`[${store.id}]: set-truth, updating [${this.id}]`);
         this._referenceStore(store);
       });
     }
