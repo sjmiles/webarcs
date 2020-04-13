@@ -27,15 +27,16 @@ return class extends Particle {
   }
   update({tmdbResults}) {
     this.tmdbResults = tmdbResults;
-    const length = tmdbResults ? tmdbResults.length : 0;
+    const length = tmdbResults ? Object.keys(tmdbResults).length : 0;
     if (length !== this.lastLength) {
       this.lastLength = length;
-      this.output({tmdbSelection: tmdbResults ? tmdbResults[0] : null});
+      const tmdbSelection = tmdbResults ? Object.values(tmdbResults)[0] : null;
+      this.output({tmdbSelection});
     }
   }
   render({tmdbResults}) {
     if (tmdbResults) {
-      const sorted = tmdbResults.slice(0);
+      const sorted = Object.values(tmdbResults);
       sorted.sort((a, b) => -String(a.date).localeCompare(String(b.date)));
       const tiles = this.renderTiles(sorted);
       return {

@@ -15,6 +15,7 @@ const template = Xen.Template.html`
   :host {
     display: inline-block;
     line-height: 0;
+    user-select: none;
   }
   * {
     box-sizing: border-box;
@@ -45,7 +46,7 @@ const template = Xen.Template.html`
 <device><img src="{{device}}"></device>
 `;
 
-export class PeerIcon extends Xen.Async {
+export class TenantIcon extends Xen.Async {
   static get observedAttributes() {
     return ['avatar', 'device'];
   }

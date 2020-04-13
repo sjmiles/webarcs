@@ -53,34 +53,33 @@ const tenants = specs.map(({persona, device, peers}) => ({
   avatar: `../assets/users/${persona}.png`,
   device: `../assets/devices/${device}.png`,
   peers,
-  dev: getDevice(`${persona}:${device}`)
+  dev: getDevice(`${persona}:${device}`),
+  arcs: Object.create(null)
 }));
+// for debugging only
+window.tenants = tenants;
 
-const getTenant = id => tenants.find(d => d.id === id);
-
-const adaptInnerPeers = peers => {
+const mapTentantsFromPeers = peers => {
   return Object.keys(peers).map(peer => {
     return getTenant(peer);
   });
 };
-
+const getTenant = id => tenants.find(d => d.id === id);
 tenants.forEach(tenant => {
-  tenant.peers = adaptInnerPeers(tenant.peers);
+  tenant.tenants = mapTentantsFromPeers(tenant.peers);
 });
 
-// for debugging only
-window.tenants = tenants;
-
-const {peersView, tenantViews} = window;
+const {tenantsView, tenantViews} = window;
 
 tenants.forEach(tenant => {
-  tenant.view = tenantViews.appendChild(document.createElement('peer-view'));
-  tenant.view.peer = tenant;
+  tenant.view = tenantViews.appendChild(document.createElement('tenant-view'));
+  tenant.view.tenant = tenant;
 });
 
-peersView.peers = tenants;
+tenantsView.tenants = tenants;
+
 let selected;
-peersView.addEventListener('select', ({detail: tenant}) => {
+tenantsView.addEventListener('select', ({detail: tenant}) => {
   if (selected && selected !== tenant) {
     selected.style.display = '';
   }
@@ -88,26 +87,7 @@ peersView.addEventListener('select', ({detail: tenant}) => {
   selected.style.display = 'block';
 });
 
-// mock up arc stores
-
-const createMockStore = () => {
-  const n = Math.floor(Math.random() * 10);
-  const store = new Store(`mock-arc-store-${n}`);
-  store.change(data => {
-    data['01-01'] = {name: `foo-${n}`};
-    data['01-02'] = {name: `bar-${n}`};
-  });
-  return store;
-};
-
-devices[0].context.add(createMockStore());
-devices[2].context.add(createMockStore());
-
-// below here: welding on bits from lib.a
-
-const container = tenants[0].view;
-const composer = new Composer(container);
-const arc = new Arc({id: 'multi-arc', name: 'one', composer});
+// arcs
 
 const recipe = {
   // a recipe is an array of slots
@@ -115,30 +95,37 @@ const recipe = {
     // a slot is an array of either particles or slots
     // `particle` is a keyword: conflicts? maybe use `$<keyword>`?
     // probably keywords should be symbols, but that seems bad for JSON
+  //   particle: 'Frame',
+  //   content: [{
+  //     particle: 'Books'
+  //   }]
+  // }, {
     particle: 'Frame',
     content: [{
-      particle: 'Books'
+      particle: {
+        kind: 'Chat/ChatWrite',
+        entries: 'entries'
+      }
+    },{
+      particle: {
+        kind: 'Chat/ChatList',
+        entries: 'entries'
+      }
     }]
   }, {
-    // particle: 'Frame',
-    // content: [{
-      particle: 'Chat/ChatList'
-    // }]
-  }, {
-  //   particle: 'TMDBSearch'
     particle: {
       // `kind` is a keyword: conflicts? maybe use `$<keyword>`?
       kind: 'TMDBSearch',
-      // bind `particle::query` to `arc::tmdbQuery`
-      query: 'tmdbQuery',
-      tmdbResults: {
-        //private: true,
-        collection: true
+  //     // bind `particle::query` to `arc::tmdbQuery`
+  //     query: 'tmdbQuery',
+  //     tmdbResults: {
+  //       //private: true,
+  //       collection: true
+  //     }
       }
-    }
-  }, {
-    // particle: 'Frame',
-    // content: [{
+    }, {
+  //   // particle: 'Frame',
+  //   // content: [{
       particle: {
         kind: 'TMDBGrid',
         tmdbResults: 'tmdbResults'
@@ -152,25 +139,37 @@ const recipe = {
   }]
 };
 
+const buildArcStore = (arc, name, device) => {
+  // create a store
+  const store = new Store(`${arc.id}:store:${name}`);
+  store.name = name;
+  // store changes cause host updates
+  store.listen('set-truth', () => {
+    arc.updateHosts(store.pojo);
+  });
+  // initialize data
+  store.change(data => data[name] = {});
+  // add to context
+  device.context.add(store);
+  return store;
+};
+
 (async () => {
   const runtime = await initContext();
-  // instantiate our one recipe
-  await runtime.instantiate(arc, recipe);
-  // create a store
-  const tmdbResults = new Store(`arc-tmdbResults`);
-  // store changes cause host updates
-  tmdbResults.listen('set-truth', () => {
-    arc.updateHosts(tmdbResults.pojo);
-  });
-  // host output changes store
-  arc.mergeOutputs = (host, outputs) => {
-    if (outputs.tmdbResults) {
-      tmdbResults.change(data => data.tmdbResults = outputs.tmdbResults);
-    }
-    //console.warn(host, outputs);
-  };
-  // initialize data
-  tmdbResults.change(data => data.tmdbResults = {});
-  // kick things off (?)
-  //arc.update();
+  await createmArc(runtime, tenants[0]);
+  await createmArc(runtime, tenants[1]);
 })();
+
+const createmArc = async (runtime, tenant) => {
+  const device = tenant.dev;
+  // crete arc
+  const composer = new Composer(tenant.view);
+  const arc = new Arc({id: 'starter-arc', name: 'arcname', composer});
+  tenant.arcs[arc.id] = arc;
+  // TODO(sjmiles): create stores after instantiating recipe for update effects
+  // instantiate recipe
+  await runtime.instantiate(arc, recipe);
+  // create stores
+  arc.stores.push(buildArcStore(arc, 'tmdbResults', device));
+  arc.stores.push(buildArcStore(arc, 'entries', device));
+};

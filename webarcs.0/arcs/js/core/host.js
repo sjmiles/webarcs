@@ -34,9 +34,9 @@ export class Host extends Particle {
     requestUpdate(inputs) {
         return this.particle.requestUpdate(inputs);
     }
-    render(inputs) {
-        return this.particle.render(inputs);
-    }
+    // public render(inputs) {
+    //   return this.particle.render(inputs);
+    // }
     handleEvent(eventlet) {
         return this.particle.handleEvent(eventlet);
     }

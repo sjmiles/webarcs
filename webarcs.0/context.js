@@ -23,7 +23,8 @@ const particles = [
   'TMDBSearch',
   'TMDBGrid',
   'TMDBDetail',
-  'Chat/ChatList'
+  'Chat/ChatList',
+  'Chat/ChatWrite',
 ];
 
 export const initContext = async () => {

@@ -40,10 +40,14 @@ export class Runtime {
   }
   public async addParticle(arc: Arc, spec: ParticleSpec, container: Container) {
     const id = `${arc.id}:${spec.kind}(${makeId()})`;
-    log(`adding particle ${id}`);
     const particle = await this.createParticle(arc, spec, container);
-    const host = new Host(id, container, spec, particle);
-    arc.addHost(host);
+    if (particle) {
+      log(`adding particle ${id}`);
+      const host = new Host(id, container, spec, particle);
+      arc.addHost(host);
+    } else {
+      log.error(`failed to create particle "${id}" (is the kind registered?)`)
+    }
   }
   public async createParticle(arc: Arc, spec: ParticleSpec, container: Container): Promise<Host> {
     // `spec` is just a String for now

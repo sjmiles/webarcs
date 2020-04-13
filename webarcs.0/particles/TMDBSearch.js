@@ -47,7 +47,11 @@ return class extends Particle {
     // support mapping fields to our entity schema
     const map = result => this.resultToEntity(result);
     // construct entity data
-    return results.filter(filter).map(map);
+    const list = results.filter(filter).map(map);
+    // convert to collection
+    const collection = {};
+    list.forEach(entity => collection[entity.id] = entity);
+    return collection;
   }
   resultToEntity({id, name, title, media_type, adult, overview, backdrop_path, poster_path, first_air_date, release_date}) {
     return {

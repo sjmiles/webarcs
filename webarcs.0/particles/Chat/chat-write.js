@@ -25,7 +25,7 @@ const template = Xen.html`
 
 export class ChatWrite extends Xen.Async {
   static get observedAttributes() {
-    return ['userid'];
+    return ['userid', 'entries'];
   }
   get template() {
     return template;

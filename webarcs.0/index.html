@@ -19,12 +19,13 @@
   [toolbar] {
     background-color: var(--ui-bg-2);
   }
-  peers-view {
+  tenants-view {
     width: 120px;
     background-color: var(--ui-bg-2);
+    user-select: none;
     /* border: 1px solid magenta; */
   }
-  peer-view {
+  tenant-view {
     display: none;
     flex: 1;
   }
@@ -37,9 +38,9 @@
 
 <div flex-container>
   <div id="tenantViews" flex flex-container>
-    <!-- <peer-view flex id="peerView"></peer-view> -->
+    <!-- <tenant-view flex id="tenantView"></tenant-view> -->
   </div>
-  <peers-view id="peersView"></peers-view>
+  <tenants-view id="tenantsView"></tenants-view>
 </div>
 
 <script src="../node_modules/automerge/dist/automerge.js"></script>

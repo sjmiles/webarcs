@@ -31,10 +31,10 @@ const template = Xen.Template.html`
   cx-tabs {
     background-color: var(--ui-bg-4);
   }
-  [peers] {
+  [tenants] {
     zoom: 0.5;
   }
-  [peers] > * {
+  [tenants] > * {
     margin: 0 4px;
   }
   [database] {
@@ -49,10 +49,10 @@ const template = Xen.Template.html`
 </style>
 
 <div banner>
-  <peer-icon avatar="{{avatar}}" device="{{device}}"></peer-icon>
+  <tenant-icon avatar="{{avatar}}" device="{{device}}"></tenant-icon>
   <span>{{id}}</span>
   <span flex></span>
-  <span peers>{{peers}}</span>
+  <span tenants>{{tenants}}</span>
 </div>
 
 <cx-tabs on-select="onTabSelect">
@@ -65,13 +65,13 @@ const template = Xen.Template.html`
 <pre page show$="{{showDatabase}}" database unsafe-html="{{database}}"></pre>
 `;
 
-const peerTemplate = Xen.Template.html`
-  <peer-icon avatar="{{avatar}}" device="{{device}}"></peer-icon>
+const tenantTemplate = Xen.Template.html`
+  <tenant-icon avatar="{{avatar}}" device="{{device}}"></tenant-icon>
 `;
 
-export class PeerView extends Xen.Async {
+export class TenantView extends Xen.Async {
   static get observedAttributes() {
-    return ['peer'];
+    return ['tenant'];
   }
   get template() {
     return template;
@@ -81,20 +81,36 @@ export class PeerView extends Xen.Async {
       selected: 1
     };
   }
-  render({peer}, {selected}) {
+  render({tenant}, {selected}) {
     return {
-      ...peer,
-      peers: {
-        template: peerTemplate,
-        models: this.renderPeers(peer)
+      ...tenant,
+      tenants: {
+        template: tenantTemplate,
+        models: this.renderTenants(tenant)
       },
-      database: peer.dev.context.dump(),
+      database: this.renderDatabase(tenant),
       showArc: (selected === 1),
       showDatabase: (selected === 2)
     };
   }
-  renderPeers({peers}) {
-    return peers;
+  renderTenants({tenants}) {
+    return tenants;
+  }
+  renderDatabase(tenant) {
+    return `${tenant.dev.context.dump()}`;
+    //
+    // const stores = [];
+    // Object.values(tenant.arcs).forEach(arc => {
+    //   stores.push(arc.stores.map(store => store.dump()).join('\n'));
+    // });
+    // return `${tenant.dev.context.dump()}\n${stores.join('')}`;
+    //
+    // const arcs = Object.keys(tenant.arcs).join(', ');
+    // const stores = [];
+    // Object.values(tenant.arcs).forEach(arc => {
+    //   stores.push(`${arc.id}.stores = [${arc.stores.map(store => store.id).join(', ')}]\n`);
+    // });
+    // return `${tenant.dev.context.dump()}\n${arcs}\n${stores}`;
   }
   onTabSelect({currentTarget: {value: selected}}) {
     this.state = {selected};

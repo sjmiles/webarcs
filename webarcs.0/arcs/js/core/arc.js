@@ -52,6 +52,13 @@ class HostNexus extends DataNexus {
         host.requestUpdate(hostInputs);
     }
     mergeOutputs(host, outputs) {
+        this.stores.forEach(store => {
+            const { name } = store;
+            if (outputs[name]) {
+                store.change(data => data[name] = outputs[name]);
+            }
+            //console.warn(host, outputs);
+        });
         // const hostOutputs = this.computeHostOutputs(host, outputs);
         // if (Object.keys(hostOutputs.private).length) {
         //   this.hnlog(`mergeOutputs[${host.id}]: produced private data`, Object.keys(hostOutputs.private));
@@ -67,10 +74,11 @@ class HostNexus extends DataNexus {
         const hostInputs = {};
         // ad-hoc data translation
         Object.keys(host.spec).forEach(name => {
+            // either 'kind' keyword, or a property name
             if (name !== 'kind') {
-                let sourceName = name;
                 const propSpec = host.spec[name];
                 // name bindings
+                let sourceName = name;
                 if (typeof propSpec === 'string') {
                     sourceName = propSpec;
                 }
@@ -80,21 +88,21 @@ class HostNexus extends DataNexus {
                     hostInputs[name] = value;
                 }
                 else if (sourceName in inputs) {
-                    // supply requested inputs
+                    // finally use value from inputs
                     hostInputs[name] = inputs[sourceName];
                 }
             }
         });
         return hostInputs;
     }
-    computeHostOutputs(host, outputs) {
-        const hostOutputs = {
-            private: {},
-            public: {}
-        };
-        Object.keys(outputs).forEach(name => this.computeHostOutputProperty(name, host, outputs, hostOutputs));
-        return hostOutputs;
-    }
+    // protected computeHostOutputs(host, outputs) {
+    //   const hostOutputs = {
+    //     private: {},
+    //     public: {}
+    //   };
+    //   Object.keys(outputs).forEach(name => this.computeHostOutputProperty(name, host, outputs, hostOutputs));
+    //   return hostOutputs;
+    // }
     computeHostOutputProperty(name, host, outputs, hostOutputs) {
         let target = hostOutputs.public;
         let targetName = name;
@@ -132,6 +140,7 @@ export class Arc extends HostNexus {
     */
     constructor({ composer, id }) {
         super(id || `arc(${makeId()})`);
+        this.stores = [];
         this.log = logFactory(logFactory.flags.all, `Arc[${id}]`, 'blue');
         this.composer = composer;
         composer.onevent = (pid, eventlet) => this.onComposerEvent(pid, eventlet);
@@ -158,7 +167,7 @@ export class Arc extends HostNexus {
         this.updateHosts(inputs);
     }
     updateHosts(inputs) {
-        this.log(`update({${Object.keys(inputs)}})`);
+        this.log(`updateHosts({${Object.keys(inputs)}})`);
         this.hosts.forEach((p) => this.updateHost(p, inputs));
     }
     async addHost(host) {

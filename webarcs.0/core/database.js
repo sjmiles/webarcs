@@ -75,6 +75,6 @@ export class Database extends AbstractStore {
     const data = this.pojo.docs;
     return Object.keys(data).map(key => `store: ${key}
 ${JSON.stringify(data[key], null, '  ')}
-`).join('');
+`).join('\n');
   }
 }

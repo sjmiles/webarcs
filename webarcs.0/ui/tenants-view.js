@@ -18,11 +18,11 @@ const template = Xen.Template.html`
   * {
     box-sizing: border-box;
   }
-  [peers] {
+  [tenants] {
     line-height: 0;
     padding: 4px 0;
   }
-  [peer] {
+  [tenant] {
     display: block;
     /* border: 1px solid silver; */
     padding: 8px;
@@ -30,24 +30,24 @@ const template = Xen.Template.html`
     text-align: center;
     /* border: 2px solid transparent; */
   }
-  [peer][selected] {
+  [tenant][selected] {
     /* border: 2px solid lightblue; */
     border-radius: 8px;
     background-color: var(--ui-bg-hi-1);
   }
 </style>
-<div peers>{{peers}}</div>
+<div tenants>{{tenants}}</div>
 `;
 
-const peerTemplate = Xen.Template.html`
-  <div peer selected$="{{selected}}" key="{{i}}" on-click="onPeerClick">
-    <peer-icon avatar="{{avatar}}" device="{{device}}"></peer-icon>
+const tenantTemplate = Xen.Template.html`
+  <div tenant selected$="{{selected}}" key="{{i}}" on-click="onTenantClick">
+    <tenant-icon avatar="{{avatar}}" device="{{device}}"></tenant-icon>
   </div>
 `;
 
-export class PeersView extends Xen.Async {
+export class TenantsView extends Xen.Async {
   static get observedAttributes() {
-    return ['peers'];
+    return ['tenants'];
   }
   get template() {
     return template;
@@ -55,11 +55,11 @@ export class PeersView extends Xen.Async {
   getInitialState() {
     return {selected: 0};
   }
-  update({peers}, {selected}) {
-    this.fire('select', peers[selected]);
+  update({tenants}, {selected}) {
+    this.fire('select', tenants[selected]);
   }
-  render({peers}, {selected}) {
-    const models = peers.map(({id, avatar, device}, i) => ({
+  render({tenants}, {selected}) {
+    const models = tenants.map(({id, avatar, device}, i) => ({
       i,
       id,
       avatar,
@@ -67,13 +67,13 @@ export class PeersView extends Xen.Async {
       selected: i === selected
     }));
     return {
-      peers: {
-        template: peerTemplate,
+      tenants: {
+        template: tenantTemplate,
         models
       }
     };
   }
-  onPeerClick(e) {
+  onTenantClick(e) {
     const {key} = e.currentTarget;
     this.state = {selected: key};
   }

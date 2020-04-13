@@ -7,12 +7,12 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
-import {PeersView} from './peers-view.js';
-import {PeerIcon} from './peer-icon.js';
-import {PeerView} from './peer-view.js';
+import {TenantsView} from './tenants-view.js';
+import {TenantIcon} from './tenant-icon.js';
+import {TenantView} from './tenant-view.js';
 
-window.customElements.define('peers-view', PeersView);
-window.customElements.define('peer-icon', PeerIcon);
-window.customElements.define('peer-view', PeerView);
+window.customElements.define('tenants-view', TenantsView);
+window.customElements.define('tenant-icon', TenantIcon);
+window.customElements.define('tenant-view', TenantView);
 
 import '../../elements/corellia-xen/cx-tabs.js';
