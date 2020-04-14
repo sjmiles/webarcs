@@ -153,19 +153,19 @@ export class Arc extends HostNexus {
         }
     }
     // override to listen-to/control mutation events
-    onchange() {
-        this.update();
-    }
-    onstorechange() {
-        this.update();
-    }
-    update() {
-        const inputs = {
-        // ...this.stores.public.toSerializable(),
-        // ...this.stores.private.toSerializable()
-        };
-        this.updateHosts(inputs);
-    }
+    // public onchange() {
+    //   this.update();
+    // }
+    // protected onstorechange() {
+    //   this.update();
+    // }
+    // public update() {
+    //   const inputs = {
+    //     // ...this.stores.public.toSerializable(),
+    //     // ...this.stores.private.toSerializable()
+    //   };
+    //   this.updateHosts(inputs);
+    // }
     updateHosts(inputs) {
         this.log(`updateHosts({${Object.keys(inputs)}})`);
         this.hosts.forEach((p) => this.updateHost(p, inputs));

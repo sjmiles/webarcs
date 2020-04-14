@@ -7,7 +7,7 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
-
+import {Store} from '../../../core/store.js';
 import {logFactory} from '../utils/log.js';
 
 /**
@@ -28,10 +28,8 @@ type ParticleSpec = {
 type Container = string;
 
 export class Runtime {
-  private registry;
-  constructor() {
-    this.registry = {};
-  }
+  device;
+  private registry = {};
   register(name, factory) {
     this.registry[name] = factory;
   }
@@ -41,6 +39,7 @@ export class Runtime {
   public async addParticle(arc: Arc, spec: ParticleSpec, container: Container) {
     const id = `${arc.id}:${spec.kind}(${makeId()})`;
     const particle = await this.createParticle(arc, spec, container);
+    particle.id = id;
     if (particle) {
       log(`adding particle ${id}`);
       const host = new Host(id, container, spec, particle);
@@ -48,12 +47,51 @@ export class Runtime {
     } else {
       log.error(`failed to create particle "${id}" (is the kind registered?)`)
     }
+    return particle;
   }
   public async createParticle(arc: Arc, spec: ParticleSpec, container: Container): Promise<Host> {
     // `spec` is just a String for now
     const factory = this.registry[spec.kind];
     if (factory) {
       return await factory();
+    }
+  }
+  public createArcStores(arc) {
+    arc.hosts.forEach(host => this.createParticleStores(arc, host));
+  }
+  public createParticleStores(arc, host) {
+    Object.keys(host.spec).forEach(key => {
+      switch(key) {
+        case 'kind':
+          break;
+        default: {
+          const store = this.requireStore(arc, host.spec[key]);
+          if (store) {
+            this.device.context.add(store);
+          }
+        }
+      }
+    });
+  }
+  requireStore(arc: Arc, name) {
+    const id = `${arc.id}:store:${name}`;
+    if (!arc.stores.find(s => s.id === id)) {
+      log(`createStore: creating ${id} [${this.device.id}]`);
+      const store = new Store(`${arc.id}:store:${name}`);
+      store.name = name;
+      // store changes cause host updates
+      store.listen('set-truth', () => {
+        arc.updateHosts(store.pojo);
+      });
+      // initialize data
+      store.change(data => data[name] = {});
+      // add to context
+      this.device.context.add(store);
+      arc.stores.push(store);
+      return store;
+    } else {
+      log(`createStore: store ${id} already exists`);
+      return null;
     }
   }
 };

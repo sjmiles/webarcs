@@ -39,32 +39,53 @@ const log = logFactory(logFactory.flags.ergo, 'recipe', 'purple');
 //     particle: 'SortArray'     // `root` contains 'SortArray' particles
 //   }]
 // }
-
+//
 export class Recipe {
   static async instantiate(runtime, arc, recipe, container?) {
     if (Array.isArray(recipe)) {
       recipe = {_: recipe};
     }
-    await Promise.all(Object.keys(recipe).map(async key => {
-      await this.instantiateRecipeNode(runtime, arc, key, recipe[key], container);
-    }));
-  }
-  static async instantiateRecipeNode(runtime, arc, key, info, container) {
-    if (key === 'particle') {
+    let particle;
+    for (const key in recipe) {
+      let info = recipe[key];
       if (typeof info === 'string') {
         info = {kind: info};
       }
-      log(`recipe: adding ${info.kind} particle`);
-      await runtime.addParticle(arc, info, container);
-    } else {
-      let node = info;
-      if (!Array.isArray(node)) {
-        node = [node]
+      if (key === 'particle') {
+        particle = await this.instantiateParticle(runtime, arc, info, container);
+      } else {
+        await this.instantiateSlot(runtime, arc, key, info, particle, container);
       }
-      log(`recipe: populating [${key}]...`);
-      await Promise.all(node.map(r => this.instantiate(runtime, arc, r, key)));
     }
+    // await Promise.all(Object.keys(recipe).map(async key => {
+    //   let info = recipe[key];
+    //   if (typeof info === 'string') {
+    //     info = {kind: info};
+    //   }
+    //   if (key === 'particle') {
+    //     particle = await this.instantiateParticle(runtime, arc, info, container);
+    //   } else {
+    //     await this.instantiateSlot(runtime, arc, key, info, particle, container);
+    //   }
+    //   //await this.consumeRecipeNode(runtime, arc, key, recipe[key], container);
+    // }));
+    runtime.createArcStores(arc);
+  }
+  static async instantiateParticle(runtime, arc, info, container) {
+    if (typeof info === 'string') {
+      info = {kind: info};
+    }
+    log(`adding ${info.kind} particle`);
+    return await runtime.addParticle(arc, info, container);
+  }
+  static async instantiateSlot(runtime, arc, key, info, particle, container) {
+    if (!Array.isArray(info)) {
+      info = [info]
+    }
+    //container = container ? `${container}:${key}`: key;
+    //log(`populating [${container}]...[${particle ? particle.id : 'no particle'}]`);
+    container = particle ? `${particle.id}#${key}` : key;
+    log(`populating [${container}]`);
+    await Promise.all(info.map(r => this.instantiate(runtime, arc, r, container)));
   }
 }
-
-

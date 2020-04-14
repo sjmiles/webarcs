@@ -40,11 +40,10 @@ const devices = specs.map(spec => {
   device.hub = new Hub(device);
   return device;
 });
-
-const getDevice = id => devices.find(d => d.id === id);
-
 // for debugging only
 window.devices = devices;
+
+const getDevice = id => devices.find(d => d.id === id);
 
 // in theory, format above is easy to read/write; here we make it ready to consume
 
@@ -84,7 +83,7 @@ tenantsView.addEventListener('select', ({detail: tenant}) => {
     selected.style.display = '';
   }
   selected = tenant.view;
-  selected.style.display = 'block';
+  selected.style.display = 'flex';
 });
 
 // arcs
@@ -104,7 +103,8 @@ const recipe = {
     content: [{
       particle: {
         kind: 'Chat/ChatWrite',
-        entries: 'entries'
+        entries: 'entries',
+        userid: 'userid'
       }
     },{
       particle: {
@@ -113,63 +113,63 @@ const recipe = {
       }
     }]
   }, {
-    particle: {
-      // `kind` is a keyword: conflicts? maybe use `$<keyword>`?
-      kind: 'TMDBSearch',
-  //     // bind `particle::query` to `arc::tmdbQuery`
-  //     query: 'tmdbQuery',
-  //     tmdbResults: {
-  //       //private: true,
-  //       collection: true
-  //     }
-      }
-    }, {
-  //   // particle: 'Frame',
-  //   // content: [{
+    particle: 'Frame',
+    content: [{
       particle: {
-        kind: 'TMDBGrid',
-        tmdbResults: 'tmdbResults'
-      }
-    // }]
-  // }, {
-  //   particle: {
-  //     kind: 'TMDBDetail',
-  //     tmdbSelection: 'tmdbSelection'
-  //   }
+        // `kind` is a keyword: conflicts? maybe use `$<keyword>`?
+        kind: 'TMDBSearch',
+    //     // bind `particle::query` to `arc::tmdbQuery`
+    //     query: 'tmdbQuery',
+    //     tmdbResults: {
+    //       //private: true,
+    //       collection: true
+    //     }
+        }
+      }, {
+    //   // particle: 'Frame',
+    //   // content: [{
+        particle: {
+          kind: 'TMDBGrid',
+          tmdbResults: 'tmdbResults'
+        }
+      // }]
+    // }, {
+    //   particle: {
+    //     kind: 'TMDBDetail',
+    //     tmdbSelection: 'tmdbSelection'
+    //   }
+    }]
   }]
 };
 
-const buildArcStore = (arc, name, device) => {
-  // create a store
-  const store = new Store(`${arc.id}:store:${name}`);
-  store.name = name;
-  // store changes cause host updates
-  store.listen('set-truth', () => {
-    arc.updateHosts(store.pojo);
-  });
-  // initialize data
-  store.change(data => data[name] = {});
-  // add to context
-  device.context.add(store);
-  return store;
-};
-
-(async () => {
-  const runtime = await initContext();
-  await createmArc(runtime, tenants[0]);
-  await createmArc(runtime, tenants[1]);
-})();
-
-const createmArc = async (runtime, tenant) => {
-  const device = tenant.dev;
+const createArc = async (tenant, id, recipe) => {
+  const {view, arcs, runtime} = tenant;
   // crete arc
-  const composer = new Composer(tenant.view);
-  const arc = new Arc({id: 'starter-arc', name: 'arcname', composer});
-  tenant.arcs[arc.id] = arc;
+  const composer = new Composer(view);
+  const arc = new Arc({id, name: 'arcname', composer});
+  // record it
+  arcs[arc.id] = arc;
   // TODO(sjmiles): create stores after instantiating recipe for update effects
   // instantiate recipe
   await runtime.instantiate(arc, recipe);
-  // create stores
-  arc.stores.push(buildArcStore(arc, 'tmdbResults', device));
-  arc.stores.push(buildArcStore(arc, 'entries', device));
 };
+
+(async () => {
+  await Promise.all(tenants.map(async tenant => {
+    tenant.runtime = await initContext();
+    // TODO(sjmiles): reconcile tenant.device, tenant.dev, tenant.runtime.device
+    tenant.runtime.device = tenant.dev;
+    //
+    // const profile = new Store(`${tenant.dev.id}:store:profile`);
+    // tenant.dev.context.add(profile);
+    //
+  }));
+  //
+  await createArc(tenants[0], 'starter-arc', recipe);
+  let store = tenants[0].arcs['starter-arc'].stores.find(s => s.name === 'userid');
+  store.change(truth => truth.userid = 'Moe');
+  //
+  await createArc(tenants[1], 'starter-arc', recipe);
+  store = tenants[1].arcs['starter-arc'].stores.find(s => s.name === 'userid');
+  store.change(truth => truth.userid = 'Lenny');
+})();

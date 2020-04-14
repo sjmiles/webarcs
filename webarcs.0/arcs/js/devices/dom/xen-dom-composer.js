@@ -15,6 +15,7 @@ import { Xen } from '../../../../../xen/xen-async.js';
 import { logFactory } from '../../utils/log.js';
 const log = logFactory(logFactory.flags.render, 'render', 'red');
 ;
+const sanitizeId = id => id.replace(/[)(:]/g, '_');
 export class Composer {
     constructor(root) {
         this.root = root || document.body;
@@ -26,10 +27,7 @@ export class Composer {
         log('render:', { id, container, template, model });
         let slot = this.slots[id];
         if (!slot) {
-            let parent = this.root;
-            if (container && container !== 'root') {
-                parent = parent.querySelector(`[slot=${container}]`);
-            }
+            const parent = this.findContainer(container);
             if (!parent) {
                 this.pendingPackets.push(packet);
                 //log.warn(`container unavailable for slot`, id);
@@ -40,6 +38,23 @@ export class Composer {
         }
         slot.set(model);
         this.processPendingPackets();
+    }
+    findContainer(container) {
+        let node = this.root;
+        if (container && container !== 'root') {
+            const [particle, slot] = container.split('#');
+            const owner = deepQuerySelector(node, `#${sanitizeId(particle)}`);
+            node = deepQuerySelector(owner, `[slot=${slot}]`);
+            // const slots = container.split(':');
+            // slots.forEach(slot => {
+            //   if (slot !== 'root') {
+            //     node = deepQuerySelector(node, `[slot=${slot}]`);
+            //     //node = node.querySelector(`[slot=${slot}]`);
+            //   }
+            // });
+            log(container, node);
+        }
+        return node;
     }
     processPendingPackets() {
         const packets = this.pendingPackets;
@@ -52,9 +67,12 @@ export class Composer {
         }
     }
     generateSlot(id, template, parent) {
+        const container = parent.appendChild(document.createElement('div'));
+        container.id = sanitizeId(id);
+        const root = container.attachShadow({ mode: `open` });
         const slot = Xen.Template
             .stamp(template)
-            .appendTo(parent)
+            .appendTo(root)
             .events(this.mapEvent.bind(this, id));
         return slot;
     }
@@ -89,3 +107,17 @@ export class Composer {
     }
 }
 ;
+const deepQuerySelector = (root, selector) => {
+    const find = (element, selector) => {
+        let result;
+        while (element && !result) {
+            result =
+                (element.matches && element.matches(selector) ? element : null)
+                    || find(element.firstElementChild, selector)
+                    || (element.shadowRoot && find(element.shadowRoot.firstElementChild, selector));
+            element = element.nextElementSibling;
+        }
+        return result;
+    };
+    return find(root || document.body, selector);
+};

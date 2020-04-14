@@ -7,7 +7,7 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
-export const particle = ({Particle}) => {
+export const particle = ({Particle, log}) => {
 
 const id = digits => {
   return Math.floor(Math.pow(10, digits-1)*2*(Math.random()*4 + 1));
@@ -41,12 +41,14 @@ return class extends Particle {
   onInputChange({data: {value: msg}}) {
     if (msg) {
       this.state = {value: ''};
-      const entries = this.inputs.entries || {};
+      let {entries, userid} = this.inputs;
+      entries = entries || {};
+      log(userid);
       const entry = {
         id: makeId(),
         time: Date.now(),
         msg,
-        userid: this.inputs.userid || ''
+        userid: userid || ''
       };
       entries[entry.id] = entry;
       //const entries = [];

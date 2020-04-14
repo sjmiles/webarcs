@@ -13,8 +13,9 @@ import {Xen} from '../../xen/xen-async.js';
 const template = Xen.Template.html`
 <style>
   :host {
-    display: block;
+    display: flex;
     font-size: 16px;
+    overflow: hidden;
   }
   * {
     box-sizing: border-box;
@@ -39,9 +40,13 @@ const template = Xen.Template.html`
   }
   [database] {
     padding: 8px;
+    font-size: 12px;
+    white-space: pre;
   }
   [page] {
     display: none;
+    flex: 1;
+    overflow: auto;
   }
   [show] {
     display: block;
@@ -62,7 +67,9 @@ const template = Xen.Template.html`
 </cx-tabs>
 
 <div page show$="{{showArc}}"><slot></slot></div>
-<pre page show$="{{showDatabase}}" database unsafe-html="{{database}}"></pre>
+<div page show$="{{showDatabase}}">
+  <div database unsafe-html="{{database}}"></div>
+</div>
 `;
 
 const tenantTemplate = Xen.Template.html`

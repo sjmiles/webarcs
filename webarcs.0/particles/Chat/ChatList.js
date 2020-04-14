@@ -38,7 +38,6 @@ return class extends Particle {
     return template;
   }
   render({entries}) {
-    entries = entries || [{userid: 'moe', time: Date.now(), msg: 'Test'}];
     return {
       entries: entries ? this.renderEntries(entries) : null
     };
