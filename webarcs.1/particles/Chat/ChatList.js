@@ -15,8 +15,8 @@ const template = Particle.html`
 <style>
   :host {
     display: block;
-    padding: 12px;
     font-size: 18px;
+    order: 1;
   }
   [entries] {
     margin-top: 4px;
@@ -24,12 +24,36 @@ const template = Particle.html`
   i {
     font-size: 75%;
   }
+  pre {
+    margin: 0;
+  }
+  [entry] {
+    padding: 4px 8px;
+    border: 1px dotted silver;
+    border-radius: 24px;
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+  }
+  tenant-icon {
+    margin: 0 10px;
+    width: 32px;
+    height: 32px;
+  }
+  [time] {
+    font-size: 75%;
+    font-style: italic;
+  }
 </style>
 
 <div entries>{{entries}}</div>
 
-<template entry>
-  <pre style="padding: 4px; border: 1px dotted silver; margin: 0;"><i>{{time}}</i> <span>{{entry}}</span></pre>
+<template entryTemplate>
+  <div entry>
+    <span time>{{time}}</span>
+    <tenant-icon avatar="{{avatar}}"></tenant-icon>
+    <span unsafe-html="{{entry}}"></span>
+  </div>
 </template>
 `;
 
@@ -48,14 +72,15 @@ return class extends Particle {
       .map(this.renderEntry)
       ;
     return {
-      $template: 'entry',
+      $template: 'entryTemplate',
       models
     };
   }
   renderEntry({userid, time, msg}) {
     return {
       time: new Date(time).toLocaleTimeString(),
-      entry: `[${userid}] ${msg}`
+      avatar: `../assets/users/${userid}.png`,
+      entry: msg
     };
   }
 };

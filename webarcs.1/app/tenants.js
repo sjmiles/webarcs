@@ -10,25 +10,31 @@
 
 const specs = [{
   device: 'mobile',
-  user: 'moe@simpsons.com',
+  user: 'moe@springfield.com',
   persona: 'moe',
-  peers: {'carl:mobile':1}
+  peers: ['edna:mobile', 'carl:mobile']
 }, {
   device: 'mobile',
-  user: 'carl@simpsons.com',
+  user: 'edna@springfield.edu',
+  persona: 'edna',
+  peers: ['moe:mobile', 'carl:mobile']
+}, {
+  device: 'mobile',
+  user: 'carl@springfield.com',
   persona: 'carl',
-  peers: {'moe:mobile':1, 'lenny:mobile':1}
+  peers: ['moe:mobile', 'lenny:mobile']
 }, {
   device: 'mobile',
-  user: 'lenny@simpsons.com',
+  user: 'lenny@springfield.com',
   persona: 'lenny',
-  peers: {'carl:mobile':1}
+  peers: ['carl:mobile', 'edna:mobile']
 }];
 
+// expand specs into tenant objects
 const tenants = specs.map(({persona, device, peers}) => ({
   deviceKind: device,
   persona,
-  peers,
+  peers: peers.reduce((peers, peer) => (peers[peer] = true, peers), {}),
   id: `${persona}:${device}`,
   avataricon: `../assets/users/${persona}.png`,
   deviceicon: `../assets/devices/${device}.png`,
@@ -41,6 +47,7 @@ const tenants = specs.map(({persona, device, peers}) => ({
 import {Hub} from '../arcs/build/data/hub.js';
 import {Database} from '../arcs/build/data/database.js';
 import {Runtime} from '../arcs/build/ergo/runtime.js';
+import {Composer} from '../arcs/build/platforms/dom/xen-dom-composer.js';
 import {initContext} from './context.js';
 
 const getTenant = id => tenants.find(d => d.id === id);
@@ -56,6 +63,8 @@ const processTenants = async () => {
     const runtime = new Runtime(tenant);
     tenant.runtime = runtime;
     tenant.context = new Database(`${tenant.id}:context`);
+    tenant.root = document.createElement('div');
+    tenant.composer = new Composer(tenant.root);
     // TODO(sjmiles): rename: registers Particle kinds with runtime
     await initContext(runtime);
     // convert tenant.peers (specs) into tenant.tenants (connections)

@@ -62,7 +62,9 @@ export class TenantPages extends Xen.Async {
     const {tenants} = this.props;
     if (tenants) {
       const elts = this.host.querySelectorAll('tenant-view');
-      tenants.forEach((t, i) => t.view = elts[i]);
+      tenants.forEach((t, i) => {
+        elts[i].appendChild(t.composer.root);
+      });
     }
   }
 }

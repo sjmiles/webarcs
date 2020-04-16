@@ -20,9 +20,18 @@ const template = Particle.html`
   :host {
     display: block;
     padding: 4px;
+    order: 2;
+  }
+  button {
+    padding: 5px;
   }
   input {
-    width: 80%;
+    padding: 4px;
+    width: calc(100% - 86px);
+    font-size: 1.2em;
+    margin-right: 8px;
+    border-radius: 8px;
+    border: 1px solid #f4f4f4;
   }
 </style>
 

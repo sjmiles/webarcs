@@ -18,9 +18,13 @@ const template = Particle.html`
     padding: 2px;
     margin: 2px;
   }
+  [slot] {
+    display: flex;
+    flex-direction: column;
+  }
 </style>
 
-<div container>
+<div container xen:style="{{style}}">
   <div slot="content"></div>
 </div>
 
@@ -29,6 +33,11 @@ const template = Particle.html`
 return class extends Particle {
   get template() {
     return template;
+  }
+  render({padding}) {
+    return {
+      style: padding ? `padding: ${padding};` : ''
+    };
   }
 };
 

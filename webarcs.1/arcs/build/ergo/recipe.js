@@ -54,18 +54,6 @@ export class Recipe {
                 await this.instantiateSlot(runtime, arc, key, info, particle, container);
             }
         }
-        // await Promise.all(Object.keys(recipe).map(async key => {
-        //   let info = recipe[key];
-        //   if (typeof info === 'string') {
-        //     info = {kind: info};
-        //   }
-        //   if (key === 'particle') {
-        //     particle = await this.instantiateParticle(runtime, arc, info, container);
-        //   } else {
-        //     await this.instantiateSlot(runtime, arc, key, info, particle, container);
-        //   }
-        //   //await this.consumeRecipeNode(runtime, arc, key, recipe[key], container);
-        // }));
         this.createArcStores(runtime, arc);
     }
     static async instantiateParticle(runtime, arc, info, container) {
@@ -79,8 +67,6 @@ export class Recipe {
         if (!Array.isArray(info)) {
             info = [info];
         }
-        //container = container ? `${container}:${key}`: key;
-        //log(`populating [${container}]...[${particle ? particle.id : 'no particle'}]`);
         container = particle ? `${particle.id}#${key}` : key;
         log(`populating [${container}]`);
         await Promise.all(info.map(r => this.instantiate(runtime, arc, r, container)));
@@ -125,7 +111,7 @@ export class Recipe {
             runtime.tenant.context.add(store);
         }
         else {
-            log.warn('leaving no-share store out of context', store);
+            //log.warn('leaving no-share store out of context', store);
         }
         arc.stores.push(store);
         return store;

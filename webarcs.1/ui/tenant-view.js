@@ -43,18 +43,35 @@ const template = Xen.Template.html`
   [tenants] > * {
     margin: 0 4px;
   }
-  [database] {
+  [database] > div {
     padding: 8px;
     font-size: 12px;
     white-space: pre;
   }
+  [flex] {
+    flex: 1;
+  }
   [page] {
     display: none;
-    flex: 1;
     overflow: auto;
   }
   [show] {
     display: block;
+  }
+  [home] {
+    padding: 12px;
+  }
+  [arcItem] {
+    display: flex;
+    padding: 8px;
+  }
+  [dot] {
+    display: inline-block;
+    background-color: #ffc107;
+    border-radius: 100%;
+    width: 16px;
+    height: 16px;
+    margin: 0 8px;
   }
 </style>
 
@@ -71,14 +88,19 @@ const template = Xen.Template.html`
   <cx-tab>Database</cx-tab>
 </cx-tabs>
 
-<div page show$="{{showArc}}"><slot></slot></div>
-<div page show$="{{showDatabase}}">
-  <div database unsafe-html="{{database}}"></div>
+<div home page flex show$="{{showHome}}">{{home}}</div>
+<div arc page flex show$="{{showArc}}"><slot></slot></div>
+<div database page flex show$="{{showDatabase}}">
+  <div unsafe-html="{{database}}"></div>
 </div>
 `;
 
 const tenantTemplate = Xen.Template.html`
   <tenant-icon avatar="{{avataricon}}" device="{{deviceicon}}"></tenant-icon>
+`;
+
+const arcTemplate = Xen.Template.html`
+  <div arcItem><span dot></span><span name>{{name}}</span></div>
 `;
 
 export class TenantView extends Xen.Async {
@@ -93,16 +115,24 @@ export class TenantView extends Xen.Async {
       selected: 1
     };
   }
+  onTabSelect({currentTarget: {value: selected}}) {
+    this.state = {selected};
+  }
   render({tenant}, {selected}) {
     return {
       ...tenant,
+      showHome: (selected === 0),
+      showArc: (selected === 1),
+      showDatabase: (selected === 2),
+      home: {
+        template: arcTemplate,
+        models: this.renderHome(tenant)
+      },
+      database: tenant && this.renderDatabase(tenant),
       tenants: {
         template: tenantTemplate,
         models: tenant && this.renderTenants(tenant)
       },
-      database: tenant && this.renderDatabase(tenant),
-      showArc: (selected === 1),
-      showDatabase: (selected === 2)
     };
   }
   renderTenants({tenants}) {
@@ -111,7 +141,7 @@ export class TenantView extends Xen.Async {
   renderDatabase(tenant) {
     return `${tenant.context.dump()}`;
   }
-  onTabSelect({currentTarget: {value: selected}}) {
-    this.state = {selected};
+  renderHome(tenant) {
+    return Object.keys(tenant.arcs).map(name => ({name}));
   }
 }

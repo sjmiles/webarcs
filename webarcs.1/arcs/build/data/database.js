@@ -10,6 +10,8 @@
 import { AbstractStore } from './abstract-store.js';
 import { Store } from './store.js';
 import { Automerge } from './automerge.js';
+import { logFactory } from '../utils/log.js';
+const log = logFactory(logFactory.flags['database'] || logFactory.flags['all'], 'database', 'navy');
 export class Database extends AbstractStore {
     constructor(id) {
         super(id);
@@ -22,6 +24,7 @@ export class Database extends AbstractStore {
         if (!this.get(docId)) {
             this.add(new Store(docId, doc));
         }
+        log(`[${this.id}]: onDocsChanged(${docId})`);
         this.fire('doc-changed', docId);
     }
     get docs() {
@@ -33,9 +36,6 @@ export class Database extends AbstractStore {
     get data() {
         return this.docs;
     }
-    // get storeValues() {
-    //   return Object.values(this.stores);
-    // }
     forEachStore(iter) {
         Object.values(this.stores).forEach(iter);
     }
@@ -56,7 +56,7 @@ export class Database extends AbstractStore {
         if (!this.storeListeners[store.id]) {
             //console.log(`[${this.id}]: listening for set-truth on [${store.id}]`);
             this.storeListeners[store.id] = store.listen('set-truth', () => {
-                //console.log(`[${store.id}]: set-truth, updating [${this.id}]`);
+                log(`[${store.id}]: set-truth, updating [${this.id}]`);
                 this._referenceStore(store);
             });
         }

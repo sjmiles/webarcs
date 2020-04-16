@@ -18,9 +18,13 @@ const log = logFactory(logFactory.flags.render, 'render', 'red');
 const sanitizeId = id => id.replace(/[)(:]/g, '_');
 export class Composer {
     constructor(root) {
-        this.root = root || document.body;
+        this.root = root;
         this.slots = {};
         this.pendingPackets = [];
+    }
+    setRoot(root) {
+        this.root = root;
+        this.processPendingPackets();
     }
     render(packet) {
         const { id, container, content: { template, model } } = packet;

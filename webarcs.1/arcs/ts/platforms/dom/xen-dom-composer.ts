@@ -33,10 +33,14 @@ export class Composer {
   private root;
   private slots;
   private pendingPackets;
-  constructor(root) {
-    this.root = root || document.body;
+  constructor(root?) {
+    this.root = root;
     this.slots = {};
     this.pendingPackets = [];
+  }
+  setRoot(root) {
+    this.root = root;
+    this.processPendingPackets();
   }
   render(packet: RenderPacket) {
     const {id, container, content: {template, model}} = packet;

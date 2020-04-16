@@ -13,9 +13,13 @@ import {Xen} from '../../xen/xen-async.js';
 const template = Xen.Template.html`
 <style>
   :host {
-    display: inline-block;
+    position: relative;
+    display: inline-flex;
     line-height: 0;
     user-select: none;
+    white-space: normal;
+    width: 64px;
+    height: 64px;
   }
   * {
     box-sizing: border-box;
@@ -25,25 +29,34 @@ const template = Xen.Template.html`
     border: 3px solid silver;
     border-radius: 50%;
     overflow: hidden;
+    width: 100%;
+    height: 100%;
   }
   avatar > img {
     background-color: white;
-    width: 48px;
-    height: 48px;
+    width: 100%;
+    height: 100%;
   }
   device {
-    margin: -12px 0 0 -12px;
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    right: -14px;
+    bottom: 0px;
   }
   device > img {
     background-color: white;
     padding: 4px;
-    width: 32px;
-    height: 32px;
+    width: 100%;
+    height: 100%;
+  }
+  device[hidden] {
+    display: none;
   }
 </style>
 
 <avatar><img src="{{avatar}}"></avatar>
-<device><img src="{{device}}"></device>
+<device hidden="{{hideDevice}}"><img src="{{device}}"></device>
 `;
 
 export class TenantIcon extends Xen.Async {
@@ -54,6 +67,10 @@ export class TenantIcon extends Xen.Async {
     return template;
   }
   render({avatar, device}) {
-    return {avatar, device};
+    return {
+      avatar,
+      device: device || '',
+      hideDevice: !device
+    };
   }
 }

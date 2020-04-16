@@ -8,9 +8,6 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Arc} from '../arcs/build/core/arc.js';
-import {Composer} from '../arcs/build/platforms/dom/xen-dom-composer.js';
-
 export const recipe = {
   // a recipe is an array of slots
   root: [{
@@ -22,7 +19,13 @@ export const recipe = {
       particle: 'Books'
     }]
   }, {
-    particle: 'Frame',
+    particle: {
+      kind: 'Frame',
+      padding: {
+        share: false,
+        value: '24px 12px'
+      }
+    },
     content: [{
       particle: {
         kind: 'Chat/ChatWrite',
@@ -47,7 +50,9 @@ export const recipe = {
     }, {
       particle: {
         kind: 'TMDBGrid',
-        tmdbResults: 'tmdbResults'
+        tmdbResults: {
+          share: false
+        }
       }
     }, {
       particle: {
@@ -58,18 +63,60 @@ export const recipe = {
   }]
 };
 
-export const createArc = async (tenant, id) => {
-  // crete arc
-  const composer = new Composer(tenant.view);
-  const arc = new Arc({id, name: 'arcname', composer});
-  // record it
-  tenant.arcs[arc.id] = arc;
-  return arc;
+const chat = {
+  root: [{
+    particle: 'Frame',
+    content: [{
+      particle: 'Books'
+    }]
+  }, {
+    particle: {
+      kind: 'Frame',
+      padding: {
+        share: false,
+        value: '24px 12px'
+      }
+    },
+    content: [{
+      particle: {
+        kind: 'Chat/ChatWrite',
+        entries: 'entries',
+        userid: {
+          share: false
+        }
+      }
+    },{
+      particle: {
+        kind: 'Chat/ChatList',
+        entries: 'entries'
+      }
+    }]
+  }]
 };
 
-// const createTestArc = async (tenant, recipe) => {
-//   const id = `starter-arc`;
-//   await createArc(tenant, id, recipe);
-//   let store = tenant.arcs[id].stores.find(s => s.name === 'userid');
-//   store.change(truth => truth.userid = tenant.persona);
-// };
+const tv = {
+  // a recipe is an array of slots
+  root: [{
+    particle: 'Frame',
+    content: [{
+      particle: {
+        kind: 'TMDBSearch',
+        query: 'tmdbQuery',
+      }
+    }, {
+      particle: {
+        kind: 'TMDBGrid',
+        tmdbResults: {
+          share: false
+        }
+      }
+    }, {
+      particle: {
+        kind: 'TMDBDetail',
+        tmdbSelection: 'tmdbSelection'
+      }
+    }]
+  }]
+};
+
+export const recipes = {chat, tv};

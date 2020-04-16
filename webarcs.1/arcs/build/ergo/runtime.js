@@ -11,7 +11,7 @@ import { Host } from '../core/host.js';
 import { Recipe } from './recipe.js';
 import { logFactory } from '../utils/log.js';
 import { makeId } from '../utils/id.js';
-const log = logFactory(logFactory.flags.ergo, 'runtime', 'purple');
+const log = logFactory(logFactory.flags.ergo, 'runtime', 'magenta');
 export class Runtime {
     constructor(tenant) {
         this.registry = {};

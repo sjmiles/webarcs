@@ -12,12 +12,12 @@ import { Database } from './database.js';
 import { EventEmitter } from '../core/event-emitter.js';
 import { Automerge } from './automerge.js';
 import { logFactory } from '../utils/log.js';
+// build logger for 'hub' (if enabled)
+const log = logFactory(logFactory.flags['hub'] || logFactory.flags['all'], 'hub', 'green');
 // rendezvous system
 const hubs = [];
 // for debugging only
 window['hubs'] = hubs;
-// build logger for 'hub' (if enabled)
-const log = logFactory(logFactory.flags['hub'] || logFactory.flags['all'], 'hub', 'green');
 export class Endpoint {
     constructor(id, sourceId) {
         this.id = id;
@@ -128,18 +128,14 @@ export class Hub extends EventEmitter {
         // for local (loopback) testing
         hubs.push(this);
         this.tenant = tenant;
-        tenant.context.listen('doc-changed', docId => this.deviceChanged(tenant, docId));
+        tenant.context.listen('doc-changed', docId => this.contextChanged(tenant, docId));
         this.peerStore = this.initPeers(tenant);
         this.connections = this.connectPeers(this.peerStore.truth);
     }
-    deviceChanged(tenant, docId) {
+    contextChanged(tenant, docId) {
         log(`${tenant.id}: sharing`, docId);
         const store = tenant.context.get(docId);
         Object.values(tenant.hub.connections).forEach((c) => c.database.add(store));
-    }
-    changed() {
-        this.captureStores(this.tenant.context);
-        this.fire('change');
     }
     initPeers(tenant) {
         //const id = `${tenant.id}:peers`;
@@ -168,5 +164,9 @@ export class Hub extends EventEmitter {
     captureStores(database) {
         //this.forEachConnection(c => c.database.forEachStore(store => !database.get(store.id) && log('capture', store)));
         this.forEachConnection(c => c.database.forEachStore(store => database.add(store)));
+    }
+    changed() {
+        this.captureStores(this.tenant.context);
+        this.fire('change');
     }
 }
