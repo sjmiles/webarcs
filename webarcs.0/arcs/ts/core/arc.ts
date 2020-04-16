@@ -16,7 +16,7 @@
 //import {Store} from './store.js';
 import {Host} from './host.js';
 import {debounce, makeId} from '../utils/utils.js';
-import {logFactory} from '../utils/log.js';
+import {logFactory} from '../../../../webarcs.1/ts/utils/log.js';
 
 const renderDebounceIntervalMs = 200;
 
@@ -65,7 +65,7 @@ class HostNexus extends DataNexus {
   }
   protected updateHost(host, inputs) {
     const hostInputs = this.computeHostInputs(host, inputs);
-    this.hnlog(`updateHost[${host.id}], {${JSON.stringify(Object.keys(hostInputs))}}`);
+    this.hnlog(`updateHost(${host.id}, {${Object.keys(hostInputs)}})`);
     host.requestUpdate(hostInputs);
   }
   protected mergeOutputs(host, outputs) {
@@ -196,7 +196,7 @@ export class Arc extends HostNexus {
   protected particleOutput(host, output) {
     if (output) {
       const {slot, outputs} = output;
-      this.log(`particleOutput('${host.id}', {${Object.keys(outputs || Object)}})`);
+      this.log(`particleOutput(${host.id}, {${Object.keys(outputs || Object)}})`);
       // process render-channel output
       if (slot) {
         const model = slot;

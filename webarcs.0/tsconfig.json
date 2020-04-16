@@ -7,6 +7,6 @@
     "outDir": "./arcs/js"
   },
   "include": [
-    "./arcs/ts/**/*"
+    "./arcs/ts/**/*", "../webarcs.1/ts/utils/params.ts", "../webarcs.1/ts/utils/log.ts"
   ]
 }

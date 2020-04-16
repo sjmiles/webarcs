@@ -15,7 +15,7 @@
 
 import {Arc} from '../core/arc.js';
 import {debounce, deepEqual} from '../utils/utils.js';
-import {logFlags} from '../utils/log.js';
+import {logFlags} from '../../../../webarcs.1/ts/utils/log.js';
 
 const changeDebounceIntervalMs = 100;
 

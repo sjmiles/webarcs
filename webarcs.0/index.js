@@ -8,7 +8,6 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Store} from './core/store.js';
 import {Hub} from './connection/hub.js';
 import {Device} from './core/device.js';
 
@@ -49,6 +48,7 @@ const getDevice = id => devices.find(d => d.id === id);
 
 const tenants = specs.map(({persona, device, peers}) => ({
   id: `${persona}:${device}`,
+  persona,
   avatar: `../assets/users/${persona}.png`,
   device: `../assets/devices/${device}.png`,
   peers,
@@ -94,11 +94,11 @@ const recipe = {
     // a slot is an array of either particles or slots
     // `particle` is a keyword: conflicts? maybe use `$<keyword>`?
     // probably keywords should be symbols, but that seems bad for JSON
-  //   particle: 'Frame',
-  //   content: [{
-  //     particle: 'Books'
-  //   }]
-  // }, {
+    particle: 'Frame',
+    content: [{
+      particle: 'Books'
+    }]
+  }, {
     particle: 'Frame',
     content: [{
       particle: {
@@ -116,28 +116,19 @@ const recipe = {
     particle: 'Frame',
     content: [{
       particle: {
-        // `kind` is a keyword: conflicts? maybe use `$<keyword>`?
         kind: 'TMDBSearch',
-    //     // bind `particle::query` to `arc::tmdbQuery`
-    //     query: 'tmdbQuery',
-    //     tmdbResults: {
-    //       //private: true,
-    //       collection: true
-    //     }
-        }
-      }, {
-    //   // particle: 'Frame',
-    //   // content: [{
-        particle: {
-          kind: 'TMDBGrid',
-          tmdbResults: 'tmdbResults'
-        }
-      // }]
-    // }, {
-    //   particle: {
-    //     kind: 'TMDBDetail',
-    //     tmdbSelection: 'tmdbSelection'
-    //   }
+        query: 'tmdbQuery',
+      }
+    }, {
+      particle: {
+        kind: 'TMDBGrid',
+        tmdbResults: 'tmdbResults'
+      }
+    }, {
+      particle: {
+        kind: 'TMDBDetail',
+        tmdbSelection: 'tmdbSelection'
+      }
     }]
   }]
 };
@@ -154,6 +145,13 @@ const createArc = async (tenant, id, recipe) => {
   await runtime.instantiate(arc, recipe);
 };
 
+const createTestArc = async (tenant, recipe) => {
+  const id = `starter-arc`;
+  await createArc(tenant, id, recipe);
+  let store = tenant.arcs[id].stores.find(s => s.name === 'userid');
+  store.change(truth => truth.userid = tenant.persona);
+};
+
 (async () => {
   await Promise.all(tenants.map(async tenant => {
     tenant.runtime = await initContext();
@@ -165,11 +163,6 @@ const createArc = async (tenant, id, recipe) => {
     //
   }));
   //
-  await createArc(tenants[0], 'starter-arc', recipe);
-  let store = tenants[0].arcs['starter-arc'].stores.find(s => s.name === 'userid');
-  store.change(truth => truth.userid = 'Moe');
-  //
-  await createArc(tenants[1], 'starter-arc', recipe);
-  store = tenants[1].arcs['starter-arc'].stores.find(s => s.name === 'userid');
-  store.change(truth => truth.userid = 'Lenny');
+  createTestArc(tenants[0], recipe);
+  createTestArc(tenants[1], recipe);
 })();

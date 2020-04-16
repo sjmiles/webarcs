@@ -16,7 +16,8 @@ const _logFactory = (nonoop, preamble, color, log = 'log') => {
   if (!nonoop) {
       return () => { };
   }
-  const style = `background: ${color || 'gray'}; color: white; padding: 1px 6px 2px 7px; border-radius: 6px 0 6px 0;`;
+  //const style = `background: ${color || 'gray'}; color: white; padding: 1px 6px 2px 7px; border-radius: 6px 0 6px 0;`;
+  const style = `background: ${color || 'gray'}; color: white; padding: 1px 6px 2px 7px; border-radius: 6px 0 0 0;`;
   return console[log].bind(console, `%c${preamble}`, style);
 };
 

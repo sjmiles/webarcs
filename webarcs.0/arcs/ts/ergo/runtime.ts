@@ -7,13 +7,14 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
-import {Store} from '../../../core/store.js';
-import {logFactory} from '../utils/log.js';
 
 /**
  * @packageDocumentation
  * @module ergo
  */
+
+import {Store} from '../../../core/store.js';
+import {logFactory} from '../../../../webarcs.1/ts/utils/log.js';
 
 const log = logFactory(logFactory.flags.ergo, 'runtime', 'purple');
 
@@ -75,23 +76,21 @@ export class Runtime {
   }
   requireStore(arc: Arc, name) {
     const id = `${arc.id}:store:${name}`;
-    if (!arc.stores.find(s => s.id === id)) {
-      log(`createStore: creating ${id} [${this.device.id}]`);
-      const store = new Store(`${arc.id}:store:${name}`);
-      store.name = name;
-      // store changes cause host updates
-      store.listen('set-truth', () => {
-        arc.updateHosts(store.pojo);
-      });
-      // initialize data
-      store.change(data => data[name] = {});
-      // add to context
-      this.device.context.add(store);
-      arc.stores.push(store);
-      return store;
-    } else {
-      log(`createStore: store ${id} already exists`);
+    if (arc.stores.find(s => s.id === id)) {
       return null;
     }
+    log(`requireStore: creating ${id} [${this.device.id}]`);
+    const store = new Store(`${arc.id}:store:${name}`);
+    store.name = name;
+    // store changes cause host updates
+    store.listen('set-truth', () => {
+      arc.updateHosts(store.pojo);
+    });
+    // initialize data
+    store.change(data => data[name] = {});
+    // add to context
+    this.device.context.add(store);
+    arc.stores.push(store);
+    return store;
   }
 };

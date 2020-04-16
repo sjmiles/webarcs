@@ -123,8 +123,8 @@ export class Particle {
     }
   }
   getStateArgs() {
-    this._inputs.$previous = this.lastInputs;
-    this._state.$previous = this.lastState;
+    this._inputs.$oldInputs = this.lastInputs;
+    this._state.$oldState = this.lastState;
     return [this._inputs, this._state]; //, this.lastInputs, this.lastState];
   }
   validate() {
@@ -197,7 +197,7 @@ export class Particle {
   }
   public requestUpdate(inputs?) {
     this.inputs = inputs;
-    this.update(inputs);
+    this.invalidateInputs();
   }
   // default output performs render merging
   protected output(outputs?) {

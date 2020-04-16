@@ -37,7 +37,7 @@ const requireParticleBaseCode = async () => {
         let moduleText = await (await fetch('./arcs/js/core/particle.js')).text();
         // TODO(sjmiles): brittle content processing
         const preamble = moduleText.indexOf('class Particle');
-        moduleText = moduleText.slice(preamble);
+        moduleText = moduleText.slice(preamble); //-3);
         particleSource = `(${moduleText})`;
         //console.log(particleSource);
     }

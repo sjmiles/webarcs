@@ -14,7 +14,7 @@
  */
 
 import {Xen} from '../../../../../xen/xen-async.js';
-import {logFactory} from '../../utils/log.js';
+import {logFactory} from '../../../../../webarcs.1/ts/utils/log.js';
 
 const log = logFactory(logFactory.flags.render, 'render', 'red');
 
@@ -40,7 +40,7 @@ export class Composer {
   }
   render(packet: RenderPacket) {
     const {id, container, content: {template, model}} = packet;
-    log('render:', {id, container, template, model});
+    log({id, container, template, model});
     let slot = this.slots[id];
     if (!slot) {
       const parent = this.findContainer(container);
@@ -60,15 +60,10 @@ export class Composer {
     if (container && container !== 'root') {
       const [particle, slot] = container.split('#');
       const owner = deepQuerySelector(node, `#${sanitizeId(particle)}`);
+      if (!owner) {
+        return null;
+      }
       node = deepQuerySelector(owner, `[slot=${slot}]`);
-      // const slots = container.split(':');
-      // slots.forEach(slot => {
-      //   if (slot !== 'root') {
-      //     node = deepQuerySelector(node, `[slot=${slot}]`);
-      //     //node = node.querySelector(`[slot=${slot}]`);
-      //   }
-      // });
-      log(container, node);
     }
     return node;
   }

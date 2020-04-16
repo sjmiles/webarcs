@@ -10,51 +10,8 @@
 
 /**
  * @packageDocumentation
- * @module core
+ * @module object
  */
-
-export const irand = (range: number) => Math.floor(Math.random()*range);
-export const prob = (probability: number) => Boolean(Math.random() < probability);
-
-type Task = (...args: any[]) => void;
-type DebounceKey = number;
-
-/**
- * Perform `action` if `delay` ms have elapsed since last debounce call for `key`.
- *
- * ```
- * // invoke 'task' one second after last time this line executed
- * this.debounceTask = debounce(this.debounceTask, task, 1000);
- * ```
- */
-export const debounce = (key: DebounceKey, action: Task, delay: number): DebounceKey => {
-  if (key) {
-    clearTimeout(key);
-  }
-  if (action && delay) {
-    return setTimeout(action, delay) as unknown as number;
-  }
-};
-
-export const async = task => {
-  return async (...args) => {
-    await Promise.resolve();
-    task(...args);
-  };
-};
-
-export const makeId = (pairs?, digits?, delim?) => {
-  pairs = pairs || 2;
-  digits = digits || 2;
-  delim = delim || '-';
-  const min = Math.pow(10, digits - 1);
-  const range = Math.pow(10, digits) - min;
-  const result = [];
-  for (let i=0; i<pairs; i++) {
-    result.push(`${irand(range - min) + min}`);
-  }
-  return result.join(delim);
-};
 
 export const shallowMerge = (obj, data) => {
   Object.keys(data).forEach(key => obj[key] = data[key]);

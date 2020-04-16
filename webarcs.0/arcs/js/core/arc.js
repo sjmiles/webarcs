@@ -48,7 +48,7 @@ class HostNexus extends DataNexus {
     }
     updateHost(host, inputs) {
         const hostInputs = this.computeHostInputs(host, inputs);
-        this.hnlog(`updateHost[${host.id}], {${JSON.stringify(Object.keys(hostInputs))}}`);
+        this.hnlog(`updateHost(${host.id}, {${Object.keys(hostInputs)}})`);
         host.requestUpdate(hostInputs);
     }
     mergeOutputs(host, outputs) {
@@ -177,7 +177,7 @@ export class Arc extends HostNexus {
     particleOutput(host, output) {
         if (output) {
             const { slot, outputs } = output;
-            this.log(`particleOutput('${host.id}', {${Object.keys(outputs || Object)}})`);
+            this.log(`particleOutput(${host.id}, {${Object.keys(outputs || Object)}})`);
             // process render-channel output
             if (slot) {
                 const model = slot;

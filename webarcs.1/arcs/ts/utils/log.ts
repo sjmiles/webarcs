@@ -8,7 +8,7 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {deviceId} from '../../connect/device.js';
+//import {deviceId} from '../../../webarcs.0/arcs/connect/device.js';
 
 export const logFlags = {all: true, groupStatus: true, render: true, comms: true, ergo: true};
 
@@ -16,7 +16,7 @@ const _logFactory = (nonoop, preamble, color, log = 'log') => {
   if (!nonoop) {
     return () => {};
   }
-  const style = `background: ${color || 'gray'}; color: white; padding: 1px 6px 2px 7px; border-radius: 6px 0 6px 0;`;
+  const style = `background: ${color || 'gray'}; color: white; padding: 1px 6px 2px 7px; border-radius: 6px 0 0 6px;`;
   return console[log].bind(console, `%c${preamble}`, style);
 };
 
@@ -28,7 +28,8 @@ const logKinds =  ['log', 'warn', 'error', 'group', 'groupCollapsed', 'groupEnd'
 
 export const logFactory = (nonoop, preamble: string, color: string = '') => {
   const loggers = {};
-  logKinds.forEach(log => loggers[log] = _logFactory(nonoop, `[${deviceId}]:${preamble}`, color, log));
+  //logKinds.forEach(log => loggers[log] = _logFactory(nonoop, `[${deviceId}]:${preamble}`, color, log));
+  logKinds.forEach(log => loggers[log] = _logFactory(nonoop, `${preamble}`, color, log));
   const log = loggers['log'];
   Object.assign(log, loggers);
   return log;

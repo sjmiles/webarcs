@@ -7,7 +7,7 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
-import {logFactory} from '../utils/log.js';
+import {logFactory} from '../../../../webarcs.1/ts/utils/log.js';
 
 /**
  * @packageDocumentation
