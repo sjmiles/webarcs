@@ -31,14 +31,10 @@ class StoreNexus {
     // this.addStore('private');
   }
   private addStore(name) {
-    // const store = new Store(`${this.id}:store(${name})`);
-    // store.onchange = () => this.onstoreschange(name);
     // this.stores[name] = store;
   }
   // onstoreschange(name) {
-  //   if (name === 'public') {
   //     this.onstorechange();
-  //   }
   // }
   protected mergeRawData(store, data) {
     // return data && store.mergeRawData(data);
@@ -186,9 +182,11 @@ export class Arc extends HostNexus {
   //   };
   //   this.updateHosts(inputs);
   // }
-  public updateHosts(inputs) {
-    this.log(`updateHosts({${Object.keys(inputs)}})`);
-    this.hosts.forEach((p: Host) => this.updateHost(p, inputs));
+  public async addParticle(runtime, id, spec, container) {
+    const host = await runtime.createHostedParticle(id, spec, container);
+    if (host) {
+      this.addHost(host);
+    }
   }
   async addHost(host) {
     super.addHost(host);
@@ -221,5 +219,9 @@ export class Arc extends HostNexus {
       const {id, container} = host;
       this.composer.render({id, container, content: {template, model}});
     }
+  }
+  public updateHosts(inputs) {
+    this.log(`updateHosts({${Object.keys(inputs)}})`);
+    this.hosts.forEach((p: Host) => this.updateHost(p, inputs));
   }
 }

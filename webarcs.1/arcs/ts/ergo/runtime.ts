@@ -42,19 +42,6 @@ export class Runtime {
   async instantiate(arc: Arc, recipe) {
     await Recipe.instantiate(this, arc, recipe);
   }
-  // public async addParticle(arc: Arc, spec: ParticleSpec, container: Container) {
-  //   const id = `${arc.id}:${spec.kind}(${makeId()})`;
-  //   const particle = await this.createParticle(arc, spec, container);
-  //   particle.id = id;
-  //   if (particle) {
-  //     log(`adding particle ${id}`);
-  //     const host = new Host(id, container, spec, particle);
-  //     arc.addHost(host);
-  //   } else {
-  //     log.error(`failed to create particle "${id}" (is the kind registered?)`)
-  //   }
-  //   return particle;
-  // }
   public async createHostedParticle(id, spec: ParticleSpec, container: Container) {
     const particle = await this.createParticle(spec);
     if (particle) {

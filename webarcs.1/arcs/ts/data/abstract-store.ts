@@ -21,8 +21,14 @@ export class AbstractStore extends EventEmitter {
   set truth(truth) {
     if (this._truth !== truth) {
       this._truth = truth;
-      this.fire('set-truth');
+      // if (this['ownerId'] === 'moe:mobile' && this.id === 'book-club:store:entries') {
+      //   console.warn(this.pojo);
+      // }
+      this.changed();
     }
+  }
+  changed() {
+    this.fire('set-truth');
   }
   get truth() {
     return this._truth;
