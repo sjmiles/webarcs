@@ -35,8 +35,8 @@ const XenAsyncMixin = Base => class extends Base {
     }
   }
   // underscore relief
-  fire(name, detail) {
-    this._fire(name, detail);
+  fire(...args) {
+    this._fire(...args);
   }
   _getInitialState() {
     return this.getInitialState && this.getInitialState();

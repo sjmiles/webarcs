@@ -23,13 +23,15 @@ const template = Xen.Template.html`
   }
   tenant-view {
     display: none;
+    flex: 1;
   }
   [show] {
     display: flex;
   }
 </style>
+
 <pages>{{tenants}}</pages>
-<slot></slot>
+
 `;
 
 const tenantTemplate = Xen.Template.html`

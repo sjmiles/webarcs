@@ -17,12 +17,17 @@ const specs = [{
   device: 'mobile',
   user: 'edna@springfield.edu',
   persona: 'edna',
-  peers: ['moe:mobile', 'carl:mobile']
+  peers: ['moe:mobile', 'liz:mobile', 'lenny:mobile']
 }, {
   device: 'mobile',
   user: 'carl@springfield.com',
   persona: 'carl',
   peers: ['moe:mobile', 'lenny:mobile']
+}, {
+  device: 'mobile',
+  user: 'liz@springfield.edu',
+  persona: 'liz',
+  peers: ['moe:mobile', 'edna:mobile']
 }, {
   device: 'mobile',
   user: 'lenny@springfield.com',
@@ -48,7 +53,6 @@ import {Hub} from '../arcs/build/data/hub.js';
 import {Database} from '../arcs/build/data/database.js';
 import {Runtime} from '../arcs/build/ergo/runtime.js';
 import {Composer} from '../arcs/build/platforms/dom/xen-dom-composer.js';
-import {initContext} from './context.js';
 
 const getTenant = id => tenants.find(d => d.id === id);
 
@@ -62,11 +66,10 @@ const processTenants = async () => {
     // TODO(sjmiles): do we need all these objects?
     const runtime = new Runtime(tenant);
     tenant.runtime = runtime;
-    tenant.context = new Database(`${tenant.id}:context`);
+    const db = new Database(`${tenant.id}:context`);
+    tenant.context = db;
     tenant.root = document.createElement('div');
     tenant.composer = new Composer(tenant.root);
-    // TODO(sjmiles): rename: registers Particle kinds with runtime
-    await initContext(runtime);
     // convert tenant.peers (specs) into tenant.tenants (connections)
     tenant.tenants = mapTenantsFromPeers(tenant.peers);
     tenant.hub = new Hub(tenant);

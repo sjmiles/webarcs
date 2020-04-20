@@ -28,34 +28,44 @@ type ParticleSpec = {
 
 type Container = string;
 
+const registry = {};
+
 export class Runtime {
   tenant;
-  private registry = {};
+  //private registry = {};
   constructor(tenant) {
     this.tenant = tenant;
   }
-  register(name, factory) {
-    this.registry[name] = factory;
+  static register(name, factory) {
+    registry[name] = factory;
   }
   async instantiate(arc: Arc, recipe) {
     await Recipe.instantiate(this, arc, recipe);
   }
-  public async addParticle(arc: Arc, spec: ParticleSpec, container: Container) {
-    const id = `${arc.id}:${spec.kind}(${makeId()})`;
-    const particle = await this.createParticle(arc, spec, container);
-    particle.id = id;
+  // public async addParticle(arc: Arc, spec: ParticleSpec, container: Container) {
+  //   const id = `${arc.id}:${spec.kind}(${makeId()})`;
+  //   const particle = await this.createParticle(arc, spec, container);
+  //   particle.id = id;
+  //   if (particle) {
+  //     log(`adding particle ${id}`);
+  //     const host = new Host(id, container, spec, particle);
+  //     arc.addHost(host);
+  //   } else {
+  //     log.error(`failed to create particle "${id}" (is the kind registered?)`)
+  //   }
+  //   return particle;
+  // }
+  public async createHostedParticle(id, spec: ParticleSpec, container: Container) {
+    const particle = await this.createParticle(spec);
     if (particle) {
-      log(`adding particle ${id}`);
-      const host = new Host(id, container, spec, particle);
-      arc.addHost(host);
-    } else {
-      log.error(`failed to create particle "${id}" (is the kind registered?)`)
+      particle.id = id;
+      return new Host(id, container, spec, particle);
     }
-    return particle;
+    log.error(`failed to create particle "${id}" (is the kind registered?)`)
+    return null;
   }
-  public async createParticle(arc: Arc, spec: ParticleSpec, container: Container): Promise<Host> {
-    // `spec` is just a String for now
-    const factory = this.registry[spec.kind];
+  public async createParticle(spec: ParticleSpec): Promise<Host> {
+    const factory = registry[spec.kind];
     if (factory) {
       return await factory();
     }

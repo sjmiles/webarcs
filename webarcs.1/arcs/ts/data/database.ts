@@ -19,6 +19,7 @@ const log = logFactory(logFactory.flags['database'] || logFactory.flags['all'], 
 export class Database extends AbstractStore {
   stores;
   storeListeners;
+  ownerId;
   constructor(id) {
     super(id);
     this.stores = {};
@@ -28,7 +29,8 @@ export class Database extends AbstractStore {
   }
   onDocsChanged(docId, doc) {
     if (!this.get(docId)) {
-      this.add(new Store(docId, doc));
+      //log.warn(`[${this.id}]: onDocsChanged(${docId}): adding missing store`);
+      this.add(new Store(this.ownerId, docId, doc));
     }
     log(`[${this.id}]: onDocsChanged(${docId})`);
     this.fire('doc-changed', docId);
@@ -43,7 +45,7 @@ export class Database extends AbstractStore {
     return this.docs;
   }
   forEachStore(iter) {
-    Object.values(this.stores).forEach(iter);
+    return Object.values(this.stores).map(iter);
   }
   get(id) {
     return this.stores[id];
@@ -76,9 +78,16 @@ export class Database extends AbstractStore {
     }
   }
   dump() {
-    const data = this.pojo.docs;
-    return Object.keys(data).map(key => `store: ${key}
-${JSON.stringify(data[key], null, '  ')}
-`).join('\n');
+    return this.forEachStore(s =>
+      `<b style="font-size:125%;${
+        s.shared ? 'color:green;' : ''}">${
+        s.id}${
+        s.shared ? ' (shared)' : ''}</b>\n${
+        s.json}`
+    ).join('\n\n');
+//     const data = this.pojo.docs;
+//     return Object.keys(data).map(key => `${key}
+// ${JSON.stringify(data[key], null, '  ')}
+// `).join('\n');
   }
 }

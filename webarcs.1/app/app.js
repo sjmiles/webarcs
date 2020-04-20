@@ -10,8 +10,41 @@
 
 import {Arc} from '../arcs/build/core/arc.js';
 import {Composer} from '../arcs/build/platforms/dom/xen-dom-composer.js';
+import {initCorpus} from './corpus.js';
 import {initTenants} from './tenants.js';
-import {recipes} from './recipe.js';
+import {recipes} from './recipes.js';
+
+(async () => {
+   // initialize particle corpus
+  await initCorpus();
+  // initialize tenants
+  const tenants = await initTenants();
+  // for debugging only
+  window.tenants = tenants;
+  // populate ui
+  const {tenantsView, tenantPages} = window;
+  // tenant selector
+  tenantsView.tenants = tenants;
+  // tenant details
+  tenantPages.tenants = tenants;
+  // use selector to control tenant display
+  tenantsView.addEventListener('selected', ({detail: tenant}) => {
+    tenantPages.selected = tenant;
+  });
+  // arcs
+  // moe
+  createTestArc(tenants[0], 'book-club', recipes.book_club);
+  createTestArc(tenants[0], 'tv', recipes.tv);
+  // edna
+  createTestArc(tenants[1], 'book-club', recipes.book_club);
+  createTestArc(tenants[1], 'chat', recipes.chat);
+  // carl
+  createTestArc(tenants[2], 'tv', recipes.tv);
+  // liz
+  createTestArc(tenants[3], 'chat', recipes.chat);
+  // lenny
+  createTestArc(tenants[4], 'book-club', recipes.book_club);
+})();
 
 const createTestArc = async (tenant, name, recipe) => {
   const arc = await createArc(tenant, name, recipe);
@@ -37,45 +70,9 @@ const createArc = async (tenant, id) => {
     tenant.currentArc.composer.root.hidden = true;
   }
   const composer = new Composer(arcRoot);
-  const arc = new Arc({id, name: 'arcname', composer}); //: tenant.composer});
+  const arc = new Arc({id, name: 'arcname', composer});
   tenant.currentArc = arc;
   tenant.arcs[id] = arc;
   return arc;
 };
 
-const selectArc = (tenant, id) => {
-  const arc = tenant.arcs[id];
-  if (arc) {
-    if (tenant.currentArc) {
-      tenant.currentArc.composer.root.hidden = true;
-    }
-    tenant.currentArc = arc;
-    arc.composer.root.hidden = false;
-  }
-};
-
-(async () => {
-  // initialize tenants
-  const tenants = await initTenants();
-  // for debugging only
-  window.tenants = tenants;
-  // populate ui
-  const {tenantsView, tenantPages} = window;
-  // tenant selector
-  tenantsView.tenants = tenants;
-  // tenant details
-  tenantPages.tenants = tenants;
-  // use selector to control tenant display
-  tenantsView.addEventListener('selected', ({detail: tenant}) => {
-    tenantPages.selected = tenant;
-  });
-  // arcs
-  //createTestArc(tenants[0], 'test-arc', recipe);
-  //createTestArc(tenants[1], 'test-arc', recipe);
-  // arcs
-  createTestArc(tenants[0], 'chat', recipes.chat);
-  createTestArc(tenants[0], 'tv', recipes.tv);
-  selectArc(tenants[0], 'chat');
-  //
-  createTestArc(tenants[1], 'chat', recipes.chat);
-})();

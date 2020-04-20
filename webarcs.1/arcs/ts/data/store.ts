@@ -13,14 +13,14 @@ const {Automerge} = window as any;
 
 export class Store extends AbstractStore {
   name;
-  share;
-  constructor(id, truth?) {
+  shared;
+  ownerId;
+  constructor(ownerId, id, truth?) {
     super(id);
+    // TODO(sjmiles): to uniquify persistence keys
+    this.ownerId = ownerId;
     this.truth = truth || Automerge.init();
-  }
-  change(mutator) {
-    this.truth = Automerge.change(this.truth, mutator);
-    return this;
+    this.restore();
   }
   get json() {
     return this.toJson(true);
@@ -28,8 +28,13 @@ export class Store extends AbstractStore {
   get pojo() {
     return JSON.parse(this.toJson(false));
   }
-  toJson(pretty) {
+  toJson(pretty?) {
     return JSON.stringify(this.truth, null, pretty ? '  ' : '');
+  }
+  change(mutator) {
+    this.truth = Automerge.change(this.truth, mutator);
+    this.persist();
+    return this;
   }
   load(serial) {
     if (serial) {
@@ -61,6 +66,26 @@ export class Store extends AbstractStore {
       }
     });
     return doc;
+  }
+  // TODO(sjmiles): delegate the work to a persistor object
+  get persistId() {
+    return `[${this.ownerId}]:${this.id}`;
+  }
+  persist() {
+    // use `this.save()` to include CRDT metadata
+    //const serial = this.toJson();
+    const serial = this.save();
+    localStorage.setItem(this.persistId, serial);
+    //console.warn('persist', this.persistId); //, serial);
+  }
+  restore() {
+    const serial = localStorage.getItem(this.persistId);
+    if (serial) {
+      this.load(serial);
+      //const pojo = JSON.parse(serial);
+      //console.warn('restore', this.persistId); //, pojo);
+      //this.change(data => Object.assign(data, pojo));
+    }
   }
 }
 

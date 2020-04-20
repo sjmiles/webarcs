@@ -8,22 +8,13 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-export const recipe = {
-  // a recipe is an array of slots
+const chat = {
   root: [{
-    // a slot is an array of either particles or slots
-    // `particle` is a keyword: conflicts? maybe use `$<keyword>`?
-    // probably keywords should be symbols, but that seems bad for JSON
-    particle: 'Frame',
-    content: [{
-      particle: 'Books'
-    }]
-  }, {
     particle: {
       kind: 'Frame',
       padding: {
         share: false,
-        value: '24px 12px'
+        value: '12px 8px'
       }
     },
     content: [{
@@ -40,30 +31,10 @@ export const recipe = {
         entries: 'entries'
       }
     }]
-  }, {
-    particle: 'Frame',
-    content: [{
-      particle: {
-        kind: 'TMDBSearch',
-        query: 'tmdbQuery',
-      }
-    }, {
-      particle: {
-        kind: 'TMDBGrid',
-        tmdbResults: {
-          share: false
-        }
-      }
-    }, {
-      particle: {
-        kind: 'TMDBDetail',
-        tmdbSelection: 'tmdbSelection'
-      }
-    }]
   }]
 };
 
-const chat = {
+const book_club = {
   root: [{
     particle: 'Frame',
     content: [{
@@ -74,7 +45,7 @@ const chat = {
       kind: 'Frame',
       padding: {
         share: false,
-        value: '24px 12px'
+        value: '12px 8px'
       }
     },
     content: [{
@@ -119,4 +90,4 @@ const tv = {
   }]
 };
 
-export const recipes = {chat, tv};
+export const recipes = {chat, book_club, tv};

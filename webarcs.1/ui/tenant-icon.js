@@ -20,6 +20,8 @@ const template = Xen.Template.html`
     white-space: normal;
     width: 64px;
     height: 64px;
+    flex-shrink: 0;
+    flex-grow: 0;
   }
   * {
     box-sizing: border-box;

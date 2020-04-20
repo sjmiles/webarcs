@@ -1,3 +1,4 @@
 node_modules
 **/docs
 lib.8/lib/js
+build

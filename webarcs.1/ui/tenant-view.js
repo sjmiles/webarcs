@@ -61,17 +61,46 @@ const template = Xen.Template.html`
   [home] {
     padding: 12px;
   }
+  /**/
+  [arc][show] {
+    display: flex;
+    align-items: stretch;
+  }
+  [chooser] {
+    width: 120px;
+    padding: 8px;
+    border: 1px solid var(--ui-bg-3);
+    background-color: var(--ui-bg-2);
+  }
   [arcItem] {
     display: flex;
-    padding: 8px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    padding: 6px;
+    border: 2px solid #eeeeee;
+    background-color: #f4f4f4;
+    color: #999;
+    cursor: pointer;
+    user-select: none;
+    justify-content: center;
+  }
+  [arcItem][selected] {
+    font-weight: bold;
+    color: black;
+    background-color: white;
+    border: 2px solid #ffc107;
   }
   [dot] {
     display: inline-block;
-    background-color: #ffc107;
+    background-color: lightblue;
     border-radius: 100%;
     width: 16px;
     height: 16px;
     margin: 0 8px;
+    visibility: hidden;
+  }
+  [arcItem][selected] [dot] {
+    visibility: visible;
   }
 </style>
 
@@ -89,7 +118,10 @@ const template = Xen.Template.html`
 </cx-tabs>
 
 <div home page flex show$="{{showHome}}">{{home}}</div>
-<div arc page flex show$="{{showArc}}"><slot></slot></div>
+<div arc page flex show$="{{showArc}}">
+  <div chooser style="width: 120px; padding: 8px; border: 1px solid var(--ui-bg-3);">{{home}}</div>
+  <div flex><slot></slot></div>
+</div>
 <div database page flex show$="{{showDatabase}}">
   <div unsafe-html="{{database}}"></div>
 </div>
@@ -100,7 +132,7 @@ const tenantTemplate = Xen.Template.html`
 `;
 
 const arcTemplate = Xen.Template.html`
-  <div arcItem><span dot></span><span name>{{name}}</span></div>
+  <div arcItem selected$="{{selected}}" key="{{id}}" on-click="onArcItemClick"><span name>{{id}}</span></div>
 `;
 
 export class TenantView extends Xen.Async {
@@ -118,7 +150,22 @@ export class TenantView extends Xen.Async {
   onTabSelect({currentTarget: {value: selected}}) {
     this.state = {selected};
   }
-  render({tenant}, {selected}) {
+  onArcItemClick({currentTarget: {key}}) {
+    if (key) {
+      this.state = {selectedArcId: key, selected: 1};
+      const {tenant} = this.props;
+      const arc = tenant.arcs[key];
+      this.selectArc(tenant, arc);
+    }
+  }
+  render({tenant}, {selected, selectedArcId}) {
+    if (!selectedArcId) {
+      const arc = Object.values(tenant.arcs)[0];
+      if (arc) {
+        this.selectArc(tenant, arc);
+        selectedArcId = arc.id;
+      }
+    }
     return {
       ...tenant,
       showHome: (selected === 0),
@@ -126,7 +173,7 @@ export class TenantView extends Xen.Async {
       showDatabase: (selected === 2),
       home: {
         template: arcTemplate,
-        models: this.renderHome(tenant)
+        models: this.renderHome(tenant, selectedArcId)
       },
       database: tenant && this.renderDatabase(tenant),
       tenants: {
@@ -141,7 +188,17 @@ export class TenantView extends Xen.Async {
   renderDatabase(tenant) {
     return `${tenant.context.dump()}`;
   }
-  renderHome(tenant) {
-    return Object.keys(tenant.arcs).map(name => ({name}));
+  renderHome(tenant, selectedArcId) {
+    return Object.keys(tenant.arcs).map(id => ({
+      id,
+      selected: id === selectedArcId
+    }));
+  }
+  selectArc(tenant, arc) {
+    if (tenant.currentArc) {
+      tenant.currentArc.composer.root.hidden = true;
+    }
+    tenant.currentArc = arc;
+    arc.composer.root.hidden = false;
   }
 }

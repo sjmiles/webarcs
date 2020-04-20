@@ -86,9 +86,13 @@ export class Connection {
   }
   initDatabase(hub, endpoint) {
     const database = new Database(`${hub.tenant.id}:${endpoint.id}:db`);
+    database.ownerId = hub.tenant.id;
     database.add(hub.peerStore);
-    database.listen('doc-changed', () => this.hub.changed());
+    database.listen('doc-changed', docId => this.databaseChanged(docId));
     return database;
+  }
+  databaseChanged(docId) {
+    this.hub.changed();
   }
   open() {
     // collect messages as pending until endpoint is open
@@ -130,6 +134,9 @@ export class Connection {
       let doc = this.database.docs.get(msg.docId);
       if (doc) {
         doc = Store.fix(doc);
+        // if (!this.database.get(msg.docId)) {
+        //   this.database.add(new Store(this.hub.tenant.id, msg.docId, doc));
+        // }
         this.database.get(msg.docId).truth = doc;
       }
     }, 0);
@@ -153,23 +160,33 @@ export class Hub extends EventEmitter {
   contextChanged(tenant, docId) {
     log(`${tenant.id}: sharing`, docId);
     const store = tenant.context.get(docId);
-    Object.values(tenant.hub.connections).forEach(
-      (c: Connection) => c.database.add(store)
-    );
+    this.forEachConnection(c => this.maybeShareStore(c, store));
+  }
+  maybeShareStore({database}, store) {
+    if (store.shared) {
+      //console.warn(`ADDING "${store.id}" to "${database.id}"`);
+      database.add(store);
+    } else {
+      if (database.get(store.id)) {
+        console.warn(`REMOVING "${store.id}" from (sharing) "${database.id}"`);
+        database.remove(store);
+      }
+    }
   }
   initPeers(tenant) {
     //const id = `${tenant.id}:peers`;
     const id = `peers`;
-    const peerStore = new Store(id);
-    const serial = localStorage.getItem(id);
-    if (serial) {
-      peerStore.load(serial);
-    } else {
+    const peerStore = new Store(this.tenant.id, id);
+    peerStore.shared = true;
+    // const serial = localStorage.getItem(id);
+    // if (serial) {
+    //   peerStore.load(serial);
+    // } else {
       const peers = tenant.peers;
       peerStore.change(truth => {
         Object.keys(peers).forEach(key => truth[key] = peers[key]);
       });
-    }
+    // }
     return peerStore;
   }
   connectPeers(peers) {
@@ -184,7 +201,13 @@ export class Hub extends EventEmitter {
   }
   captureStores(database) {
     //this.forEachConnection(c => c.database.forEachStore(store => !database.get(store.id) && log('capture', store)));
-    this.forEachConnection(c => c.database.forEachStore(store => database.add(store)));
+    this.forEachConnection(c => c.database.forEachStore(store => {
+      if (!database.get(store.id)) {
+        // if it came from a remote source it must be "shared"
+        store.shared = true;
+        database.add(store);
+      }
+    }));
   }
   changed() {
     this.captureStores(this.tenant.context);
