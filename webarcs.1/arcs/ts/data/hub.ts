@@ -130,15 +130,14 @@ export class Connection {
     // TODO(sjmiles): simulate asynchrony of a real communication channel
     setTimeout(() => {
       log(`[${this.hub.tenant.id}] received: `, msg);
+      //console.group(`[${this.hub.tenant.id}] received: `, msg)
       this.conn.receiveMsg(msg);
       let doc = this.database.docs.get(msg.docId);
       if (doc) {
         doc = Store.fix(doc);
-        // if (!this.database.get(msg.docId)) {
-        //   this.database.add(new Store(this.hub.tenant.id, msg.docId, doc));
-        // }
         this.database.get(msg.docId).truth = doc;
       }
+      //console.groupEnd();
     }, 0);
   }
 }

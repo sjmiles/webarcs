@@ -8,6 +8,7 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
+import {deepEqual, deepUndefinedToNull} from '../utils/object.js';
 import {AbstractStore} from './abstract-store.js';
 const {Automerge} = window as any;
 
@@ -67,6 +68,48 @@ export class Store extends AbstractStore {
     });
     return doc;
   }
+  hasChanges(outputs) {
+    const data = this.truth;
+    // if (typeof outputs !== 'object') {
+    //   return data !== outputs;
+    // }
+    const changed = Object.keys(outputs).some(key => {
+      const truth = data[key];
+      let value = outputs[key];
+      // TODO(sjmiles): potentially expensive dirty-checking here
+      if (deepEqual(truth, value)) {
+        return false;
+      }
+      // downstream APIs, e.g. `automerge` and 'firebase', tend to dislike undefined values
+      deepUndefinedToNull(value);
+      return true;
+    });
+    return changed;
+  }
+  // mergeRawData(outputs) {
+  //   let changed = false;
+  //   this.change(doc => {
+  //     Object.keys(outputs).forEach(key => {
+  //       const truth = doc[key];
+  //       let value = outputs[key];
+  //       // TODO(sjmiles): perform potentially expensive dirty-checking here
+  //       if (deepEqual(truth, value)) {
+  //         return;
+  //       }
+  //       // downstream APIs, e.g. `automerge` and 'firebase', tend to dislike undefined values
+  //       if (value === undefined) {
+  //         value = null;
+  //       }
+  //       else {
+  //         // TODO(sjmiles): stopgap: deeply convert undefined values to null
+  //         deepUndefinedToNull(value);
+  //       }
+  //       doc[key] = value;
+  //       changed = true;
+  //     });
+  //   });
+  //   return changed;
+  // }
   // TODO(sjmiles): delegate this work to a persistor object
   get persistId() {
     return `[${this.ownerId}]:${this.id}`;

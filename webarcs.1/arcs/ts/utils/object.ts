@@ -36,6 +36,9 @@ export const deepEqual = (a, b) => {
 };
 
 export const deepUndefinedToNull = obj => {
+  if (obj === undefined) {
+    return null;
+  }
   if (obj && (typeof obj === 'object')) {
     // we are `deep` because we recursively study object types
     const props = Object.getOwnPropertyNames(obj);

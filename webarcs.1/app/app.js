@@ -11,14 +11,93 @@
 import {Arc} from '../arcs/build/core/arc.js';
 import {Composer} from '../arcs/build/platforms/dom/xen-dom-composer.js';
 import {initCorpus} from './corpus.js';
-import {initTenants} from './tenants.js';
+import {initTenants, getTenant} from './tenants.js';
 import {recipes} from './recipes.js';
+
+const specs = [{
+  device: 'mobile',
+  user: 'moe@springfield.com',
+  persona: 'moe',
+  peers: ['edna:desktop', 'carl:mobile']
+}, {
+  device: 'desktop',
+  user: 'edna@springfield.edu',
+  persona: 'edna',
+  peers: ['moe:mobile', 'liz:mobile', 'lenny:mobile']
+}, {
+  device: 'mobile',
+  user: 'carl@springfield.com',
+  persona: 'carl',
+  peers: ['moe:mobile', 'lenny:mobile']
+}, {
+  device: 'mobile',
+  user: 'liz@springfield.edu',
+  persona: 'liz',
+  peers: ['moe:mobile', 'edna:desktop']
+}, {
+  device: 'mobile',
+  user: 'lenny@springfield.com',
+  persona: 'lenny',
+  peers: ['carl:mobile', 'edna:desktop']
+}, {
+  device: 'mobile',
+  user: 'frink@labs.com',
+  persona: 'frink',
+  peers: ['frink:laptop', 'liz:mobile']
+}, {
+  device: 'laptop',
+  user: 'frink@labs.com',
+  persona: 'frink',
+  peers: ['frink:mobile']
+}];
+
+const arcs = [{
+  id: 'moe:mobile',
+  name: 'book-club',
+  recipe: recipes.book_club
+},{
+  id: 'moe:mobile',
+  name: 'tv',
+  recipe: recipes.tv
+},{
+  id: 'edna:desktop',
+  name: 'book-club',
+  recipe: recipes.book_club
+},{
+  id: 'edna:desktop',
+  name: 'school-chat',
+  recipe: recipes.chat
+},{
+  id: 'carl:mobile',
+  name: 'tv',
+  recipe: recipes.tv
+},{
+  id: 'liz:mobile',
+  name: 'school-chat',
+  recipe: recipes.chat
+},{
+  id: 'lenny:mobile',
+  name: 'tv',
+  recipe: recipes.tv
+},{
+  id: 'lenny:mobile',
+  name: 'book-club',
+  recipe: recipes.book_club
+},{
+  id: 'frink:mobile',
+  name: 'lab-chat',
+  recipe: recipes.chat
+},{
+  id: 'frink:laptop',
+  name: 'lab-chat',
+  recipe: recipes.chat
+}];
 
 (async () => {
    // initialize particle corpus
   await initCorpus();
   // initialize tenants
-  const tenants = await initTenants();
+  const tenants = await initTenants(specs);
   // for debugging only
   window.tenants = tenants;
   // populate ui
@@ -32,19 +111,12 @@ import {recipes} from './recipes.js';
     tenantPages.selected = tenant;
   });
   // arcs
-  // moe
-  createTestArc(tenants[0], 'book-club', recipes.book_club);
-  createTestArc(tenants[0], 'tv', recipes.tv);
-  // edna
-  createTestArc(tenants[1], 'book-club', recipes.book_club);
-  createTestArc(tenants[1], 'chat', recipes.chat);
-  // carl
-  createTestArc(tenants[2], 'tv', recipes.tv);
-  // liz
-  createTestArc(tenants[3], 'chat', recipes.chat);
-  // lenny
-  createTestArc(tenants[4], 'book-club', recipes.book_club);
-  createTestArc(tenants[4], 'tv', recipes.tv);
+  arcs.forEach(({id, name, recipe}) => {
+    const tenant = getTenant(id);
+    if (tenant) {
+      createTestArc(tenant, name, recipe);
+    }
+  });
 })();
 
 const createTestArc = async (tenant, name, recipe) => {

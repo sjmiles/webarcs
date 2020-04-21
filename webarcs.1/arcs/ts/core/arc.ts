@@ -90,10 +90,17 @@ class HostNexus extends StoreNexus {
     return hostInputs;
   }
   protected mergeOutputs(host, outputs) {
+    this.hnlog(`mergeOutputs(${host.id}, ${Object.keys(outputs||0)})`);
     this.stores.forEach(store => {
       const {name} = store;
-      if (outputs[name]) {
-        store.change(data => data[name] = outputs[name]);
+      if (name in outputs) {
+        this.hnlog(`mergeOutputs: analyzing "${name}"`);
+        const output = outputs[name];
+        // TODO(sjmiles): need to formalize what can be in outputs: right here we ignore non-object values
+        if (typeof output === 'object' && store.hasChanges({[name]: output})) {
+          this.hnlog(`mergeOutputs: "${name}" is dirty, updating Store`);
+          store.change(data => data[name] = outputs[name]);
+        }
       }
       //console.warn(host, outputs);
     });

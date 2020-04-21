@@ -8,35 +8,23 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-const specs = [{
-  device: 'mobile',
-  user: 'moe@springfield.com',
-  persona: 'moe',
-  peers: ['edna:mobile', 'carl:mobile']
-}, {
-  device: 'mobile',
-  user: 'edna@springfield.edu',
-  persona: 'edna',
-  peers: ['moe:mobile', 'liz:mobile', 'lenny:mobile']
-}, {
-  device: 'mobile',
-  user: 'carl@springfield.com',
-  persona: 'carl',
-  peers: ['moe:mobile', 'lenny:mobile']
-}, {
-  device: 'mobile',
-  user: 'liz@springfield.edu',
-  persona: 'liz',
-  peers: ['moe:mobile', 'edna:mobile']
-}, {
-  device: 'mobile',
-  user: 'lenny@springfield.com',
-  persona: 'lenny',
-  peers: ['carl:mobile', 'edna:mobile']
-}];
+import {Hub} from '../arcs/build/data/hub.js';
+import {Database} from '../arcs/build/data/database.js';
+import {Runtime} from '../arcs/build/ergo/runtime.js';
+import {Composer} from '../arcs/build/platforms/dom/xen-dom-composer.js';
+
+let tenants;
+
+export const initTenants = async (specs) => {
+  tenants = specsToTenants(specs);
+  await processTenants();
+  return tenants;
+};
+
+export const getTenant = id => tenants.find(d => d.id === id);
 
 // expand specs into tenant objects
-const tenants = specs.map(({persona, device, peers}) => ({
+const specsToTenants = specs => specs.map(({persona, device, peers}) => ({
   deviceKind: device,
   persona,
   peers: peers.reduce((peers, peer) => (peers[peer] = true, peers), {}),
@@ -46,15 +34,6 @@ const tenants = specs.map(({persona, device, peers}) => ({
   // arcs here?
   arcs: {}
 }));
-
-/**/
-
-import {Hub} from '../arcs/build/data/hub.js';
-import {Database} from '../arcs/build/data/database.js';
-import {Runtime} from '../arcs/build/ergo/runtime.js';
-import {Composer} from '../arcs/build/platforms/dom/xen-dom-composer.js';
-
-const getTenant = id => tenants.find(d => d.id === id);
 
 const processTenants = async () => {
   const mapTenantsFromPeers = peers => {
@@ -75,10 +54,3 @@ const processTenants = async () => {
     tenant.hub = new Hub(tenant);
   }));
 };
-
-const initTenants = async () => {
-  await processTenants();
-  return tenants;
-};
-
-export {initTenants};
