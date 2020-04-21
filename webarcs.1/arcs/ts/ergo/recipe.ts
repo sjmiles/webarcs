@@ -111,13 +111,19 @@ export class Recipe {
     //
     const name = spec.store;
     const id = `${arc.id}:store:${name}`;
-    if (arc.stores.find(s => s.id === id)) {
-      return null;
+    let store = arc.stores.find(s => s.id === id);
+    if (store) {
+      // TODO(sjmiles): hack, fix init sequence properly
+      store.changed();
+    } else {
+      store = this.createStore(runtime, arc, id, spec);
     }
-    //
-    //
-    log(`requireStore: creating ${id}`); //[${this.tenant.id}]`);
+    return store;
+  }
+  static createStore(runtime, arc: Arc, id, spec) {
+    log(`createStore(${id})`);
     const store = new Store(runtime.tenant.id, id);
+    const name = spec.store;
     store.name = name;
     // store changes cause host updates
     // TODO(sjmiles): too blunt: this updates all hosts regardless of their interest in this store
@@ -126,20 +132,24 @@ export class Recipe {
     store.listen('set-truth', () => {
       arc.updateHosts(store.pojo);
     });
-    // initialize data
-    if (store.truth[name] === undefined) {
-      store.change(data => data[name] = {});
-    } else {
-      // TODO(sjmiles): pretend we have changed for our new listener
-      // instead, perhaps newly added set-truth listeners should automatically be fired
-      store.fire('set-truth');
-      //console.warn('... data was initialized via persistence');
-    }
-    store.shared = spec.share !== false;
     // add to context
     runtime.tenant.context.add(store);
     // add to arc
     arc.stores.push(store);
+    // TODO(sjmiles): flags at the binding level could conflict (they are n:1)
+    // for now, creator wins
+    store.shared = spec.share !== false;
+    store.volatile = spec.volatile;
+    // TODO(sjmiles): we must not `restore()` until after we set `volatile`
+    if (!store.restore()) {
+      // initialize data
+      store.change(data => data[name] = {});
+    } else {
+      // TODO(sjmiles): pretend we have changed for our new listener
+      // instead, perhaps newly added set-truth listeners should automatically be fired
+      store.changed();
+      //console.warn('... data was initialized via persistence');
+    }
     return store;
   }
 }

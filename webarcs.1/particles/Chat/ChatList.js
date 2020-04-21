@@ -15,7 +15,7 @@ const template = Particle.html`
 <style>
   :host {
     display: block;
-    font-size: 18px;
+    font-size: 16px;
     order: 1;
   }
   [entries] {
@@ -41,6 +41,7 @@ const template = Particle.html`
     height: 32px;
   }
   [time] {
+    flex-shrink: 0;
     font-size: 75%;
     font-style: italic;
   }

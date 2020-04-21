@@ -44,6 +44,7 @@ import {recipes} from './recipes.js';
   createTestArc(tenants[3], 'chat', recipes.chat);
   // lenny
   createTestArc(tenants[4], 'book-club', recipes.book_club);
+  createTestArc(tenants[4], 'tv', recipes.tv);
 })();
 
 const createTestArc = async (tenant, name, recipe) => {

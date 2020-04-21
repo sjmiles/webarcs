@@ -143,14 +143,16 @@ export class Particle {
         this.ensureMount();
         this.doUpdate(...stateArgs);
       }
-    } catch (x) {
-      console.error(x);
+    // } catch (x) {
+    //   console.error(x);
+    // }
+    } finally {
+      // nullify validator _after_ methods so state changes don't reschedule validation
+      this.validator = null;
+      // save the old inputs and state
+      this.lastInputs = Object.assign(Particle.nob(), this._inputs);
+      this.lastState = Object.assign(Particle.nob(), this._state);
     }
-    // nullify validator _after_ methods so state changes don't reschedule validation
-    this.validator = null;
-    // save the old inputs and state
-    this.lastInputs = Object.assign(Particle.nob(), this._inputs);
-    this.lastState = Object.assign(Particle.nob(), this._state);
   }
   doUpdate(...stateArgs) {
     this.update(...stateArgs);

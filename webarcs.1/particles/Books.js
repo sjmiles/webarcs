@@ -14,15 +14,15 @@ return class extends Particle {
   get template() {
     return Particle.html`
     <div style="padding: 8px;">
-      Book Club:
-      <pre>{{books}}</pre>
+      Book club titles:
+      <pre><i>{{books}}</i></pre>
     </div>
     `;
   }
   update() {
     if (!this.finished) {
       this.finished = true;
-      const books = ['Owls!', 'Dirt is my Friend', 'The Laundry Dilemma'];
+      const books = ['Owls?', 'Dirt is my Friend', 'The Laundry Dilemma'];
       this.output({books});
     }
   }

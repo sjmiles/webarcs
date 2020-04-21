@@ -78,7 +78,8 @@ const tv = {
       particle: {
         kind: 'TMDBGrid',
         tmdbResults: {
-          share: false
+          share: false,
+          volatile: true
         }
       }
     }, {

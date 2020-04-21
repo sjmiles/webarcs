@@ -112,12 +112,12 @@ const template = Xen.Template.html`
 </div>
 
 <cx-tabs on-select="onTabSelect">
-  <cx-tab>Home</cx-tab>
+  <!-- <cx-tab>Home</cx-tab> -->
   <cx-tab selected>Arc</cx-tab>
   <cx-tab>Database</cx-tab>
 </cx-tabs>
 
-<div home page flex show$="{{showHome}}">{{home}}</div>
+<!-- <div home page flex show$="{{showHome}}">{{home}}</div> -->
 <div arc page flex show$="{{showArc}}">
   <div chooser style="width: 120px; padding: 8px; border: 1px solid var(--ui-bg-3);">{{home}}</div>
   <div flex><slot></slot></div>
@@ -144,7 +144,7 @@ export class TenantView extends Xen.Async {
   }
   getInitialState() {
     return {
-      selected: 1
+      selected: 0
     };
   }
   onTabSelect({currentTarget: {value: selected}}) {
@@ -152,7 +152,7 @@ export class TenantView extends Xen.Async {
   }
   onArcItemClick({currentTarget: {key}}) {
     if (key) {
-      this.state = {selectedArcId: key, selected: 1};
+      this.state = {selectedArcId: key, selected: 0};
       const {tenant} = this.props;
       const arc = tenant.arcs[key];
       this.selectArc(tenant, arc);
@@ -168,9 +168,9 @@ export class TenantView extends Xen.Async {
     }
     return {
       ...tenant,
-      showHome: (selected === 0),
-      showArc: (selected === 1),
-      showDatabase: (selected === 2),
+      //showHome: (selected === 0),
+      showArc: (selected === 0),
+      showDatabase: (selected === 1),
       home: {
         template: arcTemplate,
         models: this.renderHome(tenant, selectedArcId)
