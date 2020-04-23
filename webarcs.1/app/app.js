@@ -12,6 +12,7 @@ import {Arc} from '../arcs/build/core/arc.js';
 import {Composer} from '../arcs/build/platforms/dom/xen-dom-composer.js';
 import {initCorpus} from './corpus.js';
 import {initTenants, getTenant} from './tenants.js';
+import {Planner} from './planner.js';
 import {recipes} from './recipes.js';
 
 const specs = [{
@@ -94,7 +95,7 @@ const arcs = [{
 }];
 
 (async () => {
-   // initialize particle corpus
+  // initialize particle corpus
   await initCorpus();
   // initialize tenants
   const tenants = await initTenants(specs);
@@ -116,6 +117,11 @@ const arcs = [{
     if (tenant) {
       createTestArc(tenant, name, recipe);
     }
+  });
+  // planning
+  tenants.forEach(tenant => {
+    tenant.planner = new Planner(tenant);
+    setTimeout(() => tenant.planner.plan(), 2000);
   });
 })();
 

@@ -16,7 +16,8 @@ const template = Xen.Template.html`
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: auto;
+    /* overflow: auto; */
+    overflow: hidden;
   }
   * {
     box-sizing: border-box;

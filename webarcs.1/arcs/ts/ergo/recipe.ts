@@ -45,10 +45,48 @@ const log = logFactory(logFactory.flags.ergo, 'recipe', 'purple');
 // }
 //
 export class Recipe {
-  static async instantiate(runtime, arc, recipe, container?) {
+  static normalize(recipe) {
+    // TODO(sjmiles): would be great if we normalized all the nodes
     if (Array.isArray(recipe)) {
       recipe = {_: recipe};
     }
+    return recipe;
+  }
+  static parseStores(recipe, stores) {
+    recipe = this.normalize(recipe);
+    for (const key in recipe) {
+      let info = recipe[key];
+      if (key === 'particle') {
+        this.parseParticle(info, stores);
+      } else {
+        this.parseSlot(info, stores);
+      }
+    }
+    return stores;
+  }
+  static parseSlot(info, stores) {
+    if (!Array.isArray(info)) {
+      info = [info]
+    }
+   info.forEach(child => this.parseStores(child, stores));
+  }
+  static parseParticle(spec, stores) {
+    if (typeof spec === 'object') {
+      //log(`parse:`, spec);
+      Object.keys(spec).forEach(key => {
+        if (key !== 'kind') {
+          let value = spec[key];
+          if (typeof value === 'object') {
+            value = spec.store || key;
+          }
+          stores[value] = true;
+        }
+      });
+    }
+  }
+  //
+  static async instantiate(runtime, arc, recipe, container?) {
+    recipe = this.normalize(recipe);
     let particle;
     for (const key in recipe) {
       let info = recipe[key];
@@ -81,7 +119,15 @@ export class Recipe {
     }
     container = particle ? `${particle.id}#${key}` : key;
     log(`populating [${container}]`);
-    await Promise.all(info.map(r => this.instantiate(runtime, arc, r, container)));
+    //
+    // TODO(sjmiles): paralellized process works but is relatively chaotic ...
+    // linearize for now to ease understanding. Beware of dependencies on process order
+    // creeping in.
+    //
+    //await Promise.all(info.map(r => this.instantiate(runtime, arc, r, container)));
+    for (let child of info) {
+      await this.instantiate(runtime, arc, child, container);
+    }
   }
   static createArcStores(runtime, arc) {
     arc.hosts.forEach(host => this.createParticleStores(runtime, arc, host));

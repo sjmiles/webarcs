@@ -53,7 +53,7 @@ const template = Xen.Template.html`
   }
   [page] {
     display: none;
-    overflow: auto;
+    /* overflow: auto; */
   }
   [show] {
     display: block;
@@ -102,6 +102,10 @@ const template = Xen.Template.html`
   [arcItem][selected] [dot] {
     visibility: visible;
   }
+  system-view {
+    height: 216px;
+    overflow: auto;
+  }
 </style>
 
 <div banner>
@@ -118,13 +122,21 @@ const template = Xen.Template.html`
 </cx-tabs>
 
 <!-- <div home page flex show$="{{showHome}}">{{home}}</div> -->
-<div arc page flex show$="{{showArc}}">
-  <div chooser style="width: 120px; padding: 8px; border: 1px solid var(--ui-bg-3);">{{home}}</div>
-  <div flex><slot></slot></div>
+<div arc page flex show$="{{showArc}}" style="flex-direction: column; overflow: hidden;">
+  <div flex style="display: flex; overflow: auto;">
+    <div chooser style="width: 132px; padding: 8px; border: 1px solid var(--ui-bg-3);">{{home}}</div>
+    <div flex>
+      <!-- actual arcs projected here -->
+      <slot></slot>
+    </div>
+  </div>
+  <system-view tenant="{{tenant}}"></system-view>
 </div>
-<div database page flex show$="{{showDatabase}}">
+
+<div database page flex show$="{{showDatabase}}" style="overflow: auto;">
   <div unsafe-html="{{database}}"></div>
 </div>
+
 `;
 
 const tenantTemplate = Xen.Template.html`
@@ -180,6 +192,7 @@ export class TenantView extends Xen.Async {
         template: tenantTemplate,
         models: tenant && this.renderTenants(tenant)
       },
+      tenant
     };
   }
   renderTenants({tenants}) {
