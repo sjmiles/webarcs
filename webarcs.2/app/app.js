@@ -10,6 +10,7 @@
 
 import {Arc} from '../arcs/build/core/arc.js';
 import {Composer} from '../arcs/build/platforms/dom/xen-dom-composer.js';
+import {Runtime} from '../arcs/build/ergo/runtime.js';
 import {initCorpus} from './corpus.js';
 import {initTenants, getTenant} from './tenants.js';
 import {Planner} from './planner.js';
@@ -34,7 +35,7 @@ const specs = [{
   device: 'mobile',
   user: 'liz@springfield.edu',
   persona: 'liz',
-  peers: ['moe:mobile', 'edna:desktop', 'frink:laptop']
+  peers: ['moe:mobile', 'edna:desktop', 'frink:mobile']
 }, {
   device: 'mobile',
   user: 'lenny@springfield.com',
@@ -121,7 +122,7 @@ const arcs = [{
   // planning
   tenants.forEach(tenant => {
     tenant.planner = new Planner(tenant);
-    setTimeout(() => tenant.planner.plan(), 2000);
+    window.setInterval(() => tenant.planner.plan(), 2000);
   });
 })();
 
@@ -134,6 +135,11 @@ const createTestArc = async (tenant, name, recipe) => {
   if (store) {
     store.change(truth => truth.userid = tenant.persona);
   }
+};
+
+Runtime.prototype.createTestArc = function(recipe) {
+  const map = {'school-chat': 'chat', 'lab-chat': 'chat', 'book-club': 'book_club'};
+  createTestArc(this.tenant, recipe, recipes[map[recipe] || recipe]);
 };
 
 const createArc = async (tenant, id) => {

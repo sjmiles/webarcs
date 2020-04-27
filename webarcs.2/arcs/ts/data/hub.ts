@@ -75,8 +75,19 @@ export class Connection {
   database;
   conn;
   pending;
+  log;
+  frink;
+  liz;
   constructor(hub, peer) {
     //super();
+    if (hub.tenant.id === 'liz:mobile') {
+      this.liz = true;
+      this.log = logFactory(true, 'liz:connection', 'sepia');
+    }
+    if (hub.tenant.id === 'frink:mobile') {
+      this.frink = true;
+      this.log = logFactory(true, 'frink:connection', 'brown');
+    }
     this.hub = hub;
     this.endpoint = new Endpoint(peer, hub.tenant.id);
     this.database = this.initDatabase(this.hub, this.endpoint);
@@ -92,6 +103,9 @@ export class Connection {
     return database;
   }
   databaseChanged(docId) {
+    if (this.frink) {
+      this.log('databaseChanged', docId);
+    }
     this.hub.changed();
   }
   open() {
@@ -127,6 +141,9 @@ export class Connection {
     this.endpoint.send(msg);
   }
   receive(msg) {
+    if (this.liz) {
+      this.log(`receive: `, msg);
+    }
     // TODO(sjmiles): simulate asynchrony of a real communication channel
     setTimeout(() => {
       log(`[${this.hub.tenant.id}] received: `, msg);

@@ -50,6 +50,9 @@ export class Recipe {
     if (Array.isArray(recipe)) {
       recipe = {_: recipe};
     }
+    if (typeof recipe !== 'object') {
+      throw Error('recipe must be an Object');
+    }
     return recipe;
   }
   static parseStores(recipe, stores) {

@@ -68,29 +68,20 @@ export class SystemView extends Xen.Async {
   get template() {
     return template;
   }
-  render({tenant}) {
-    // update periodically as a stopgap
+  get suggestions() {
+    return this.tenant && this.tenant.suggestions || [];
+  }
+  render() {
+    // update periodically as a stopgap for observing 'suggestions' (fix)
     setTimeout(() => this._invalidate(), 500);
-    // let suggestions = [];
-    // if (tenant && tenant.suggestions) {
-    //   suggestions = tenant.suggestions.map(s => ({userid: 'system', msg: `${s} is available.`}));
-    // }
-    // const notifications = [
-    //   {userid: 'frink', msg: 'Testing. Glayvin!'},
-    //   {userid: 'liz', msg: ' would like to chat.'},
-    //   {userid: 'lenny', msg: ' would like to share TV Shows.'},
-    //   // {userid: 'system', msg: 'TV Shows available.'},
-    //   // {userid: 'system', msg: 'Chat available.'}
-    // ].concat(suggestions);
-    const suggestions = tenant && tenant.suggestions || [];
     return {
-      notifications: this.renderNotifications(suggestions)
+      notifications: this.renderNotifications(this.suggestions)
     };
   }
   renderNotifications(suggestions) {
     const models = suggestions.map(({userid, recipe, msg}, i) => {
       if (recipe && !msg) {
-        msg = `<b>${recipe}</b> recipe is available.`;
+        msg = `<b>${recipe}</b> is available.`;
       }
       return {
         key: i,
@@ -105,11 +96,15 @@ export class SystemView extends Xen.Async {
   }
   onDeleteClick(e) {
     e.stopPropagation();
-    const {currentTarget: {key}} = e;
     e.currentTarget.parentElement.style.display = 'none';
+    //const {currentTarget: {key}} = e;
     //console.warn(key);
   }
   onNotificationClick({currentTarget: {key}}) {
-    //console.warn(key);
+    const note = this.suggestions[key];
+    if (note) {
+      console.warn(key, note);
+      this.tenant.runtime.createTestArc(note.recipe);
+    }
   }
 }

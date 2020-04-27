@@ -12,8 +12,8 @@
 
 export const logFlags = {all: true, groupStatus: true, render: true, comms: true, ergo: true};
 
-const _logFactory = (nonoop, preamble, color, log = 'log') => {
-  if (!nonoop) {
+const _logFactory = (enable, preamble, color, log = 'log') => {
+  if (!enable) {
     return () => {};
   }
   const style = `background: ${color || 'gray'}; color: white; padding: 1px 6px 2px 7px; border-radius: 6px 0 0 6px;`;
@@ -26,10 +26,10 @@ const logKinds =  ['log', 'warn', 'error', 'group', 'groupCollapsed', 'groupEnd'
 //   log: function(preamble, color)
 //   log.[log|warn|error|group...]: function(preamble, color)
 
-export const logFactory = (nonoop, preamble: string, color: string = '') => {
+export const logFactory = (enable, preamble: string, color: string = '') => {
   const loggers = {};
   //logKinds.forEach(log => loggers[log] = _logFactory(nonoop, `[${deviceId}]:${preamble}`, color, log));
-  logKinds.forEach(log => loggers[log] = _logFactory(nonoop, `${preamble}`, color, log));
+  logKinds.forEach(log => loggers[log] = _logFactory(enable, `${preamble}`, color, log));
   const log = loggers['log'];
   Object.assign(log, loggers);
   return log;
