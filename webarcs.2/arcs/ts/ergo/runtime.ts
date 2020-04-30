@@ -13,12 +13,12 @@
  * @module ergo
  */
 
-import {Store} from '../data/store.js';
+//import {Store} from '../data/store.js';
 import {Host} from '../core/host.js';
 import {Arc} from '../core/arc.js';
 import {Recipe} from './recipe.js';
 import {logFactory} from '../utils/log.js';
-import {makeId} from '../utils/id.js';
+//import {makeId} from '../utils/id.js';
 
 const log = logFactory(logFactory.flags.ergo, 'runtime', 'magenta');
 

@@ -8,10 +8,10 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Store} from './store.js';
-import {Database} from './database.js';
+import {Store} from '../data/store.js';
+import {Database} from '../data/database.js';
 import {EventEmitter} from '../core/event-emitter.js';
-import {Automerge} from './automerge.js';
+import {Automerge} from '../data/automerge.js';
 import {logFactory} from '../utils/log.js';
 
 // build logger for 'hub' (if enabled)
@@ -98,7 +98,7 @@ export class Connection {
   initDatabase(hub, endpoint) {
     const database = new Database(`${hub.tenant.id}:${endpoint.id}:db`);
     database.ownerId = hub.tenant.id;
-    database.add(hub.peerStore);
+    //database.add(hub.peerStore);
     database.listen('doc-changed', docId => this.databaseChanged(docId));
     return database;
   }
@@ -171,6 +171,7 @@ export class Hub extends EventEmitter {
     this.tenant = tenant;
     tenant.context.listen('doc-changed', docId => this.contextChanged(tenant, docId));
     this.peerStore = this.initPeers(tenant);
+    tenant.context.add(this.peerStore);
     this.connections = this.connectPeers(this.peerStore.truth);
   }
   contextChanged(tenant, docId) {
@@ -179,7 +180,7 @@ export class Hub extends EventEmitter {
     this.forEachConnection(c => this.maybeShareStore(c, store));
   }
   maybeShareStore({database}, store) {
-    if (store.shared) {
+    if (store.isShared()) {
       //console.warn(`ADDING "${store.id}" to "${database.id}"`);
       database.add(store);
     } else {
@@ -191,21 +192,23 @@ export class Hub extends EventEmitter {
   }
   initPeers(tenant) {
     //const id = `${tenant.id}:peers`;
-    const id = `peers`;
-    const peerStore = new Store(this.tenant.id, id, id);
-    peerStore.shared = true;
+    const id = `peers:store:peers:[Peer]:default:${tenant.id}`;
+    // [arcid]:store:[name]:[type]:[tags]:[tenantid]
+    const peerStore = new Store(this.tenant.id, id, 'peers', '[Peer]'); //, ['private']);
     // const serial = localStorage.getItem(id);
     // if (serial) {
     //   peerStore.load(serial);
     // } else {
       const peers = tenant.peers;
       peerStore.change(truth => {
-        Object.keys(peers).forEach(key => truth[key] = peers[key]);
+        truth.peers = peers;
+        //const clone = {};
+        //Object.keys(peers).forEach(key => truth[key] = peers[key]);
       });
     // }
     return peerStore;
   }
-  connectPeers(peers) {
+  connectPeers({peers}) {
     const connections = {};
     Object.keys(peers).forEach(peer =>
       connections[peer] = new Connection(this, peer)
@@ -213,7 +216,9 @@ export class Hub extends EventEmitter {
     return connections;
   }
   forEachConnection(iter) {
-    Object.values(this.connections).forEach(iter);
+    if (this.connections) {
+      Object.values(this.connections).forEach(iter);
+    }
   }
   captureStores(database) {
     //this.forEachConnection(c => c.database.forEachStore(store => !database.get(store.id) && log('capture', store)));

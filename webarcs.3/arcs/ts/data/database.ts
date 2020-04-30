@@ -28,11 +28,11 @@ export class Database extends AbstractStore {
     this.truth.registerHandler(this.onDocsChanged.bind(this));
   }
   onDocsChanged(docId, doc) {
-    log(`[${this.id}]: onDocsChanged(${docId})`);
     if (!this.get(docId)) {
-      log.warn(`[${this.id}]: onDocsChanged(${docId}): adding missing store`);
-      this.add(new Store(this.ownerId, docId, null, null, null, doc));
+      //log.warn(`[${this.id}]: onDocsChanged(${docId}): adding missing store`);
+      this.add(new Store(this.ownerId, docId, docId, null, null, doc));
     }
+    log(`[${this.id}]: onDocsChanged(${docId})`);
     this.fire('doc-changed', docId);
   }
   get docs() {

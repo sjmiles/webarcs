@@ -55,44 +55,44 @@ const specs = [{
 
 const arcs = [{
   id: 'moe:mobile',
-  name: 'book-club',
-  recipe: recipes.book_club
-},{
-  id: 'moe:mobile',
-  name: 'tv',
-  recipe: recipes.tv
-},{
-  id: 'edna:desktop',
-  name: 'book-club',
-  recipe: recipes.book_club
-},{
-  id: 'edna:desktop',
-  name: 'school-chat',
+  name: 'chat',
   recipe: recipes.chat
-},{
-  id: 'carl:mobile',
-  name: 'tv',
-  recipe: recipes.tv
-},{
-  id: 'liz:mobile',
-  name: 'school-chat',
-  recipe: recipes.chat
-},{
-  id: 'lenny:mobile',
-  name: 'tv',
-  recipe: recipes.tv
-},{
-  id: 'lenny:mobile',
-  name: 'book-club',
-  recipe: recipes.book_club
-},{
-  id: 'frink:mobile',
-  name: 'lab-chat',
-  recipe: recipes.chat
-},{
-  id: 'frink:laptop',
-  name: 'lab-chat',
-  recipe: recipes.chat
+// },{
+//   id: 'moe:mobile',
+//   name: 'tv',
+//   recipe: recipes.tv
+// },{
+//   id: 'edna:desktop',
+//   name: 'book-club',
+//   recipe: recipes.book_club
+// },{
+  // id: 'edna:desktop',
+  // name: 'school-chat',
+  // recipe: recipes.chat
+// },{
+//   id: 'carl:mobile',
+//   name: 'tv',
+//   recipe: recipes.tv
+// },{
+//   id: 'liz:mobile',
+//   name: 'school-chat',
+//   recipe: recipes.chat
+// },{
+//   id: 'lenny:mobile',
+//   name: 'tv',
+//   recipe: recipes.tv
+// },{
+//   id: 'lenny:mobile',
+//   name: 'book-club',
+//   recipe: recipes.book_club
+// },{
+//   id: 'frink:mobile',
+//   name: 'lab-chat',
+//   recipe: recipes.chat
+// },{
+//   id: 'frink:laptop',
+//   name: 'lab-chat',
+//   recipe: recipes.chat
 }];
 
 // ui objects

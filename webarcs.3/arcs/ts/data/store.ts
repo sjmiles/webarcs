@@ -9,43 +9,62 @@
  */
 
 import {deepEqual, deepUndefinedToNull} from '../utils/object.js';
+import {logFactory} from '../utils/log.js';
 import {Automerge} from './automerge.js';
 import {AbstractStore} from './abstract-store.js';
 
+const log = logFactory(true, 'store', 'orange');
+
+// These CRDT documents will grow unbounded forever always waiting for a participant
+// to reappear with changes from the distant past.
+//
+// Can we define a notion of 'distant', prune the histories, and use another strategy when
+// said participant reappears?
+
 export class Store extends AbstractStore {
   name;
-  shared: boolean;
-  volatile: boolean;
   ownerId;
   type;
   tags;
+  spec;
   constructor(ownerId, id, name, type?, tags?, truth?) {
     super(id);
     // TODO(sjmiles): to uniquify persistence keys
     this.ownerId = ownerId;
     // name of data object in document (should we just make this 'data'?)
     this.name = name;
-    this.type = type;
-    this.tags = tags;
+    this.type = type || 'Any';
+    this.tags = tags || [];
     if (!truth) {
       truth = Automerge.init();
+      // truth = Automerge.from({
+      //   $arcs_meta: {
+      //     '0': {
+      //       type: this.type,
+      //       tags: this.tags
+      //     }
+      //   }
+      // });
     }
-    // truth = Automerge.change(truth, truth => {
-    //     truth.$arcs_meta = {
-    //       type: type || 'unknown',
-    //       tags: tags || []
-    //     };
-    // });
     this.truth = truth;
   }
+  getMeta() {
+    // [arcid]:store:[name]:[type]:[tags]:[tenantid]
+    const [arcid, store, name, type, tags, tenantid] = this.id.split(':');
+    return {arcid, store, name, type, tags, tenantid};
+  }
+  getProperty() {
+    return this.truth[this.getMeta().name];
+  }
   isCollection() {
-    const keys = Object.keys(this.truth);
-    if (keys.length) {
-      const entity = this.truth[keys[0]];
-      if (typeof entity === 'object') {
-        return true;
-      }
-    }
+    return this.type[0] === '[';
+  }
+  // TODO(sjmiles): `tags` usage feels brittle, not sure it's the right way to go
+  isShared() {
+    return !this.tags.includes('private');
+  }
+  isVolatile() {
+    return this.tags.includes('volatile');
   }
   change(mutator) {
     this.truth = Automerge.change(this.truth, mutator);
@@ -72,7 +91,7 @@ export class Store extends AbstractStore {
         if (Array.isArray(value)) {
           console.log(`array conflict for [${key}]`, value, conflicts);
           doc = Automerge.change(doc, root => value.forEach(v => root[key].push(v)));
-        } else if (typeof value === 'object') {
+        } else if (typeof value === 'object') { //} && !key.includes('$arcs')) {
           console.log(`object conflict for [${key}]`, value, conflicts);
           doc = Automerge.change(doc, root => {
             const entity = root[key];
@@ -106,13 +125,13 @@ export class Store extends AbstractStore {
     return `[${this.ownerId}]:${this.id}`;
   }
   persist() {
-    if (!this.volatile) {
+    if (!this.isVolatile()) {
       const serial = this.save();
-      localStorage.setItem(this.persistId, serial);
+      //localStorage.setItem(this.persistId, serial);
     }
   }
   restore() {
-    if (!this.volatile) {
+    if (!this.isVolatile()) {
       const serial = localStorage.getItem(this.persistId);
       if (serial) {
         this.load(serial);

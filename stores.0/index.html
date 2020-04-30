@@ -1,0 +1,27 @@
+<!doctype html>
+
+<style>
+  body {
+    font-family: sans-serif;
+    font-size: 12px;
+    display: flex;
+  }
+  body {
+    --ui-bg-1: #ffffff;
+    --ui-bg-2: #e0e0e0;
+    --ui-bg-3: #ebebeb;
+    --ui-bg-4: #f4f4f4;
+    --ui-bg-hi-1: rgba(192, 192, 255, 0.35);
+  }
+  [toolbar] {
+    background-color: var(--ui-bg-2);
+  }
+  tenants-view {
+    width: 120px;
+    user-select: none;
+    background-color: var(--ui-bg-2);
+  }
+</style>
+
+<script src="../automerge/automerge.js"></script>
+<script src="./app.js" type="module"></script>

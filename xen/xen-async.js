@@ -45,7 +45,12 @@ const XenAsyncMixin = Base => class extends Base {
     return this.update && this.update(props, state, oldProps, oldState);
   }
   _render(props, state, oldProps, oldState) {
-    return this.render && this.render(props, state, oldProps, oldState);
+    if (this.shouldRender(props, state, oldProps, oldState)) {
+      return this.render && this.render(props, state, oldProps, oldState);
+    }
+  }
+  shouldRender() {
+    return true;
   }
   // event->state utility
   onState(e, data) {

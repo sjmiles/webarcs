@@ -160,24 +160,23 @@ export class Recipe {
     //
     const name = spec.store;
     const id = `${arc.id}:store:${name}`;
-    let store = arc.stores.find(s => s.id === id);
+    let store = arc.stores.find(s => s.id.startsWith(id));
     if (store) {
       // TODO(sjmiles): hack, fix init sequence properly
       store.changed();
     } else {
-      store = this.createStore(runtime, arc, id, spec);
+      store = this.createStore(runtime, arc, `${id}:${runtime.tenant.id}`, spec);
     }
     return store;
   }
   static createStore(runtime, arc: Arc, id, spec) {
     log(`createStore(${id})`);
-    const store = new Store(runtime.tenant.id, id);
     const name = spec.store;
-    store.name = name;
+    const store = new Store(runtime.tenant.id, id, name);
     // store changes cause host updates
     // TODO(sjmiles): too blunt: this updates all hosts regardless of their interest in this store
     // TODO(sjmiles): `inputs` sent to updateHosts is not the complete set of inputs as may be expected, but
-    // instead it's just the latest from here. Hosts accumulate inputs (for better or worse).
+    // instead it's just the latest from here. Hosts accrete inputs (for better or worse).
     store.listen('set-truth', () => {
       arc.updateHosts(store.pojo);
     });
