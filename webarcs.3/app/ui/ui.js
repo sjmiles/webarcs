@@ -7,7 +7,7 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
-import '../../elements/corellia-xen/cx-tabs.js';
+import '../../../elements/corellia-xen/cx-tabs.js';
 
 import {TenantsView} from './tenants-view.js';
 import {TenantIcon} from './tenant-icon.js';

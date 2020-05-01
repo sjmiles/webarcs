@@ -8,7 +8,7 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Xen} from '../../xen/xen-async.js';
+import {Xen} from '../../../xen/xen-async.js';
 
 const template = Xen.Template.html`
 <style>
@@ -31,7 +31,6 @@ const template = Xen.Template.html`
     flex: 1;
   }
   [notification] {
-    /* padding: 6px; */
     cursor: pointer;
     border-radius: 128px;
     border: 1px solid #e0e0e0;
@@ -72,7 +71,7 @@ export class SystemView extends Xen.Async {
     return this.tenant && this.tenant.suggestions || [];
   }
   render() {
-    // update periodically as a stopgap for observing 'suggestions' (fix)
+    // TODO(sjmiles): update periodically as a stopgap for observing 'suggestions' ... fix!
     setTimeout(() => this._invalidate(), 500);
     return {
       notifications: this.renderNotifications(this.suggestions)
@@ -103,7 +102,6 @@ export class SystemView extends Xen.Async {
   onNotificationClick({currentTarget: {key}}) {
     const note = this.suggestions[key];
     if (note) {
-      console.warn(key, note);
       this.tenant.runtime.createTestArc(note.recipe);
     }
   }

@@ -22,26 +22,30 @@ import {logFactory} from '../utils/log.js';
 
 const renderDebounceIntervalMs = 200;
 
+// TODO(sjmiles): mush the *Nexi into the Arc class
+
 class StoreNexus extends EventEmitter {
-  stores = [];
+  stores = {};
   constructor() {
     super();
   }
   getStoreByName(name) {
-    return this.stores.find(s => s.name === name);
+    return this.stores[name];
+    //return this.stores.find(s => s.name === name);
+  }
+  forEachStore(task) {
+    Object.keys(this.stores).forEach(key => task(this.stores[key], key));
   }
 }
 
 class HostNexus extends StoreNexus {
   protected hosts: Host[];
-  protected hnlog;
-  public stores;
+  protected log;
   public id;
   constructor(id) {
     super();
     this.id = id;
     this.hosts = [];
-    this.hnlog = logFactory(logFactory.flags.all, `HostNexus[${this.id}]`, 'green') as any;
   }
   public onchange() {
   }
@@ -51,9 +55,9 @@ class HostNexus extends StoreNexus {
   public addHost(host) {
     this.hosts.push(host);
   }
-  protected updateHost(host, inputs) {
+  protected updateHost(host) {
     //const hostInputs = this.computeHostInputs(host, inputs);
-    this.hnlog(`updateHost(${host.id})`);
+    this.log(`updateHost(${host.id})`);
     const hostInputs = this.computeHostInputs(host);
     host.requestUpdate(hostInputs);
   }
@@ -61,34 +65,36 @@ class HostNexus extends StoreNexus {
   // TODO(sjmiles): add debounce (update is debounced, so it's not critical)
   protected computeHostInputs(host) {
     const hostInputs = {};
-    const {spec} = host;
-    // TODO(sjmiles): start with clearer structure (e.g. lose 'kind' object as preprocess)
-    Object.keys(spec).forEach(name => {
-      // either 'kind' keyword, or a property name
-      if (name !== 'kind') {
-        const storeName = spec[name];
+    const {meta} = host;
+    Object.keys(meta).forEach(name => {
+      // skip keywords
+      // TODO(sjmiles): start with clearer structure (e.g. remove keywords as preprocess)
+      if (name !== 'kind' && name !== 'id' && name !== 'container') {
+        const storeName = meta[name];
         // find referenced store
         const store = this.getStoreByName(storeName);
         if (!store) {
-          this.hnlog.error(`computeHostInputs: "[${storeName}]" (bound to "${name}") not found`)
+          this.log.error(`computeHostInputs: "[${storeName}]" (bound to "${name}") not found`)
           return;
         }
-        hostInputs[name] = store.pojo[storeName];
+        hostInputs[name] = store.pojo.data; //[storeName];
       }
     });
-    this.hnlog.log(`computeHostInputs(${host.id}) =`, JSON.stringify(hostInputs));
+    this.log(`computeHostInputs(${host.id}) = {${Object.keys(hostInputs)}}`);
+    // dumping the entire data blob on the console is handy occasionally, but unwieldy most of the time
+    //this.log.dir(hostInputs);
     return hostInputs;
   }
   protected mergeOutputs(host, outputs) {
-    this.hnlog(`mergeOutputs(${host.id}, ${Object.keys(outputs||0)})`);
-    this.stores.forEach(store => {
+    this.log(`mergeOutputs(${host.id}, ${Object.keys(outputs||0)})`);
+    this.forEachStore(store => {
       const {name} = store;
       if (name in outputs) {
-        this.hnlog(`mergeOutputs: analyzing "${name}"`);
+        this.log(`mergeOutputs: analyzing "${name}"`);
         const output = outputs[name];
         // TODO(sjmiles): need to formalize what can be in outputs: right here we ignore non-object values
         if (typeof output === 'object' && store.hasChanges({[name]: output})) {
-          this.hnlog(`mergeOutputs: "${name}" is dirty, updating Store`);
+          this.log(`mergeOutputs: "${name}" is dirty, updating Store`);
           store.change(data => data[name] = outputs[name]);
         }
       }
@@ -99,11 +105,10 @@ class HostNexus extends StoreNexus {
 /** Arc class */
 export class Arc extends HostNexus {
   id;
-  private log;
   private composer;
   constructor({id, composer}) {
     super(id || `arc(${makeId()})`);
-    this.log = logFactory(logFactory.flags.all, `Arc[${id}]`, 'blue') as any;
+    this.log = logFactory(logFactory.flags.arc, `Arc[${id}]`, 'blue') as any;
     this.composer = composer;
     composer.onevent = (pid, eventlet) => this.onComposerEvent(pid, eventlet);
   }
@@ -114,12 +119,22 @@ export class Arc extends HostNexus {
       host.handleEvent(eventlet);
     }
   }
-  // public async addParticle(runtime, id, spec, container) {
-  //   const host = await runtime.createHostedParticle(id, spec, container);
-  //   if (host) {
-  //     this.addHost(host);
-  //   }
-  // }
+  addStore(store, name) {
+    this.stores[name] = store;
+    //arc.stores.push(store);
+    // store changes cause host updates
+    // TODO(sjmiles): too blunt: this updates all hosts regardless of their interest in this store
+    store.listen('set-truth', () => this.updateHosts());
+  }
+  public async addParticle(runtime, meta) {
+    //this.log(`addParticle(${meta.kind}, ${meta.id})`);
+    this.log(`addParticle(${JSON.stringify(meta)})`);
+    const host = await runtime.createHostedParticle(meta);
+    if (host) {
+      this.addHost(host);
+    }
+    return host;
+  }
   async addHost(host) {
     super.addHost(host);
     host.onoutput = outputs => this.particleOutput(host, outputs);
@@ -152,8 +167,8 @@ export class Arc extends HostNexus {
       this.composer.render({id, container, content: {template, model}});
     }
   }
-  public updateHosts(inputs) {
-    this.log(`updateHosts({${Object.keys(inputs)}})`);
-    this.hosts.forEach((p: Host) => this.updateHost(p, inputs));
+  public updateHosts() {
+    //this.log(`updateHosts()`);
+    this.hosts.forEach((p: Host) => this.updateHost(p));
   }
 }

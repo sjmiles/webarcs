@@ -29,8 +29,8 @@ export class Database extends AbstractStore {
   }
   onDocsChanged(docId, doc) {
     if (!this.get(docId)) {
-      //log.warn(`[${this.id}]: onDocsChanged(${docId}): adding missing store`);
-      this.add(new Store(this.ownerId, docId, docId, null, null, doc));
+      log.warn(`[${this.id}]: onDocsChanged(${docId}): adding missing store`);
+      this.add(new Store(this.ownerId, docId));
     }
     log(`[${this.id}]: onDocsChanged(${docId})`);
     this.fire('doc-changed', docId);

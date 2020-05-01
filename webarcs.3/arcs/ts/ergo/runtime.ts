@@ -14,19 +14,14 @@
  */
 
 import {Store} from '../data/store.js';
-import {Host} from '../core/host.js';
+import {Host, ParticleMeta} from '../core/host.js';
+import {Composer} from '../platforms/dom/xen-dom-composer.js';
 import {Arc} from '../core/arc.js';
 import {Recipe} from './recipe.js';
 import {logFactory} from '../utils/log.js';
 //import {makeId} from '../utils/id.js';
 
 const log = logFactory(logFactory.flags.ergo, 'runtime', 'magenta');
-
-type ParticleSpec = {
-  kind: string
-};
-
-type Container = string;
 
 // expensive, so Highlander
 const registry = {};
@@ -39,31 +34,82 @@ export class Runtime {
   static register(name, factory) {
     registry[name] = factory;
   }
+  async createArc(id) {
+    const tenant = this.tenant;
+    // TODO(sjmiles): maybe runtime should own tenant:
+    // - keeps tenant as a POJO
+    // - keeps runtime as a class
+    // - apis take runtimes
+    const root = tenant.composer.root;
+    // ?
+    tenant.root = root;
+    const arcRoot = root.appendChild(document.createElement('div'));
+    arcRoot.id = id;
+    const composer = new Composer(arcRoot);
+    const arc = new Arc({id, composer});
+    this.addArc(arc);
+    return arc;
+  };
+  addArc(arc) {
+    this.tenant.currentArc = arc;
+    this.tenant.arcs[arc.id] = arc;
+    //this.persistArcMetas();
+  }
   async instantiate(arc: Arc, recipe) {
     await Recipe.instantiate(this, arc, recipe);
+    this.persistArcMetas();
   }
-  requireStore(arc, key, spec) {
-    // normalize spec
-    if (typeof spec === 'string') {
-      spec = {store: spec};
+  realizeStore(arc, id) {
+    let store;
+    const meta = Store.metaFromId(id);
+    if (meta.tags.includes('map')) {
+      store = this.mapStore(arc, meta);
+      if (!store) {
+        log.error('realizeStore: mapStore returned null');
+      }
+    } else {
+      store = this.createStore(id);
+      if (!store) {
+        log.error('realizeStore: createStore returned null');
+      }
     }
-    spec.store = spec.store || key;
-    spec.type = spec.type || 'Any';
-    spec.tags = spec.tags || ['default'];
-    const name = spec.store;
-    // construct store id preamble
-    const id = `${arc.id}:store:${name}:${spec.type}:${spec.tags.join(',')}:${this.tenant.id}`;
-    return this.createStore(id, spec);
+    if (store) {
+      // add to context
+      this.tenant.context.add(store);
+      arc.addStore(store, meta.name);
+    }
   }
-  createStore(id, spec) {
-    log(`createStore(${id})`, spec);
-    const name = spec.store;
-    const store = new Store(this.tenant.id, id, name, spec.type, spec.tags);
-    store.spec = spec;
+  mapStore(arc, meta) {
+    let mapped;
+    this.tenant.context.forEachStore(store => {
+      const sm = store.meta;
+      if (sm.type === meta.type && sm.tenantid === this.tenant.id) {
+        mapped = store;
+      }
+    });
+    log(`spec wants to map "${meta.type}", found ${mapped ? mapped.id : 'nothing'}`);
+    return mapped;
+  }
+  // requireStore(arc, key, spec) {
+  //   // normalize spec
+  //   if (typeof spec === 'string') {
+  //     spec = {name: spec};
+  //   }
+  //   const name = spec.name || key;
+  //   const type = spec.type || 'Any';
+  //   const tags = spec.tags || ['default'];
+  //   // construct store id
+  //   const id = Store.idFromMeta({arcid: arc.id, name, type, tags: tags.join(','), tenantid: this.tenant.id});
+  //   return this.createStore(id, spec.value);
+  // }
+  createStore(id, specValue?) {
+    log(`createStore(${id})`);
+    const store = new Store(this.tenant.id, id);
+    //store.spec = spec;
     if (!store.restore()) {
-      const value = spec.value || (store.isCollection() ? {} : '');
+      const value = specValue || (store.isCollection() ? {} : '');
       // initialize data
-      store.change(data => data[name] = value);
+      store.change(doc => doc.data = value);
     } else {
       // TODO(sjmiles): pretend we have changed for our new listener
       // instead, perhaps newly added set-truth listeners should automatically be fired
@@ -71,22 +117,61 @@ export class Runtime {
     }
     return store;
   }
-  async createHostedParticle(id, spec: ParticleSpec, container: Container) {
-    const particle = await this.createParticle(spec.kind);
+  async createHostedParticle(meta: ParticleMeta) {
+    const particle = await this.createParticle(meta.kind);
     if (particle) {
-      // TODO(sjmiles): exposing id to the particle is bad but there was a reason ... study
-      particle.id = id;
-      return new Host(id, container, spec, particle);
+      // TODO(sjmiles): exposing id to the particle is bad for infosec but good for debugging ... study
+      particle.id = meta.id;
+      return new Host(meta, particle);
     }
-    log.error(`failed to create particle "${id}"`);
+    log.error(`failed to create particle "${meta.id}"`);
     return null;
   }
-  async createParticle(kind: string): Promise<Host> {
+  async createParticle(kind: string): Promise<any> {
     const factory = registry[kind];
     if (factory) {
       return await factory();
     } else {
       log.error(`createParticle: "${kind}" not in registry`);
     }
+  }
+  async restoreArcMetas() {
+    return;
+    const key = `${this.tenant.id}:arcs`;
+    const json = localStorage.getItem(key);
+    if (json) {
+      //console.log(`restoreArcMetas: "${key}"="${json}"`);
+      const metas = JSON.parse(json);
+      await Promise.all(metas.map(async ({id, stores, particles}) => {
+        const arc = await this.createArc(id);
+        for (let id of stores) {
+          this.realizeStore(arc, id);
+        }
+        for (let meta of particles) {
+          await arc.addParticle(this, meta);
+        }
+        arc.updateHosts();
+      }));
+    }
+  }
+  persistArcMetas() {
+    const json = this.buildArcMetas();
+    const key = `${this.tenant.id}:arcs`;
+    //console.log(`persistArcMetas: "${key}"="${json}"`);
+    localStorage.setItem(key, json);
+  }
+  buildArcMetas() {
+    const metas = [];
+    this.forEachArc(({id, hosts, stores}) => {
+      metas.push({
+        id,
+        particles: hosts.map(host => host.meta),
+        stores: Object.keys(stores).map(key => ({name, id: stores[key].id}))
+      });
+    });
+    return JSON.stringify(metas, null, '  ');
+  }
+  forEachArc(task) {
+    Object.values(this.tenant.arcs).forEach(arc => task(arc));
   }
 };

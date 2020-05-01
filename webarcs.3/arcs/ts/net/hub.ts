@@ -56,7 +56,7 @@ export class Endpoint {
         return;
       }
     }
-    // try again, but wait longer between each attempt
+    // try again, but wait longer between each attempt (delay is in seconds)
     delay = delay || -30;
     if (delay < 600) {
       delay += 30;
@@ -151,6 +151,7 @@ export class Connection {
       this.conn.receiveMsg(msg);
       let doc = this.database.docs.get(msg.docId);
       if (doc) {
+        console.warn(doc);
         doc = Store.fix(doc);
         this.database.get(msg.docId).truth = doc;
       }
@@ -194,21 +195,21 @@ export class Hub extends EventEmitter {
     //const id = `${tenant.id}:peers`;
     const id = `peers:store:peers:[Peer]:default:${tenant.id}`;
     // [arcid]:store:[name]:[type]:[tags]:[tenantid]
-    const peerStore = new Store(this.tenant.id, id, 'peers', '[Peer]'); //, ['private']);
+    const peerStore = new Store(this.tenant.id, id);
     // const serial = localStorage.getItem(id);
     // if (serial) {
     //   peerStore.load(serial);
     // } else {
       const peers = tenant.peers;
       peerStore.change(truth => {
-        truth.peers = peers;
+        truth.data = peers;
         //const clone = {};
         //Object.keys(peers).forEach(key => truth[key] = peers[key]);
       });
     // }
     return peerStore;
   }
-  connectPeers({peers}) {
+  connectPeers({data: peers}) {
     const connections = {};
     Object.keys(peers).forEach(peer =>
       connections[peer] = new Connection(this, peer)

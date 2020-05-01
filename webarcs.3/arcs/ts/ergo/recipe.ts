@@ -9,7 +9,7 @@
  */
 
 // import {Arc} from '../core/arc.js';
-// import {Store} from '../data/store.js';
+import {Store} from '../data/store.js';
 import {makeId} from '../utils/id.js';
 import {logFactory} from '../utils/log.js';
 
@@ -20,7 +20,7 @@ import {logFactory} from '../utils/log.js';
 
 const log = logFactory(logFactory.flags.ergo, 'recipe', 'purple');
 //
-// Recipes contain two sections: (1) stores and (2) slots and particles.
+// Recipes are made of (1) stores, (2) slots, and (3) particles.
 //
 // {
 //   stores: [{
@@ -35,22 +35,49 @@ const log = logFactory(logFactory.flags.ergo, 'recipe', 'purple');
 // }
 //
 
-// TODO(sjmiles): do we need qualified names, like `$particle` or something?
+type RecipeSpec = {
+  stores?: [{}]
+  // arbitrary slot specs
+};
 
+type StoreSpec = {
+  id: string;
+  type: string;
+  tags?: [string];
+  value?: any;
+};
+
+type ParticleSpec = {
+  kind: string
+  // arbitrary field specs
+};
+
+type ChildSpec = {
+  particle: ParticleSpec
+  // arbitrary slot specs
+};
+
+type SlotSpec = [ChildSpec];
+
+// keywords in recipe JSON:
+// TODO(sjmiles): do we need qualified names, like `$particle` or something?
 const KEYS = {
   PARTICLE: 'particle',
   STORES: 'stores'
 };
 
 export class Recipe {
-  static async instantiate(runtime, arc, recipe, container?) {
+  static async instantiate(runtime, arc, recipe: RecipeSpec, container?) {
     // convert shorthand to longhand before parsing
     // TODO(sjmiles): would be great if it normalized all the things
     recipe = this.normalize(recipe);
+    await this.instantiateNode(runtime, arc, recipe, container);
+  }
+  static async instantiateNode(runtime, arc, recipe: RecipeSpec | ChildSpec, container?) {
     let particle;
     for (const key in recipe) {
       let info = recipe[key];
-      switch(key) {
+      switch (key) {
         case KEYS.STORES:
           this.realizeStores(runtime, arc, info);
           break;
@@ -63,10 +90,10 @@ export class Recipe {
       }
     }
   }
-  static normalize(recipe) {
+  static normalize(recipe: RecipeSpec): RecipeSpec {
     // TODO(sjmiles): would be great if we normalized all the things
     if (Array.isArray(recipe)) {
-      recipe = {_: recipe};
+      recipe = {_: recipe} as RecipeSpec;
     }
     if (typeof recipe !== 'object') {
       throw Error('recipe must be an Object');
@@ -74,55 +101,45 @@ export class Recipe {
     return recipe;
   }
   static realizeStores(runtime, arc, specs) {
-    log(`realizeStores for "${arc.id}"`);
-    Object.keys(specs).forEach(name => {
-      log(`realizeStores: requireStore: "${name}"`);
-      const store = runtime.requireStore(arc, name, specs[name]);
-      if (!store) {
-        log.error('realizeStores: requireStore returned null');
-      } else {
-        // store changes cause host updates
-        // TODO(sjmiles): too blunt: this updates all hosts regardless of their interest in this store
-        // TODO(sjmiles): `inputs` sent to updateHosts is not the complete set of inputs as may be expected, but
-        // instead it's just the latest from here. Hosts accrete inputs (for better or worse).
-        store.listen('set-truth', () => {
-          arc.updateHosts(store.pojo);
-        });
-        // add to context
-        runtime.tenant.context.add(store);
-        // add to arc
-        arc.stores.push(store);
-      }
-    });
+    log(`realizeStores for "${arc.id}": ${Object.keys(specs).join(', ')}`);
+    Object.keys(specs).forEach(key => this.realizeStore(runtime, arc, key, specs[key]));
   }
-  static async instantiateParticle(runtime, arc, spec, container) {
+  static realizeStore(runtime, arc, key, spec) {
+    const id = this.specToId(arc, key, spec, runtime.tenant.id);
+    runtime.realizeStore(arc, id);
+  }
+  static specToId(arc, key, spec, tenantid) {
+    // normalize spec
+    if (typeof spec === 'string') {
+      spec = {name: spec};
+    }
+    const name = spec.name || key;
+    const type = spec.type || 'Any';
+    const tags = spec.tags || ['default'];
+    // construct store id
+    return Store.idFromMeta({arcid: arc.id, name, type, tags, tenantid});
+  }
+  static async instantiateParticle(runtime, arc, spec: ParticleSpec, container) {
+    // TODO(sjmiles): should be fixed via normalization
     if (typeof spec === 'string') {
       spec = {kind: spec};
     }
-    log(`adding ${spec.kind} particle`);
     const id = `${arc.id}:${spec.kind}(${makeId()})`;
-    // TODO(sjmiles): technically 'particles' are owned by 'hosts' but
-    // I tried to hide the difference. Could be confusing here, since
-    // `instantiateParticle` returns a Host (even though Host *is* a Particle [by extension]).
-    const host = await runtime.createHostedParticle(id, spec, container);
-    if (host) {
-      arc.addHost(host);
-    }
-    return host;
+    const meta = {id, ...spec, container};
+    return await arc.addParticle(runtime, meta);
   }
-  static async instantiateSlot(runtime, arc, key, info, particle, container) {
+  static async instantiateSlot(runtime, arc, key, info: SlotSpec, particle, container) {
+    // TODO(sjmiles): should be fixed via normalization
     if (!Array.isArray(info)) {
       info = [info]
     }
     container = particle ? `${particle.id}#${key}` : key;
     log(`populating [${container}]`);
-    //
-    // TODO(sjmiles): parallelized process works but is chaotic to analyze ...
-    // linearize for now to ease understanding. Beware of dependencies on process order
-    // creeping in.
+    // TODO(sjmiles): parallelized process works but is chaotic when analyzed ...
+    // serialize for now to ease understanding. Beware of creeping dependencies on process order.
     //await Promise.all(info.map(r => this.instantiate(runtime, arc, r, container)));
     for (let child of info) {
-      await this.instantiate(runtime, arc, child, container);
+      await this.instantiateNode(runtime, arc, child, container);
     }
   }
 }

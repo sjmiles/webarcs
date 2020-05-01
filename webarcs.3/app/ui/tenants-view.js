@@ -8,7 +8,7 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Xen} from '../../xen/xen-async.js';
+import {Xen} from '../../../xen/xen-async.js';
 
 const template = Xen.Template.html`
 <style>

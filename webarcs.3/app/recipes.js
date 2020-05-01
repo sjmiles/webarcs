@@ -19,8 +19,8 @@ const chat = {
       type: '[ChatEntry]'
     },
     userid: {
-      type: 'UserId',
-      tags: ['private']
+      type: 'BasicProfile',
+      tags: ['map', 'private']
     }
   },
   root: [{
@@ -44,6 +44,20 @@ const chat = {
 };
 
 const book_club = {
+  stores: {
+    padding: {
+      type: 'Padding',
+      value: '12px 8px',
+      tags: ['private']
+    },
+    entries: {
+      type: '[ChatEntry]'
+    },
+    userid: {
+      type: 'UserId',
+      tags: ['private']
+    }
+  },
   root: [{
     particle: 'Frame',
     content: [{
@@ -52,34 +66,35 @@ const book_club = {
   }, {
     particle: {
       kind: 'Frame',
-      padding: {
-        share: false,
-        value: '12px 8px'
-      }
+      padding: 'padding'
     },
     content: [{
       particle: {
-        kind: 'Chat/ChatWrite',
-        entries: {
-          type: '[ChatEntries]'
-        },
-        userid: {
-          tags: ['private']
-        }
+        entries: 'entries',
+        userid: 'userid'
       }
     },{
       particle: {
         kind: 'Chat/ChatList',
-        entries: {
-          type: '[ChatEntries]'
-        }
+        entries: 'entries'
       }
     }]
   }]
 };
 
 const tv = {
-  // a recipe is an array of slots
+  stores: {
+    tmdbQuery: {
+      type: 'TMDBQuery'
+    },
+    tmdbResults: {
+      type: '[TMDBEntry]',
+      tags: ['private', 'volatile']
+    },
+    tmdbSelection: {
+      type: 'TMDBEntry'
+    }
+  },
   root: [{
     particle: 'Frame',
     content: [{
@@ -90,10 +105,7 @@ const tv = {
     }, {
       particle: {
         kind: 'TMDBGrid',
-        tmdbResults: {
-          share: false,
-          volatile: true
-        }
+        tmdbResults: 'tmdbResults'
       }
     }, {
       particle: {

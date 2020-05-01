@@ -8,7 +8,7 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Xen} from '../../xen/xen-async.js';
+import {Xen} from '../../../xen/xen-async.js';
 
 const template = Xen.Template.html`
 <style>
@@ -16,7 +16,6 @@ const template = Xen.Template.html`
     flex: 1;
     display: flex;
     flex-direction: column;
-    /* overflow: auto; */
     overflow: hidden;
   }
   * {

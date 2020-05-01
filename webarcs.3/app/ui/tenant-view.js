@@ -8,7 +8,7 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Xen} from '../../xen/xen-async.js';
+import {Xen} from '../../../xen/xen-async.js';
 
 const template = Xen.Template.html`
 <style>
@@ -53,7 +53,6 @@ const template = Xen.Template.html`
   }
   [page] {
     display: none;
-    /* overflow: auto; */
   }
   [show] {
     display: block;
@@ -121,11 +120,10 @@ const template = Xen.Template.html`
   <cx-tab>Database</cx-tab>
 </cx-tabs>
 
-<!-- <div home page flex show$="{{showHome}}">{{home}}</div> -->
 <div arc page flex show$="{{showArc}}" style="flex-direction: column; overflow: hidden;">
-  <div flex style="display: flex; overflow: auto;">
+  <div flex style="display: flex; overflow: hidden;">
     <div chooser style="width: 132px; padding: 8px; border: 1px solid var(--ui-bg-3);">{{home}}</div>
-    <div flex>
+    <div flex style="overflow-x: auto; overflow-y: scroll;">
       <!-- actual arcs projected here -->
       <slot></slot>
     </div>
@@ -135,7 +133,6 @@ const template = Xen.Template.html`
 
 <div database page flex show$="{{showDatabase}}" style="overflow: auto;">
   <database-view database="{{database}}"></database-view>
-  <!-- <div unsafe-html="{{database}}"></div> -->
 </div>
 
 `;
@@ -157,39 +154,47 @@ export class TenantView extends Xen.Async {
   }
   getInitialState() {
     return {
-      selected: 0
+      selectedTab: 0
     };
   }
+  update({tenant}, state) {
+    // TODO(sjmiles): update periodically as a stopgap for observing changes (e.g. a new arc) ... fix!
+    setTimeout(() => this._invalidate(), 500);
+    if (tenant && tenant.currentArc) {
+      const arc = tenant.currentArc;
+      state.selectedArcId = arc.id;
+      const root = arc.composer.root;
+      if (state.lastRoot !== root) {
+        if (state.lastRoot) {
+          state.lastRoot.hidden = true;
+        }
+        state.lastRoot = root;
+        root.hidden = false;
+      }
+    }
+  }
   onTabSelect({currentTarget: {value: selected}}) {
-    this.state = {selected};
+    this.state = {selectedTab: selected};
   }
   onArcItemClick({currentTarget: {key}}) {
     if (key) {
-      this.state = {selectedArcId: key, selected: 0};
+      this.state = {selectedArcId: key, selectedTab: 0};
       const {tenant} = this.props;
       const arc = tenant.arcs[key];
       this.selectArc(tenant, arc);
     }
   }
-  render({tenant}, {selected, selectedArcId}) {
-    if (!selectedArcId) {
-      const arc = Object.values(tenant.arcs)[0];
-      if (arc) {
-        this.selectArc(tenant, arc);
-        selectedArcId = arc.id;
-      }
-    }
+  render({tenant}, {selectedTab, selectedArcId}) {
     return {
       ...tenant,
-      //showHome: (selected === 0),
-      showArc: (selected === 0),
-      showDatabase: (selected === 1),
+      //showHome: (selectedTab === 0),
+      showArc: (selectedTab === 0),
+      showDatabase: (selectedTab === 1),
       home: {
         template: arcTemplate,
         models: this.renderHome(tenant, selectedArcId)
       },
       database: tenant && tenant.context,
-      //database: tenant && this.renderDatabase(tenant),
       tenants: {
         template: tenantTemplate,
         models: tenant && this.renderTenants(tenant)
@@ -210,10 +215,10 @@ export class TenantView extends Xen.Async {
     }));
   }
   selectArc(tenant, arc) {
-    if (tenant.currentArc) {
-      tenant.currentArc.composer.root.hidden = true;
-    }
+    // if (tenant.currentArc) {
+    //   tenant.currentArc.composer.root.hidden = true;
+    // }
     tenant.currentArc = arc;
-    arc.composer.root.hidden = false;
+    // arc.composer.root.hidden = false;
   }
 }

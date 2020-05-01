@@ -8,7 +8,7 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {Xen} from '../../xen/xen-async.js';
+import {Xen} from '../../../xen/xen-async.js';
 
 const template = Xen.Template.html`
 <style>
@@ -56,8 +56,8 @@ export class DatabaseView extends Xen.Async {
   renderStore(store) {
     const html = [];
     const meta = store.getMeta();
-    const data = store.getProperty();
-    html.push(`<b style="font-size:125%;">${meta.name}: ${meta.type}`);
+    const data = store.getProperty() || false;
+    html.push(`<b style="font-size:125%; line-height: 150%;">${meta.name}: ${meta.type}`);
     if (store.isCollection()) {
       html.push(`[${Object.keys(data).length}]`);
     }
@@ -67,11 +67,11 @@ export class DatabaseView extends Xen.Async {
     html.push('</b>');
     html.push(` "${store.id}"`);
     html.push('\n');
-    if (store.isCollection()) {
+    //if (store.isCollection()) {
       html.push(`${JSON.stringify(data, null, '  ')}`);
-    } else {
-      html.push(`"${data}"`);
-    }
-    return `<div style="border: 1px dotted silver;">${html.join('')}</div>`;
+    //} else {
+    //  html.push(`"${data}"`);
+    //}
+    return `<div style="border-bottom: 1px dotted silver;">${html.join('')}</div>`;
   }
 }

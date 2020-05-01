@@ -26,45 +26,44 @@ export class Store extends AbstractStore {
   ownerId;
   type;
   tags;
-  spec;
-  constructor(ownerId, id, name, type?, tags?, truth?) {
+  constructor(ownerId, id: string, truth?) {
     super(id);
     // TODO(sjmiles): to uniquify persistence keys
     this.ownerId = ownerId;
     // name of data object in document (should we just make this 'data'?)
-    this.name = name;
-    this.type = type || 'Any';
-    this.tags = tags || [];
+    this.name = this.getMeta().name;
     if (!truth) {
       truth = Automerge.init();
-      // truth = Automerge.from({
-      //   $arcs_meta: {
-      //     '0': {
-      //       type: this.type,
-      //       tags: this.tags
-      //     }
-      //   }
-      // });
     }
     this.truth = truth;
   }
+  // [arcid]:store:[name]:[type]:[tags]:[tenantid]
+  static idFromMeta({arcid, name, type, tags, tenantid}) {
+    return `${arcid}:store:${name}:${type}:${tags.join(',')}:${tenantid}`;
+  }
+  static metaFromId(id) {
+    const [arcid, _, name, type, tags, tenant, device] = id.split(':');
+    return {arcid, name, type: type || 'any', tags: tags || [], tenantid: `${tenant}:${device}`};
+  }
   getMeta() {
-    // [arcid]:store:[name]:[type]:[tags]:[tenantid]
-    const [arcid, store, name, type, tags, tenantid] = this.id.split(':');
-    return {arcid, store, name, type, tags, tenantid};
+    return Store.metaFromId(this.id);
+  }
+  get meta() {
+    return this.getMeta();
   }
   getProperty() {
-    return this.truth[this.getMeta().name];
+    return this.truth.data;
+    //return this.truth[this.getMeta().name];
   }
   isCollection() {
-    return this.type[0] === '[';
+    return this.getMeta().type[0] === '[';
   }
   // TODO(sjmiles): `tags` usage feels brittle, not sure it's the right way to go
   isShared() {
-    return !this.tags.includes('private');
+    return !this.getMeta().tags.includes('private');
   }
   isVolatile() {
-    return this.tags.includes('volatile');
+    return this.getMeta().tags.includes('volatile');
   }
   change(mutator) {
     this.truth = Automerge.change(this.truth, mutator);
@@ -125,9 +124,10 @@ export class Store extends AbstractStore {
     return `[${this.ownerId}]:${this.id}`;
   }
   persist() {
+    return;
     if (!this.isVolatile()) {
       const serial = this.save();
-      //localStorage.setItem(this.persistId, serial);
+      localStorage.setItem(this.persistId, serial);
     }
   }
   restore() {

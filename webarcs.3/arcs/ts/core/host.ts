@@ -15,6 +15,13 @@
 
 import {Particle, Eventlet} from './particle.js';
 
+export type ParticleMeta = {
+  id: string,
+  kind: string,
+  container: string
+  // arbitrary field definitions
+};
+
 /**
  * Host owns metadata (e.g. `id`, `container`) that the Particle
  * itself is not allowed to access.
@@ -22,13 +29,15 @@ import {Particle, Eventlet} from './particle.js';
 export class Host extends Particle {
   public id: string;
   public container: string;
-  public spec;
+  public meta;
   public particle: Particle;
-  constructor(id, container, spec, particle) {
+  constructor(meta: ParticleMeta, particle: Particle) {
     super();
-    this.id = id;
-    this.container = container;
-    this.spec = spec;
+    this.meta = meta;
+    // promoted for convenience
+    this.id = meta.id;
+    // promoted for convenience
+    this.container = meta.container;
     this.particle = particle;
     particle.onoutput = output => this.output(output);
   }
@@ -41,9 +50,6 @@ export class Host extends Particle {
   public requestUpdate(inputs) {
     return this.particle.requestUpdate(inputs);
   }
-  // public render(inputs) {
-  //   return this.particle.render(inputs);
-  // }
   public handleEvent(eventlet: Eventlet) {
     return this.particle.handleEvent(eventlet);
   }

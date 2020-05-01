@@ -8,11 +8,14 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
+import './ui/ui.js';
+
+import {Store} from '../arcs/build/data/store.js';
 import {Arc} from '../arcs/build/core/arc.js';
-import {Composer, showSlots} from '../arcs/build/platforms/dom/xen-dom-composer.js';
+import {Composer/*, showSlots*/} from '../arcs/build/platforms/dom/xen-dom-composer.js';
 import {Runtime} from '../arcs/build/ergo/runtime.js';
 import {initCorpus} from './corpus.js';
-import {initTenants, getTenant} from './tenants.js';
+import {initTenants} from './tenants.js';
 import {Planner} from './planner.js';
 import {recipes} from './recipes.js';
 
@@ -20,79 +23,39 @@ const specs = [{
   device: 'mobile',
   user: 'moe@springfield.com',
   persona: 'moe',
-  peers: ['edna:desktop', 'carl:mobile']
+  peers: ['edna:desktop']
+  //peers: ['edna:desktop', 'carl:mobile']
 }, {
   device: 'desktop',
   user: 'edna@springfield.edu',
   persona: 'edna',
-  peers: ['moe:mobile', 'liz:mobile', 'lenny:mobile']
-}, {
-  device: 'mobile',
-  user: 'carl@springfield.com',
-  persona: 'carl',
-  peers: ['moe:mobile', 'lenny:mobile']
-}, {
-  device: 'mobile',
-  user: 'liz@springfield.edu',
-  persona: 'liz',
-  peers: ['moe:mobile', 'edna:desktop', 'frink:mobile']
-}, {
-  device: 'mobile',
-  user: 'lenny@springfield.com',
-  persona: 'lenny',
-  peers: ['carl:mobile', 'edna:desktop']
-}, {
-  device: 'mobile',
-  user: 'frink@labs.com',
-  persona: 'frink',
-  peers: ['frink:laptop', 'liz:mobile']
-}, {
-  device: 'laptop',
-  user: 'frink@labs.com',
-  persona: 'frink',
-  peers: ['frink:mobile']
-}];
-
-const arcs = [{
-  id: 'moe:mobile',
-  name: 'chat',
-  recipe: recipes.chat
-// },{
-//   id: 'moe:mobile',
-//   name: 'tv',
-//   recipe: recipes.tv
-// },{
-//   id: 'edna:desktop',
-//   name: 'book-club',
-//   recipe: recipes.book_club
-// },{
-  // id: 'edna:desktop',
-  // name: 'school-chat',
-  // recipe: recipes.chat
-// },{
-//   id: 'carl:mobile',
-//   name: 'tv',
-//   recipe: recipes.tv
-// },{
-//   id: 'liz:mobile',
-//   name: 'school-chat',
-//   recipe: recipes.chat
-// },{
-//   id: 'lenny:mobile',
-//   name: 'tv',
-//   recipe: recipes.tv
-// },{
-//   id: 'lenny:mobile',
-//   name: 'book-club',
-//   recipe: recipes.book_club
-// },{
-//   id: 'frink:mobile',
-//   name: 'lab-chat',
-//   recipe: recipes.chat
-// },{
-//   id: 'frink:laptop',
-//   name: 'lab-chat',
-//   recipe: recipes.chat
+  peers: ['moe:mobile']
+  //peers: ['moe:mobile', 'liz:mobile', 'lenny:mobile']
+// }, {
+//   device: 'mobile',
+//   user: 'carl@springfield.com',
+//   persona: 'carl',
+//   peers: ['moe:mobile', 'lenny:mobile']
+// }, {
+//   device: 'mobile',
+//   user: 'liz@springfield.edu',
+//   persona: 'liz',
+//   peers: ['moe:mobile', 'edna:desktop', 'frink:mobile']
+// }, {
+//   device: 'mobile',
+//   user: 'lenny@springfield.com',
+//   persona: 'lenny',
+//   peers: ['carl:mobile', 'edna:desktop']
+// }, {
+//   device: 'mobile',
+//   user: 'frink@labs.com',
+//   persona: 'frink',
+//   peers: ['frink:laptop', 'liz:mobile']
+// }, {
+//   device: 'laptop',
+//   user: 'frink@labs.com',
+//   persona: 'frink',
+//   peers: ['frink:mobile']
 }];
 
 // ui objects
@@ -114,16 +77,32 @@ const {tenantsView, tenantPages} = window;
     tenantPages.selected = tenant;
   });
   // arcs
-  arcs.forEach(({id, name, recipe}) => {
-    const tenant = getTenant(id);
-    if (tenant) {
-      createTestArc(tenant, name, recipe);
+  tenants.forEach(tenant => {
+    // bootstrap profile data
+    const id = Store.idFromMeta({
+      arcid: `basic_profile`,
+      name: 'profile',
+      type: `BasicProfile`,
+      tags: ['shared', 'volatile'],
+      tenantid: tenant.id
+    });
+    if (tenant === tenants[0]) {
+      const profile = tenant.runtime.createStore(id, tenant.id);
+      // const profile = tenant.runtime.createStore(`${tenant.id}:profile`, {
+      //   id: `${tenant.id}:profile:store`,
+      //   type: `BasicProfile`,
+      //   tags: ['shared'],
+      //   value: tenant.id
+      // });
+      tenant.context.add(profile);
     }
+    // restore arcs
+    tenant.runtime.restoreArcMetas();
   });
   // planning
   tenants.forEach(tenant => {
     tenant.planner = new Planner(tenant);
-    window.setInterval(() => tenant.planner.plan(), 2000);
+    window.setInterval(() => tenant.planner.plan(), 500);
   });
   //
   // setTimeout(() => {
@@ -136,16 +115,12 @@ const createTestArc = async (tenant, name, recipe) => {
   // instantiate recipe
   await tenant.runtime.instantiate(arc, recipe);
   // bootstrap profile data
-  let store = arc.stores.find(s => s.name === 'userid');
-  if (store) {
-    store.change(truth => truth.userid = tenant.persona);
-  }
-};
-
-Runtime.prototype.createTestArc = function(recipe) {
-  const map = {'school-chat': 'chat', 'lab-chat': 'chat', 'book-club': 'book_club'};
-  createTestArc(this.tenant, recipe, recipes[map[recipe] || recipe]);
-  tenantPages._invalidate();
+  // let store = arc.stores.find(s => s.name === 'userid');
+  // if (store) {
+  //   store.change(truth => truth.userid = tenant.persona);
+  // }
+  arc.updateHosts();
+  return arc;
 };
 
 const createArc = async (tenant, id) => {
@@ -157,13 +132,15 @@ const createArc = async (tenant, id) => {
   tenant.root = root;
   const arcRoot = root.appendChild(document.createElement('div'));
   arcRoot.id = id;
-  if (tenant.currentArc) {
-    tenant.currentArc.composer.root.hidden = true;
-  }
   const composer = new Composer(arcRoot);
   const arc = new Arc({id, name: 'arcname', composer});
+  tenant.runtime.addArc(arc);
   tenant.currentArc = arc;
-  tenant.arcs[id] = arc;
   return arc;
 };
 
+Runtime.prototype.createTestArc = function(recipe) {
+  const map = {'school-chat': 'chat', 'lab-chat': 'chat', 'book-club': 'book_club'};
+  createTestArc(this.tenant, recipe, recipes[map[recipe] || recipe]);
+  tenantPages._invalidate();
+};
