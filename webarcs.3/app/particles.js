@@ -27,7 +27,7 @@ const particles = [
   'Chat/ChatWrite',
 ];
 
-export const initCorpus = async () => {
+export const initParticles = async () => {
   const promises = particles.map(async p => Runtime.register(p, await realmsParticle(p)));
   await Promise.all(promises);
 };

@@ -59,7 +59,7 @@ export class Runtime {
     await Recipe.instantiate(this, arc, recipe);
     this.persistArcMetas();
   }
-  realizeStore(arc, id) {
+  realizeStore(arc, id, name?, value?) {
     let store;
     const meta = Store.metaFromId(id);
     if (meta.tags.includes('map')) {
@@ -68,46 +68,42 @@ export class Runtime {
         log.error('realizeStore: mapStore returned null');
       }
     } else {
-      store = this.createStore(id);
+      store =this.tenant.context.get(id);
+      if (store) {
+        log(`realizeStore: using existing store "${id}"`);
+      }
       if (!store) {
-        log.error('realizeStore: createStore returned null');
+        store = this.createStore(id, value);
+        if (!store) {
+          log.error('realizeStore: createStore returned null');
+        }
       }
     }
     if (store) {
       // add to context
       this.tenant.context.add(store);
-      arc.addStore(store, meta.name);
+      name = name || meta.name;
+      arc.addStore(store, name);
+      log(`realizeStore: mapped "${name}" to "${store.id}"`);
     }
   }
   mapStore(arc, meta) {
     let mapped;
     this.tenant.context.forEachStore(store => {
       const sm = store.meta;
-      if (sm.type === meta.type && sm.tenantid === this.tenant.id) {
+      if (sm.type === meta.type && sm.persona === this.tenant.persona) {
         mapped = store;
       }
     });
-    log(`spec wants to map "${meta.type}", found ${mapped ? mapped.id : 'nothing'}`);
+    log(`spec wants to map "${meta.name}" to "${meta.type}", found ${mapped ? mapped.id : 'nothing'}`);
     return mapped;
   }
-  // requireStore(arc, key, spec) {
-  //   // normalize spec
-  //   if (typeof spec === 'string') {
-  //     spec = {name: spec};
-  //   }
-  //   const name = spec.name || key;
-  //   const type = spec.type || 'Any';
-  //   const tags = spec.tags || ['default'];
-  //   // construct store id
-  //   const id = Store.idFromMeta({arcid: arc.id, name, type, tags: tags.join(','), tenantid: this.tenant.id});
-  //   return this.createStore(id, spec.value);
-  // }
   createStore(id, specValue?) {
     log(`createStore(${id})`);
     const store = new Store(this.tenant.id, id);
     //store.spec = spec;
     if (!store.restore()) {
-      const value = specValue || (store.isCollection() ? {} : '');
+      const value = (specValue !== undefined) ? specValue : (store.isCollection() ? {} : '');
       // initialize data
       store.change(doc => doc.data = value);
     } else {
@@ -136,7 +132,6 @@ export class Runtime {
     }
   }
   async restoreArcMetas() {
-    return;
     const key = `${this.tenant.id}:arcs`;
     const json = localStorage.getItem(key);
     if (json) {
@@ -144,8 +139,8 @@ export class Runtime {
       const metas = JSON.parse(json);
       await Promise.all(metas.map(async ({id, stores, particles}) => {
         const arc = await this.createArc(id);
-        for (let id of stores) {
-          this.realizeStore(arc, id);
+        for (let meta of stores) {
+          this.realizeStore(arc, meta.id, meta.name);
         }
         for (let meta of particles) {
           await arc.addParticle(this, meta);
@@ -166,7 +161,7 @@ export class Runtime {
       metas.push({
         id,
         particles: hosts.map(host => host.meta),
-        stores: Object.keys(stores).map(key => ({name, id: stores[key].id}))
+        stores: Object.keys(stores).map(name => ({name, id: stores[name].id}))
       });
     });
     return JSON.stringify(metas, null, '  ');

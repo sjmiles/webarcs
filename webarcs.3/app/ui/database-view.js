@@ -9,19 +9,50 @@
  */
 
 import {Xen} from '../../../xen/xen-async.js';
+import {IconsCss} from '../../../assets/css/icons.css.js';
 
 const template = Xen.Template.html`
 <style>
   :host {
     display: block;
-  }
-  div {
-    padding: 8px;
     font-size: 12px;
-    white-space: pre;
   }
+  [data] {
+    overflow: hidden;
+    box-sizing: border-box;
+    /* padding: 8px 6px; */
+    transition: all 300ms ease-out;
+  }
+  tenant-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 8px;
+  }
+  icon {
+    font-size: 125%;
+    margin-right: 8px;
+  }
+  ${IconsCss}
 </style>
-<div unsafe-html="{{dump}}"></div>
+
+<div>{{stores}}</div>
+`;
+
+const storeTemplate = Xen.Template.html`
+  <div style="border-bottom: 1px dotted silver;" key="{{id}}" on-click="onStoreClick">
+    <div style="padding: 8px 6px; display: flex; align-items: center; font-size:125%; line-height: 150%; background: var(--ui-bg-3)">
+      <tenant-icon avatar="{{avatar}}"></tenant-icon>
+      <icon xen:style="{{shareStyle}}">{{icon}}</icon>
+      <b><span>{{name}}</span></b>: <span>{{type}}</span>
+      <span>{{collectionInfo}}</span>
+    </div>
+    <div data xen:style="{{dataStyle}}">
+      <div style="padding: 8px 6px;">
+        <div style="text-align: right;">id: <span>{{id}}</span></div>
+        <div style="white-space: pre;" unsafe-html="{{data}}"></div>
+      </div>
+    </div>
+  </div>
 `;
 
 export class DatabaseView extends Xen.Async {
@@ -47,31 +78,37 @@ export class DatabaseView extends Xen.Async {
     return Boolean(database);
   }
   render({database}) {
-    const html = [];
-    database.forEachStore(s => html.push(this.renderStore(s)));
+    const models = [];
+    database.forEachStore(s => models.push(this.renderStoreModel(s)));
     return {
-      dump: html.join('')
+      stores: {
+        template: storeTemplate,
+        models
+      }
     };
   }
-  renderStore(store) {
-    const html = [];
+  renderStoreModel(store) {
     const meta = store.getMeta();
-    const data = store.getProperty() || false;
-    html.push(`<b style="font-size:125%; line-height: 150%;">${meta.name}: ${meta.type}`);
-    if (store.isCollection()) {
-      html.push(`[${Object.keys(data).length}]`);
+    const data = store.getProperty();
+    return {
+      shareStyle: store.isShared() ? `color: green;` : `color: gray;`,
+      icon: store.isShared() ? `cloud_upload` : `cloud_off`,
+      owner: meta.persona,
+      avatar: `../assets/users/${meta.persona}.png`,
+      name: meta.name,
+      type: meta.type,
+      collectionInfo: store.isCollection() ? `[${Object.keys(data).length}]` : '',
+      id: store.id,
+      dataStyle: store.showData ? {height: null} : {height: '0px'},
+      data: data === undefined ? `&lt;empty&gt;` : JSON.stringify(data, null, '  ')
+    };
+  }
+  onStoreClick(e) {
+    const id = e.currentTarget.key;
+    const store = this.database.get(id);
+    if (store) {
+      store.showData = !store.showData;
     }
-    if (store.isShared()) {
-      html.push(` <span style="color:green;">(shared)</span>`);
-    }
-    html.push('</b>');
-    html.push(` "${store.id}"`);
-    html.push('\n');
-    //if (store.isCollection()) {
-      html.push(`${JSON.stringify(data, null, '  ')}`);
-    //} else {
-    //  html.push(`"${data}"`);
-    //}
-    return `<div style="border-bottom: 1px dotted silver;">${html.join('')}</div>`;
+    this._invalidate();
   }
 }

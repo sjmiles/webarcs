@@ -11,9 +11,10 @@
 export const logFlags = {
   any: true,
   arc: true,
-  hub: true,
-  //groupStatus: true,
+  database: false,
+  hub: false,
   render: true,
+  //groupStatus: true,
   //comms: true,
   ergo: true
 };

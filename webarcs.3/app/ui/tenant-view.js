@@ -9,6 +9,7 @@
  */
 
 import {Xen} from '../../../xen/xen-async.js';
+import {IconsCss} from '../../../assets/css/icons.css.js';
 
 const template = Xen.Template.html`
 <style>
@@ -82,6 +83,7 @@ const template = Xen.Template.html`
     cursor: pointer;
     user-select: none;
     justify-content: center;
+    align-items: center;
   }
   [arcItem][selected] {
     font-weight: bold;
@@ -105,6 +107,13 @@ const template = Xen.Template.html`
     height: 216px;
     overflow: auto;
   }
+  [options] {
+    visibility: hidden;
+  }
+  [arcItem]:hover [options] {
+    visibility: visible;
+  }
+  ${IconsCss}
 </style>
 
 <div banner>
@@ -142,7 +151,7 @@ const tenantTemplate = Xen.Template.html`
 `;
 
 const arcTemplate = Xen.Template.html`
-  <div arcItem selected$="{{selected}}" key="{{id}}" on-click="onArcItemClick"><span name>{{id}}</span></div>
+  <div arcItem selected$="{{selected}}" key="{{id}}" on-click="onArcItemClick"><span name>{{id}}</span><span flex></span><icon options style="font-size: 75%;">settings</icon></div>
 `;
 
 export class TenantView extends Xen.Async {

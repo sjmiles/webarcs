@@ -102,7 +102,7 @@ export class SystemView extends Xen.Async {
   onNotificationClick({currentTarget: {key}}) {
     const note = this.suggestions[key];
     if (note) {
-      this.tenant.runtime.createTestArc(note.recipe);
+      this.tenant.runtime.createRecipeArc(note.recipe);
     }
   }
 }

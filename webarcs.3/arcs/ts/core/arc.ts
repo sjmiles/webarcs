@@ -56,7 +56,6 @@ class HostNexus extends StoreNexus {
     this.hosts.push(host);
   }
   protected updateHost(host) {
-    //const hostInputs = this.computeHostInputs(host, inputs);
     this.log(`updateHost(${host.id})`);
     const hostInputs = this.computeHostInputs(host);
     host.requestUpdate(hostInputs);
@@ -80,7 +79,8 @@ class HostNexus extends StoreNexus {
         hostInputs[name] = store.pojo.data; //[storeName];
       }
     });
-    this.log(`computeHostInputs(${host.id}) = {${Object.keys(hostInputs)}}`);
+    this.log(`computeHostInputs(${host.id}) =`, hostInputs);
+    //this.log(`computeHostInputs(${host.id}) = {${Object.keys(hostInputs)}}`, hostInputs);
     // dumping the entire data blob on the console is handy occasionally, but unwieldy most of the time
     //this.log.dir(hostInputs);
     return hostInputs;
@@ -93,9 +93,9 @@ class HostNexus extends StoreNexus {
         this.log(`mergeOutputs: analyzing "${name}"`);
         const output = outputs[name];
         // TODO(sjmiles): need to formalize what can be in outputs: right here we ignore non-object values
-        if (typeof output === 'object' && store.hasChanges({[name]: output})) {
+        if (typeof output === 'object' && store.hasChanges({data: output})) {
           this.log(`mergeOutputs: "${name}" is dirty, updating Store`);
-          store.change(data => data[name] = outputs[name]);
+          store.change(doc => doc.data = outputs[name]);
         }
       }
     });
@@ -121,13 +121,11 @@ export class Arc extends HostNexus {
   }
   addStore(store, name) {
     this.stores[name] = store;
-    //arc.stores.push(store);
     // store changes cause host updates
     // TODO(sjmiles): too blunt: this updates all hosts regardless of their interest in this store
     store.listen('set-truth', () => this.updateHosts());
   }
   public async addParticle(runtime, meta) {
-    //this.log(`addParticle(${meta.kind}, ${meta.id})`);
     this.log(`addParticle(${JSON.stringify(meta)})`);
     const host = await runtime.createHostedParticle(meta);
     if (host) {

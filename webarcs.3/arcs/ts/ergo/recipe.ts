@@ -106,7 +106,7 @@ export class Recipe {
   }
   static realizeStore(runtime, arc, key, spec) {
     const id = this.specToId(arc, key, spec, runtime.tenant.id);
-    runtime.realizeStore(arc, id);
+    runtime.realizeStore(arc, id, key, spec.value);
   }
   static specToId(arc, key, spec, tenantid) {
     // normalize spec

@@ -28,8 +28,12 @@ export class Database extends AbstractStore {
     this.truth.registerHandler(this.onDocsChanged.bind(this));
   }
   onDocsChanged(docId, doc) {
-    if (!this.get(docId)) {
-      log.warn(`[${this.id}]: onDocsChanged(${docId}): adding missing store`);
+    const store = this.get(docId);
+    if (store) {
+      //log.warn(`[${this.id}]: onDocsChanged(${docId}): new truth? ${store.truth === doc}`);
+      store.truth = doc;
+    } else {
+      //log.warn(`[${this.id}]: onDocsChanged(${docId}): adding missing store`);
       this.add(new Store(this.ownerId, docId));
     }
     log(`[${this.id}]: onDocsChanged(${docId})`);

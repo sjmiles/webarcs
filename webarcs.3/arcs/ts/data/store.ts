@@ -39,11 +39,13 @@ export class Store extends AbstractStore {
   }
   // [arcid]:store:[name]:[type]:[tags]:[tenantid]
   static idFromMeta({arcid, name, type, tags, tenantid}) {
-    return `${arcid}:store:${name}:${type}:${tags.join(',')}:${tenantid}`;
+    //return `${arcid}:store:${name}:${type}:${tags.join(',')}:${tenantid}`;
+    const persona = tenantid.split(':').shift();
+    return `${arcid}:store:${name}:${type}:${tags.join(',')}:${persona}`;
   }
   static metaFromId(id) {
-    const [arcid, _, name, type, tags, tenant, device] = id.split(':');
-    return {arcid, name, type: type || 'any', tags: tags || [], tenantid: `${tenant}:${device}`};
+    const [arcid, _, name, type, tags, persona/*, device*/] = id.split(':');
+    return {arcid, name, type: type || 'any', tags: tags || [], persona/*, device, tenantid: `${persona}:${device}*/};
   }
   getMeta() {
     return Store.metaFromId(this.id);
@@ -124,7 +126,6 @@ export class Store extends AbstractStore {
     return `[${this.ownerId}]:${this.id}`;
   }
   persist() {
-    return;
     if (!this.isVolatile()) {
       const serial = this.save();
       localStorage.setItem(this.persistId, serial);

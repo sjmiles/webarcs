@@ -98,7 +98,6 @@ export class Connection {
   initDatabase(hub, endpoint) {
     const database = new Database(`${hub.tenant.id}:${endpoint.id}:db`);
     database.ownerId = hub.tenant.id;
-    //database.add(hub.peerStore);
     database.listen('doc-changed', docId => this.databaseChanged(docId));
     return database;
   }
@@ -141,19 +140,17 @@ export class Connection {
     this.endpoint.send(msg);
   }
   receive(msg) {
-    // if (this.liz) {
-    //   this.log(`receive: `, msg);
-    // }
     // TODO(sjmiles): simulate asynchrony of a real communication channel
     setTimeout(() => {
       log(`[${this.hub.tenant.id}] received: `, msg);
       //console.group(`[${this.hub.tenant.id}] received: `, msg)
-      this.conn.receiveMsg(msg);
-      let doc = this.database.docs.get(msg.docId);
+      const doc = this.conn.receiveMsg(msg);
       if (doc) {
-        console.warn(doc);
-        doc = Store.fix(doc);
-        this.database.get(msg.docId).truth = doc;
+        const fixed = Store.fix(doc);
+        if (fixed !== doc) {
+          console.warn(this.hub.tenant.id, msg.docId, 'needed fixup');
+        }
+        this.database.get(msg.docId).truth = fixed;
       }
       //console.groupEnd();
     }, 0);
@@ -196,17 +193,10 @@ export class Hub extends EventEmitter {
     const id = `peers:store:peers:[Peer]:default:${tenant.id}`;
     // [arcid]:store:[name]:[type]:[tags]:[tenantid]
     const peerStore = new Store(this.tenant.id, id);
-    // const serial = localStorage.getItem(id);
-    // if (serial) {
-    //   peerStore.load(serial);
-    // } else {
-      const peers = tenant.peers;
-      peerStore.change(truth => {
-        truth.data = peers;
-        //const clone = {};
-        //Object.keys(peers).forEach(key => truth[key] = peers[key]);
-      });
-    // }
+    const peers = tenant.peers;
+    peerStore.change(truth => {
+      truth.data = peers;
+    });
     return peerStore;
   }
   connectPeers({data: peers}) {
@@ -221,12 +211,11 @@ export class Hub extends EventEmitter {
       Object.values(this.connections).forEach(iter);
     }
   }
+  // gather up novel stores from connection databases into a master database
   captureStores(database) {
     //this.forEachConnection(c => c.database.forEachStore(store => !database.get(store.id) && log('capture', store)));
     this.forEachConnection(c => c.database.forEachStore(store => {
       if (!database.get(store.id)) {
-        // if it came from a remote source it must be "shared"
-        store.shared = true;
         database.add(store);
       }
     }));

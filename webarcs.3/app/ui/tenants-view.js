@@ -36,6 +36,7 @@ const template = Xen.Template.html`
     background-color: var(--ui-bg-hi-1);
   }
 </style>
+
 <div tenants>{{tenants}}</div>
 `;
 
