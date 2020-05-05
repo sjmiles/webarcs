@@ -89,7 +89,7 @@ export class DatabaseView extends Xen.Async {
   }
   renderStoreModel(store) {
     const meta = store.getMeta();
-    const data = store.getProperty();
+    const data = store.getProperty() || {};
     return {
       shareStyle: store.isShared() ? `color: green;` : `color: gray;`,
       icon: store.isShared() ? `cloud_upload` : `cloud_off`,

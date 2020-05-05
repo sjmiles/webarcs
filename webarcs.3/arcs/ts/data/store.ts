@@ -26,6 +26,7 @@ export class Store extends AbstractStore {
   ownerId;
   type;
   tags;
+  staticValue;
   constructor(ownerId, id: string, truth?) {
     super(id);
     // TODO(sjmiles): to uniquify persistence keys
@@ -95,7 +96,10 @@ export class Store extends AbstractStore {
         } else if (typeof value === 'object') { //} && !key.includes('$arcs')) {
           console.log(`object conflict for [${key}]`, value, conflicts);
           doc = Automerge.change(doc, root => {
-            const entity = root[key];
+            let entity = root[key];
+            if (!entity) {
+              entity = root[key] = {};
+            }
             Object.keys(value).forEach(id => entity[id] = {...value[id]});
           });
         }

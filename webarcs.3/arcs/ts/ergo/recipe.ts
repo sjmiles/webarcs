@@ -79,6 +79,7 @@ export class Recipe {
       let info = recipe[key];
       switch (key) {
         case KEYS.STORES:
+          // real stores are mapped to the arc, but they may not be instantiated
           this.realizeStores(runtime, arc, info);
           break;
         case KEYS.PARTICLE:
@@ -135,8 +136,8 @@ export class Recipe {
     }
     container = particle ? `${particle.id}#${key}` : key;
     log(`populating [${container}]`);
-    // TODO(sjmiles): parallelized process works but is chaotic when analyzed ...
-    // serialize for now to ease understanding. Beware of creeping dependencies on process order.
+    // TODO(sjmiles): parallelized process works but is hard to analyze (chaotic signals) ...
+    // serialize for now to ease debugging. Beware of dependencies creeping onto processing order.
     //await Promise.all(info.map(r => this.instantiate(runtime, arc, r, container)));
     for (let child of info) {
       await this.instantiateNode(runtime, arc, child, container);

@@ -11,7 +11,6 @@
 import {Hub} from '../arcs/build/net/hub.js';
 import {Database} from '../arcs/build/data/database.js';
 import {Runtime} from '../arcs/build/ergo/runtime.js';
-import {Composer} from '../arcs/build/platforms/dom/xen-dom-composer.js';
 
 const enableNetwork = true;
 
@@ -44,18 +43,16 @@ const processTenants = async () => {
     });
   };
   await Promise.all(tenants.map(async tenant => {
-    // TODO(sjmiles): do we need all these objects?
     // Runtime
     const runtime = new Runtime(tenant);
+    // TODO(sjmiles): can we do away with this and have only runtimes?
     tenant.runtime = runtime;
     // Database (context)
-    const db = new Database(`${tenant.id}:context`);
-    tenant.context = db;
+    tenant.context = new Database(`${tenant.id}:context`);
     // UI Surface
     tenant.root = document.createElement('div');
-    tenant.composer = new Composer(tenant.root);
+    // Network
     if (enableNetwork) {
-      // Network
       // convert tenant.peers (specs) into tenant.tenants (connections)
       tenant.tenants = mapTenantsFromPeers(tenant.peers);
       tenant.hub = new Hub(tenant);

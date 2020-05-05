@@ -48,8 +48,11 @@ export class Database extends AbstractStore {
   get data() {
     return this.docs;
   }
+  get storesArray() {
+    return Object.values(this.stores);
+  }
   forEachStore(iter) {
-    return Object.values(this.stores).map(iter);
+    return this.storesArray.map(iter);
   }
   get(id) {
     return this.stores[id];

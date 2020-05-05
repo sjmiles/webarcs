@@ -19,7 +19,7 @@ import {Composer} from '../platforms/dom/xen-dom-composer.js';
 import {Arc} from '../core/arc.js';
 import {Recipe} from './recipe.js';
 import {logFactory} from '../utils/log.js';
-//import {makeId} from '../utils/id.js';
+import {elt} from '../utils/dom.js';
 
 const log = logFactory(logFactory.flags.ergo, 'runtime', 'magenta');
 
@@ -27,12 +27,15 @@ const log = logFactory(logFactory.flags.ergo, 'runtime', 'magenta');
 const registry = {};
 
 export class Runtime {
+  static register(name, factory) {
+    registry[name] = factory;
+  }
   tenant;
   constructor(tenant) {
     this.tenant = tenant;
   }
-  static register(name, factory) {
-    registry[name] = factory;
+  get arcsArray() {
+    return Object.values(this.tenant.arcs);
   }
   async createArc(id) {
     const tenant = this.tenant;
@@ -40,11 +43,8 @@ export class Runtime {
     // - keeps tenant as a POJO
     // - keeps runtime as a class
     // - apis take runtimes
-    const root = tenant.composer.root;
-    // ?
-    tenant.root = root;
-    const arcRoot = root.appendChild(document.createElement('div'));
-    arcRoot.id = id;
+    const root = tenant.root;
+    const arcRoot = elt('div', {id}, root);
     const composer = new Composer(arcRoot);
     const arc = new Arc({id, composer});
     this.addArc(arc);
@@ -53,10 +53,11 @@ export class Runtime {
   addArc(arc) {
     this.tenant.currentArc = arc;
     this.tenant.arcs[arc.id] = arc;
-    //this.persistArcMetas();
   }
   async instantiate(arc: Arc, recipe) {
     await Recipe.instantiate(this, arc, recipe);
+    // TODO(sjmiles): must do this after instantiating a recipe so it's here instead of `addArc`, but is seems
+    // neither one is correct
     this.persistArcMetas();
   }
   realizeStore(arc, id, name?, value?) {
@@ -68,7 +69,7 @@ export class Runtime {
         log.error('realizeStore: mapStore returned null');
       }
     } else {
-      store =this.tenant.context.get(id);
+      store = this.tenant.context.get(id);
       if (store) {
         log(`realizeStore: using existing store "${id}"`);
       }
@@ -101,7 +102,7 @@ export class Runtime {
   createStore(id, specValue?) {
     log(`createStore(${id})`);
     const store = new Store(this.tenant.id, id);
-    //store.spec = spec;
+    store.staticValue = specValue;
     if (!store.restore()) {
       const value = (specValue !== undefined) ? specValue : (store.isCollection() ? {} : '');
       // initialize data
@@ -131,42 +132,53 @@ export class Runtime {
       log.error(`createParticle: "${kind}" not in registry`);
     }
   }
-  async restoreArcMetas() {
-    const key = `${this.tenant.id}:arcs`;
-    const json = localStorage.getItem(key);
-    if (json) {
-      //console.log(`restoreArcMetas: "${key}"="${json}"`);
-      const metas = JSON.parse(json);
-      await Promise.all(metas.map(async ({id, stores, particles}) => {
-        const arc = await this.createArc(id);
-        for (let meta of stores) {
-          this.realizeStore(arc, meta.id, meta.name);
-        }
-        for (let meta of particles) {
-          await arc.addParticle(this, meta);
-        }
-        arc.updateHosts();
+  // metadata (serialization)
+  exportMetadata() {
+    return this.arcsArray.map(arc => this.exportArcMetadata(arc));
+  }
+  exportArcMetadata(arc) {
+    const {id, hosts, stores} = arc;
+    return {
+      id,
+      particles: hosts.map(host => host.meta),
+      stores: Object.keys(stores).map(name => ({name, id: stores[name].id, staticValue: stores[name].staticValue || null}))
+    };
+  }
+  async importMetadata(meta) {
+    if (meta) {
+      await Promise.all(meta.map(async meta => {
+        await this.importArcMetadata(meta);
       }));
     }
   }
+  async importArcMetadata({id, stores, particles}) {
+    if (this.tenant.arcs[id]) {
+      console.warn(`importArcMetadata: Arc ${id} already exists`);
+    } else {
+      const arc = await this.createArc(id);
+      for (let meta of stores) {
+        this.realizeStore(arc, meta.id, meta.name, meta.staticValue);
+      }
+      for (let meta of particles) {
+        await arc.addParticle(this, meta);
+      }
+      arc.updateHosts();
+    }
+  }
+  // TODO(sjmiles): delegate to persistor object, or at least ambiguate `localStorage`
   persistArcMetas() {
-    const json = this.buildArcMetas();
     const key = `${this.tenant.id}:arcs`;
+    const meta = this.exportMetadata();
+    const json = JSON.stringify(meta);
     //console.log(`persistArcMetas: "${key}"="${json}"`);
     localStorage.setItem(key, json);
   }
-  buildArcMetas() {
-    const metas = [];
-    this.forEachArc(({id, hosts, stores}) => {
-      metas.push({
-        id,
-        particles: hosts.map(host => host.meta),
-        stores: Object.keys(stores).map(name => ({name, id: stores[name].id}))
-      });
-    });
-    return JSON.stringify(metas, null, '  ');
-  }
-  forEachArc(task) {
-    Object.values(this.tenant.arcs).forEach(arc => task(arc));
+  restoreArcMetas() {
+    const key = `${this.tenant.id}:arcs`;
+    const json = localStorage.getItem(key);
+    //console.log(`restoreArcMetas: "${key}"="${json}"`);
+    if (json) {
+      return JSON.parse(json);
+    }
   }
 };

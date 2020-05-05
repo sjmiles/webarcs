@@ -28,7 +28,7 @@ export class AbstractStore extends EventEmitter {
     }
   }
   changed() {
-    this.fire('set-truth');
+    this.fire('set-truth', this);
   }
   get truth() {
     return this._truth;

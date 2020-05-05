@@ -11,8 +11,8 @@
 import './ui/ui.js';
 
 import {Store} from '../arcs/build/data/store.js';
-import {Arc} from '../arcs/build/core/arc.js';
-import {Composer/*, showSlots*/} from '../arcs/build/platforms/dom/xen-dom-composer.js';
+// import {Arc} from '../arcs/build/core/arc.js';
+// import {Composer/*, showSlots*/} from '../arcs/build/platforms/dom/xen-dom-composer.js';
 import {Runtime} from '../arcs/build/ergo/runtime.js';
 import {initParticles} from './particles.js';
 import {initTenants} from './tenants.js';
@@ -39,7 +39,7 @@ const {tenantsView, tenantPages} = window;
   // }, 2000);
 })();
 
-const initUi = (tenants) => {
+const initUi = tenants => {
   // tenant selector
   tenantsView.tenants = tenants;
   // tenant pages
@@ -50,56 +50,94 @@ const initUi = (tenants) => {
   });
 };
 
-const initContext = (tenants) => {
-  tenants.forEach(tenant => {
+const initContext = tenants => {
+  tenants.forEach(async tenant => {
+    const {runtime} = tenant;
     // bootstrap profile data
-    const id = Store.idFromMeta({
+    const pid = Store.idFromMeta({
       arcid: `basic_profile`,
       name: 'profile',
       type: `BasicProfile`,
       tags: ['shared', 'volatile'],
       tenantid: tenant.id
     });
-    const profile = tenant.runtime.createStore(id, tenant.persona);
+    const data = tenant.persona;
+    const profile = runtime.createStore(pid, data);
     tenant.context.add(profile);
     // restore arcs
-    tenant.runtime.restoreArcMetas();
+    const meta = runtime.restoreArcMetas();
+    // TODO(sjmiles): metadata is of type arcmeta[], but Store.fix doesn't support top-level arrays
+    // To make this work at first, we convert to key/value pairs
+    const entities = metadataToStorable(runtime, meta);
+    // bootstrap persona metadata store
+    const mid = Store.idFromMeta({
+      arcid: `${tenant.persona}`, //`${tenant.id.replace(':', '_')}`, // fake, there is no arc :(
+      name: 'metadata',
+      type: `SystemMetadata`,
+      tags: ['shared'],
+      tenantid: tenant.id
+    });
+    tenant.metadata = tenant.runtime.createStore(mid, entities);
+    tenant.metadata.listen('set-truth', async store => {
+      console.warn(`${tenant.id}: metadata set-truth`, store.json);
+      const meta = storableToMetadata(store.getProperty());
+      await runtime.importMetadata(meta);
+    });
+    // // put into context for sharing
+    tenant.context.add(tenant.metadata);
+    // reify objects
+    if (meta) {
+      await runtime.importMetadata(meta);
+    }
   });
 };
 
-const initPlanner = (tenants) => {
+const initPlanner = tenants => {
   tenants.forEach(tenant => {
     tenant.planner = new Planner(tenant);
     window.setInterval(() => tenant.planner.plan(), 500);
   });
 };
 
-const createRecipeArc = async (tenant, name, recipe) => {
-  const arc = await createArc(tenant, name, recipe);
-  // instantiate recipe
-  await tenant.runtime.instantiate(arc, recipe);
-  arc.updateHosts();
-  return arc;
+const persistMetadata = runtime => {
+  const meta = runtime.exportMetadata();
+  const collection = metadataToStorable(runtime, meta);
+  runtime.tenant.metadata.change(doc => doc.data = collection);
 };
 
-const createArc = async (tenant, id) => {
-  // TODO(sjmiles): maybe runtime should own tenant:
-  // - keeps tenant as a POJO
-  // - keeps runtime as a class
-  // - apis take runtimes
-  const root = tenant.composer.root;
-  tenant.root = root;
-  const arcRoot = root.appendChild(document.createElement('div'));
-  arcRoot.id = id;
-  const composer = new Composer(arcRoot);
-  const arc = new Arc({id, name: 'arcname', composer});
-  tenant.runtime.addArc(arc);
-  tenant.currentArc = arc;
-  return arc;
+const metadataToStorable = (runtime, meta) => {
+  // TODO(sjmiles): metadata is of type arcmeta[], but Store.fix doesn't support top-level arrays
+  // To make this work at first, we convert to key/value pairs
+  const entities = {};
+  if (meta) {
+    meta.forEach(entry => entities[entry.id] = entry);
+  }
+  return entities;
 };
+
+const storableToMetadata = (meta) => {
+  // TODO(sjmiles): metadata is of type arcmeta[], but Store.fix doesn't support top-level arrays
+  // To make this work at first, we convert back from key/value pairs
+  return meta ? Object.values(meta) : [];
+};
+
+// TODO(sjmiles): hack app-level ability into Runtime object so ui components can access the ability.
 
 Runtime.prototype.createRecipeArc = function(recipe) {
   const map = {'school-chat': 'chat', 'lab-chat': 'chat', 'book-club': 'book_club'};
-  createRecipeArc(this.tenant, recipe, recipes[map[recipe] || recipe]);
+  createRecipeArc(this, recipe, recipes[map[recipe] || recipe]);
   tenantPages._invalidate();
 };
+
+const createRecipeArc = async (runtime, id, recipe) => {
+  //const arc = await runtime.createArc(runtime.tenant, name, recipe);
+  const arc = await runtime.createArc(id);
+  // instantiate recipe
+  await runtime.instantiate(arc, recipe);
+  // force lifecycle (?)
+  arc.updateHosts();
+  // persist metadata (including arcs)
+  persistMetadata(runtime);
+  return arc;
+};
+
