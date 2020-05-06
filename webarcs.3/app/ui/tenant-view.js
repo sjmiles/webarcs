@@ -82,7 +82,7 @@ const template = Xen.Template.html`
     color: #999;
     cursor: pointer;
     user-select: none;
-    justify-content: center;
+    /* justify-content: center; */
     align-items: center;
   }
   [arcItem][selected] {
@@ -120,7 +120,8 @@ const template = Xen.Template.html`
   <tenant-icon avatar="{{avataricon}}" device="{{deviceicon}}"></tenant-icon>
   <span>{{id}}</span>
   <span flex></span>
-  <span tenants>{{tenants}}</span>
+  <!-- <span tenants>{{tenants}}</span> -->
+  <span tenants>{{connects}}</span>
 </div>
 
 <cx-tabs on-select="onTabSelect">
@@ -146,8 +147,12 @@ const template = Xen.Template.html`
 
 `;
 
-const tenantTemplate = Xen.Template.html`
-  <tenant-icon avatar="{{avataricon}}" device="{{deviceicon}}"></tenant-icon>
+// const tenantTemplate = Xen.Template.html`
+//   <tenant-icon avatar="{{avataricon}}" device="{{deviceicon}}"></tenant-icon>
+// `;
+
+const connectionTemplate = Xen.Template.html`
+  <tenant-icon xen:style="{{style}}" avatar="{{avataricon}}" device="{{deviceicon}}"></tenant-icon>
 `;
 
 const arcTemplate = Xen.Template.html`
@@ -199,20 +204,35 @@ export class TenantView extends Xen.Async {
       //showHome: (selectedTab === 0),
       showArc: (selectedTab === 0),
       showDatabase: (selectedTab === 1),
+      database: tenant && tenant.context,
       home: {
         template: arcTemplate,
         models: this.renderHome(tenant, selectedArcId)
       },
-      database: tenant && tenant.context,
-      tenants: {
-        template: tenantTemplate,
-        models: tenant && this.renderTenants(tenant)
+      // tenants: {
+      //   template: tenantTemplate,
+      //   models: tenant && this.renderTenants(tenant)
+      // },
+      connects: {
+        template: connectionTemplate,
+        models: tenant && this.renderConnections(tenant)
       },
       tenant
     };
   }
   renderTenants({tenants}) {
     return tenants;
+  }
+  renderConnections(tenant) {
+    return Object.values(tenant.hub.connections).map(conn => {
+      const targetId = conn.endpoint.id;
+      const {deviceicon, avataricon} = tenant.tenants.find(t => t.id === targetId);
+      return {
+        deviceicon,
+        avataricon,
+        style: `border-radius: 100%; border: 3px solid ${conn.endpoint.open ? 'green' : 'red'};`
+      };
+    });
   }
   renderDatabase(tenant) {
     return `${tenant.context.dump()}`;
@@ -224,10 +244,6 @@ export class TenantView extends Xen.Async {
     }));
   }
   selectArc(tenant, arc) {
-    // if (tenant.currentArc) {
-    //   tenant.currentArc.composer.root.hidden = true;
-    // }
     tenant.currentArc = arc;
-    // arc.composer.root.hidden = false;
   }
 }

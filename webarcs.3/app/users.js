@@ -12,7 +12,7 @@ export const users = [{
   device: 'mobile',
   user: 'moe@springfield.com',
   persona: 'moe',
-  peers: ['edna:desktop', 'carl:mobile']
+  peers: ['edna:desktop', 'liz:mobile', 'carl:mobile']
 }, {
   device: 'desktop',
   user: 'edna@springfield.edu',

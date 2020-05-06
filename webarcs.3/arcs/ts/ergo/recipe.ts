@@ -66,12 +66,13 @@ const KEYS = {
   STORES: 'stores'
 };
 
+const {keys, entries} = Object;
+
 export class Recipe {
   static async instantiate(runtime, arc, recipe: RecipeSpec, container?) {
-    // convert shorthand to longhand before parsing
+    // `normalize` converts shorthand to longhand before parsing
     // TODO(sjmiles): would be great if it normalized all the things
-    recipe = this.normalize(recipe);
-    await this.instantiateNode(runtime, arc, recipe, container);
+    await this.instantiateNode(runtime, arc, this.normalize(recipe), container);
   }
   static async instantiateNode(runtime, arc, recipe: RecipeSpec | ChildSpec, container?) {
     let particle;
@@ -102,23 +103,46 @@ export class Recipe {
     return recipe;
   }
   static realizeStores(runtime, arc, specs) {
-    log(`realizeStores for "${arc.id}": ${Object.keys(specs).join(', ')}`);
-    Object.keys(specs).forEach(key => this.realizeStore(runtime, arc, key, specs[key]));
+    log(`realizeStores for "${arc.id}": ${keys(specs).join(', ')}`);
+    keys(specs).forEach(name => this.realizeStore(runtime, arc, name, specs[name]));
+    entries(specs).forEach(([name, spec]) => {
+      this.realizeStore(runtime, arc, name, spec)
+      arc.storeSpecs[name] = spec;
+    });
   }
-  static realizeStore(runtime, arc, key, spec) {
-    const id = this.specToId(arc, key, spec, runtime.tenant.id);
-    runtime.realizeStore(arc, id, key, spec.value);
+  static realizeStore(runtime, arc, name, spec) {
+    // TODO(sjmiles): if we end up creating a Store, the spec.tags will be baked into it.
+    // Otherwise, the spec.tags are stored in Arc::extra metadata.
+    // It's a muddle, see if we can do away with tags on the Store itself.
+    const id = this.specToId(arc, name, spec, runtime.tenant.id);
+    const extra = this.specToExtra(spec);
+    runtime.realizeStore(arc, id, {name, ...extra});
   }
   static specToId(arc, key, spec, tenantid) {
     // normalize spec
     if (typeof spec === 'string') {
       spec = {name: spec};
     }
-    const name = spec.name || key;
-    const type = spec.type || 'Any';
-    const tags = spec.tags || ['default'];
+    const {name, type, tags} = spec;
+    const meta = {
+      arcid: arc.id,
+      name: name || key,
+      type: type || 'Any',
+      tags: tags || ['default'],
+      tenantid
+    }
     // construct store id
-    return Store.idFromMeta({arcid: arc.id, name, type, tags, tenantid});
+    return Store.idFromMeta(meta);
+  }
+  static specToExtra({value, tags}) {
+    const extra =  {};
+    if (tags) {
+      extra["tags"] = tags;
+    }
+    if (value) {
+      extra["value"] = value;
+    }
+    return extra;
   }
   static async instantiateParticle(runtime, arc, spec: ParticleSpec, container) {
     // TODO(sjmiles): should be fixed via normalization

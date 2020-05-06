@@ -18,7 +18,7 @@ const chat = {
     entries: {
       type: '[ChatEntry]'
     },
-    userid: {
+    user: {
       type: 'BasicProfile',
       tags: ['map', 'private']
     }
@@ -32,7 +32,7 @@ const chat = {
       particle: {
         kind: 'Chat/ChatWrite',
         entries: 'entries',
-        userid: 'userid',
+        user: 'user',
       }
     },{
       particle: {
@@ -53,9 +53,9 @@ const book_club = {
     entries: {
       type: '[ChatEntry]'
     },
-    userid: {
-      type: 'UserId',
-      tags: ['private']
+    user: {
+      type: 'BasicProfile',
+      tags: ['map', 'private']
     }
   },
   root: [{
@@ -71,7 +71,7 @@ const book_club = {
     content: [{
       particle: {
         entries: 'entries',
-        userid: 'userid'
+        user: 'user'
       }
     },{
       particle: {

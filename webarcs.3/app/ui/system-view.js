@@ -70,21 +70,28 @@ export class SystemView extends Xen.Async {
   get suggestions() {
     return this.tenant && this.tenant.suggestions || [];
   }
-  render() {
+  _didMount() {
     // TODO(sjmiles): update periodically as a stopgap for observing 'suggestions' ... fix!
-    setTimeout(() => this._invalidate(), 500);
+    setInterval(() => {
+      if (this.suggestions && this.suggestions.length !== this.state.length) {
+        this.state = {length: this.suggestions.length};
+      }
+    }, 500);
+  }
+  render() {
     return {
       notifications: this.renderNotifications(this.suggestions)
     };
   }
   renderNotifications(suggestions) {
-    const models = suggestions.map(({userid, recipe, msg}, i) => {
+    const models = suggestions.map(({userid, recipe, msg, avataricon}, i) => {
       if (recipe && !msg) {
         msg = `<b>${recipe}</b> is available.`;
       }
+      const avatar = avataricon || `../assets/users/${userid}.png`;
       return {
         key: i,
-        avatar: `../assets/users/${userid}.png`,
+        avatar,
         msg
       };
     });
@@ -100,9 +107,15 @@ export class SystemView extends Xen.Async {
     //console.warn(key);
   }
   onNotificationClick({currentTarget: {key}}) {
+    const {runtime} = this.tenant;
     const note = this.suggestions[key];
     if (note) {
-      this.tenant.runtime.createRecipeArc(note.recipe);
+      if (note.recipe) {
+        runtime.createRecipeArc(note.recipe);
+      } else if (note.share) {
+        console.warn('instructed to create arc from', JSON.stringify(note.share));
+        runtime.importSharedArc(note.share);
+      }
     }
   }
 }

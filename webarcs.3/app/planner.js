@@ -19,38 +19,26 @@ export class Planner {
   constructor(tenant) {
     this.tenant = tenant;
   }
-  // async initRecipeStores() {
-  //   this.recipeStores = {};
-  //   Object.keys(recipes).map(name => {
-  //     Recipe.parseStores(recipes[name], this.recipeStores);
-  //   });
-  //   //log(Object.keys(this.recipeStores));
-  // }
   plan() {
     const {tenant} = this;
     const {arcs} = tenant;
-    // const arcStores = {};
-    // // construct a map of stores-by-id for all tenant stores
-    // Object.values(arcs).forEach(arc => {
-    //   arc.forEachStores(store => {
-    //     arcStores[store.id] = store;
-    //   });
-    // });
     // use a dictionary (not an array) to uniquify keys
     const suggestions = {};
-    // suggestions from shared arc data
+    // study context stores
     Object.values(tenant.context.stores).forEach(store => {
-      const arcid = Store.metaFromId(store.id).arcid;
-      //const arcid = store.id.split(':').shift();
-      // if (arcid === 'peers') {
-      //   return;
-      // }
-      if (arcs[arcid]) {
-        //log(`context store [${store.id}] matches arc [${arcid}]`);
-      } else if (recipes[arcid]) {
-        //log(`context store [${store.id}] matches no arc, making suggestion`);
-        const recipe = arcid;
-        suggestions[recipe] = {userid: 'system', name: `shared ${recipe}`, recipe};
+      const meta = store.getMeta();
+      if (meta.type === '[ArcShareMetadata]' && meta.persona !== tenant.persona && store.length> 0) {
+        const shares = store.getProperty();
+        Object.entries(shares).forEach(([id, share]) => {
+          if (!arcs[id]) {
+          //console.warn(`[${tenant.id}]: found ArcShareMetadata from [${meta.persona}]`);
+            suggestions[id] = {
+              userid: meta.persona,
+              msg: `<b>${meta.persona}</b> has shared <b>${id}</b>`,
+              share
+            };
+          }
+        });
       }
     });
     // suggestions for sui-generis arcs
@@ -64,8 +52,3 @@ export class Planner {
     tenant.suggestions = Object.values(suggestions);
   }
 }
-
-// const hasArc = (tenant, name) => {
-//   return Boolean(tenant.arcs[name]);
-//   //Object.values(tenant.arcs).forEach(arc => log(arc));
-// };

@@ -50,18 +50,16 @@ return class extends Particle {
   onInputChange({data: {value: msg}}) {
     if (msg) {
       this.state = {value: ''};
-      let {entries, userid} = this.inputs;
+      let {entries, user} = this.inputs;
       entries = entries || {};
       //log(userid);
       const entry = {
         id: makeId(),
         time: Date.now(),
         msg,
-        userid: userid || ''
+        user
       };
       entries[entry.id] = entry;
-      //const entries = [];
-      //entries.push(input.value);
       this.output({entries});
     }
   }

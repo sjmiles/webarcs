@@ -10,6 +10,7 @@
  */
 
 import {EventEmitter} from '../core/event-emitter.js';
+import {deepCopy} from '../utils/object.js';
 
 export class AbstractStore extends EventEmitter {
   id;
@@ -40,7 +41,7 @@ export class AbstractStore extends EventEmitter {
     return this.serialize(true);
   }
   get pojo() {
-    return JSON.parse(this.serialize());
+    return deepCopy(this.raw);
   }
   serialize(prettyPrint = false) {
     return JSON.stringify(this.raw, null, prettyPrint ? '  ' : null);

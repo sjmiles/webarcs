@@ -77,10 +77,10 @@ return class extends Particle {
       models
     };
   }
-  renderEntry({userid, time, msg}) {
+  renderEntry({user, time, msg}) {
     return {
       time: new Date(time).toLocaleTimeString(),
-      avatar: `../assets/users/${userid}.png`,
+      avatar: user.avataricon, //`../assets/users/${userid}.png`,
       entry: msg
     };
   }

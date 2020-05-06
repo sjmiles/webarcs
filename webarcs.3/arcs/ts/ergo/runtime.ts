@@ -60,32 +60,36 @@ export class Runtime {
     // neither one is correct
     this.persistArcMetas();
   }
-  realizeStore(arc, id, name?, value?) {
+  realizeStore(arc, id, extra) {
     let store;
     const meta = Store.metaFromId(id);
-    if (meta.tags.includes('map')) {
+    const name = extra.name;
+    const tags = `${meta.tags},${extra.tags ? extra.tags.join(',') : ''}`;
+    if (tags.includes('map')) {
       store = this.mapStore(arc, meta);
       if (!store) {
         log.error('realizeStore: mapStore returned null');
+      } else {
+        log(`realizeStore: mapped "${name}" to "${store.id}"`);
       }
     } else {
       store = this.tenant.context.get(id);
       if (store) {
-        log(`realizeStore: using existing store "${id}"`);
+        log(`realizeStore: bound "${name}" to existing store "${id}"`);
       }
       if (!store) {
-        store = this.createStore(id, value);
+        store = this.createStore(id, extra);
         if (!store) {
           log.error('realizeStore: createStore returned null');
         }
+        log(`realizeStore: bound "${name}" to new store "${id}"`);
       }
     }
     if (store) {
       // add to context
       this.tenant.context.add(store);
-      name = name || meta.name;
-      arc.addStore(store, name);
-      log(`realizeStore: mapped "${name}" to "${store.id}"`);
+      arc.addStore(store, name, extra);
+      //log(`realizeStore: bound "${name}" to "${store.id}"`);
     }
   }
   mapStore(arc, meta) {
@@ -99,12 +103,12 @@ export class Runtime {
     log(`spec wants to map "${meta.name}" to "${meta.type}", found ${mapped ? mapped.id : 'nothing'}`);
     return mapped;
   }
-  createStore(id, specValue?) {
-    log(`createStore(${id})`);
+  createStore(id, extra) {
+    log(`[${this.tenant.id}] createStore(${id})`);
     const store = new Store(this.tenant.id, id);
-    store.staticValue = specValue;
+    //store.extra = extra;
     if (!store.restore()) {
-      const value = (specValue !== undefined) ? specValue : (store.isCollection() ? {} : '');
+      const value = (extra && extra.value !== undefined) ? extra.value : (store.isCollection() ? {} : '');
       // initialize data
       store.change(doc => doc.data = value);
     } else {
@@ -117,7 +121,7 @@ export class Runtime {
   async createHostedParticle(meta: ParticleMeta) {
     const particle = await this.createParticle(meta.kind);
     if (particle) {
-      // TODO(sjmiles): exposing id to the particle is bad for infosec but good for debugging ... study
+      // TODO(sjmiles): exposing id to the particle is bad for infosec but good for debugging ... consider
       particle.id = meta.id;
       return new Host(meta, particle);
     }
@@ -138,26 +142,35 @@ export class Runtime {
   }
   exportArcMetadata(arc) {
     const {id, hosts, stores} = arc;
+    if (hosts.some(host => !host.meta)) {
+      debugger;
+    }
     return {
       id,
       particles: hosts.map(host => host.meta),
-      stores: Object.keys(stores).map(name => ({name, id: stores[name].id, staticValue: stores[name].staticValue || null}))
+      stores: Object.keys(stores).map(name => this.exportStoreMetadata(arc, name))
     };
+  }
+  exportStoreMetadata(arc, name) {
+    //log(`exportStoreMetadata: alternate export: `, arc.storeSpecs);
+    const id = arc.stores[name].id;
+    const extra = arc.extra[name] || {};
+    extra.name = name;
+    log(`exportStoreMetadata: `, {id, extra});
+    return {id, extra};
   }
   async importMetadata(meta) {
     if (meta) {
-      await Promise.all(meta.map(async meta => {
-        await this.importArcMetadata(meta);
-      }));
+      await Promise.all(meta.map(meta => this.importArcMetadata(meta)));
     }
   }
   async importArcMetadata({id, stores, particles}) {
     if (this.tenant.arcs[id]) {
-      console.warn(`importArcMetadata: Arc ${id} already exists`);
+      log(`importArcMetadata: Arc ${id} already exists`);
     } else {
       const arc = await this.createArc(id);
       for (let meta of stores) {
-        this.realizeStore(arc, meta.id, meta.name, meta.staticValue);
+        this.realizeStore(arc, meta.id, meta.extra);
       }
       for (let meta of particles) {
         await arc.addParticle(this, meta);
@@ -165,6 +178,7 @@ export class Runtime {
       arc.updateHosts();
     }
   }
+  // send/retrieve from persistent storage
   // TODO(sjmiles): delegate to persistor object, or at least ambiguate `localStorage`
   persistArcMetas() {
     const key = `${this.tenant.id}:arcs`;

@@ -18,6 +18,26 @@ export const shallowMerge = (obj, data) => {
   return obj;
 };
 
+export const deepCopy = datum => {
+  if (!datum) {
+    return datum;
+  } else if (Array.isArray(datum)) {
+    const clone = [];
+    datum.forEach(element => clone.push(deepCopy(element)));
+    return clone;
+  } else if (typeof datum === 'object') {
+    const clone = Object.create(null);
+    Object.entries(datum).forEach(([key, value]) => {
+      clone[key] = deepCopy(value);
+    });
+    return clone;
+  } else {
+    return datum;
+  }
+};
+
+window["deepCopy"] = deepCopy;
+
 export const deepEqual = (a, b) => {
   const type = typeof a;
   // must be same type to be equal

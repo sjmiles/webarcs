@@ -57,9 +57,13 @@ export class Endpoint {
       }
     }
     // try again, but wait longer between each attempt (delay is in seconds)
-    delay = delay || -30;
-    if (delay < 600) {
+    const max = 600;
+    delay = delay === undefined ? -30 : delay;
+    if (delay < max) {
       delay += 30;
+      if (delay > 0 && delay <= max) {
+        log(`[${sourceId}] waiting (${delay}s) to connect to [${this.id}]`);
+      }
     }
     setTimeout(() => this.listenForPeer(sourceId, delay), delay*1e3);
   }
@@ -148,7 +152,7 @@ export class Connection {
       if (doc) {
         const fixed = Store.fix(doc);
         if (fixed !== doc) {
-          console.warn(this.hub.tenant.id, msg.docId, 'needed fixup');
+          log(this.hub.tenant.id, msg.docId, 'needed fixup');
         }
         this.database.get(msg.docId).truth = fixed;
       }
@@ -179,11 +183,11 @@ export class Hub extends EventEmitter {
   }
   maybeShareStore({database}, store) {
     if (store.isShared()) {
-      //console.warn(`ADDING "${store.id}" to "${database.id}"`);
+      log(`ADDING "${store.id}" to "${database.id}"`);
       database.add(store);
     } else {
       if (database.get(store.id)) {
-        console.warn(`REMOVING "${store.id}" from (sharing) "${database.id}"`);
+        log(`REMOVING "${store.id}" from (sharing) "${database.id}"`);
         database.remove(store);
       }
     }

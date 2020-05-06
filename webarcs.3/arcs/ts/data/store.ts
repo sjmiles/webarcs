@@ -8,7 +8,7 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {deepEqual, deepUndefinedToNull} from '../utils/object.js';
+import {deepCopy, deepEqual, deepUndefinedToNull} from '../utils/object.js';
 import {logFactory} from '../utils/log.js';
 import {Automerge} from './automerge.js';
 import {AbstractStore} from './abstract-store.js';
@@ -24,9 +24,9 @@ const log = logFactory(true, 'store', 'orange');
 export class Store extends AbstractStore {
   name;
   ownerId;
-  type;
-  tags;
-  staticValue;
+  //type;
+  //tags;
+  //extra;
   constructor(ownerId, id: string, truth?) {
     super(id);
     // TODO(sjmiles): to uniquify persistence keys
@@ -61,6 +61,9 @@ export class Store extends AbstractStore {
   isCollection() {
     return this.getMeta().type[0] === '[';
   }
+  get length() {
+    return Object.values(this.getProperty()).length;
+  }
   // TODO(sjmiles): `tags` usage feels brittle, not sure it's the right way to go
   isShared() {
     return !this.getMeta().tags.includes('private');
@@ -85,26 +88,44 @@ export class Store extends AbstractStore {
     return `${this.id}: ${this.json}`;
   }
   static fix(doc) {
+    // const old = doc;
+    // console.log('before fix:', JSON.stringify(doc));
     Object.keys(doc).forEach(key => {
       const conflicts = Automerge.getConflicts(doc, key);
       Automerge.clearConflicts(doc, key);
       if (conflicts) {
         const value = Object.values(conflicts)[0];
-        if (Array.isArray(value)) {
-          console.log(`array conflict for [${key}]`, value, conflicts);
+        if (!value) {
+          // weird null conflict value?
+        } else if (Array.isArray(value)) {
+          //log(`array conflict for [${key}]`, value, conflicts);
+          log(`automerge create-op conflict detected: Array may not be supported!`);
           doc = Automerge.change(doc, root => value.forEach(v => root[key].push(v)));
         } else if (typeof value === 'object') { //} && !key.includes('$arcs')) {
-          console.log(`object conflict for [${key}]`, value, conflicts);
+          //log(`object conflict for [${key}]`, value, conflicts);
+          log(`automerge create-op conflict detected: applying fix`); //, JSON.stringify(value));
           doc = Automerge.change(doc, root => {
             let entity = root[key];
             if (!entity) {
               entity = root[key] = {};
             }
-            Object.keys(value).forEach(id => entity[id] = {...value[id]});
+            Object.keys(value).forEach(id => {
+              let datum = value[id];
+              if (typeof datum === 'object') {
+                // copy plain data out of any CRDT controlled sub-objects
+                entity[id] = deepCopy(datum) //{...datum}
+              } else {
+                // copy concrete data directly
+                entity[id] = datum;
+              }
+            });
           });
         }
       }
     });
+    // if (old !== doc) {
+    //   console.log('after fix:', JSON.stringify(doc));
+    // }
     return doc;
   }
   hasChanges(outputs) {

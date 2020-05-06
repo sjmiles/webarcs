@@ -25,13 +25,28 @@ const renderDebounceIntervalMs = 200;
 // TODO(sjmiles): mush the *Nexi into the Arc class
 
 class StoreNexus extends EventEmitter {
+  // specs used to generate stores
+  storeSpecs = {};
+  // stores mapped by name-in-arc
   stores = {};
-  constructor() {
-    super();
+  // extra store metadata mapped by name-in-arc
+  extra = {};
+  // add named store to the arc, with optional extra data
+  addStore(store, name, extra) {
+    this.stores[name] = store;
+    this.extra[name] = extra || {};
+    // store changes cause host updates
+    // TODO(sjmiles): too blunt: this updates all hosts regardless of their interest in this store
+    store.listen('set-truth', () => this.storeChange(name, store));
+  }
+  // called when a store fires set-truth
+  storeChange(name, store) {
   }
   getStoreByName(name) {
     return this.stores[name];
-    //return this.stores.find(s => s.name === name);
+  }
+  get storesArray() {
+    return Object.values(this.stores);
   }
   forEachStore(task) {
     Object.keys(this.stores).forEach(key => task(this.stores[key], key));
@@ -119,11 +134,10 @@ export class Arc extends HostNexus {
       host.handleEvent(eventlet);
     }
   }
-  addStore(store, name) {
-    this.stores[name] = store;
+  storeChange(name, store) {
     // store changes cause host updates
     // TODO(sjmiles): too blunt: this updates all hosts regardless of their interest in this store
-    store.listen('set-truth', () => this.updateHosts());
+    this.updateHosts()
   }
   public async addParticle(runtime, meta) {
     this.log(`addParticle(${JSON.stringify(meta)})`);
