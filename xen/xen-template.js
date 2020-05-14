@@ -135,7 +135,11 @@ const annotateMustache = function(node, key, notes, property, mustache) {
       property = 'className';
     }
     let value = mustache.slice(2, -2);
-    const override = value.split(':');
+    // TODO(sjmiles): MWDC components use event-names of the form `MDCTabBar:activated`, which breaks the usage
+    // of `:` as delimiter. So, instead of `on-faux="MDCTabBar:activated:onActivated"` support
+    // `on-faux="MDCTabBar:activated=onActivated"`
+    const delim = mustache.includes('=') ? '=' : ':';
+    const override = value.split(delim);
     if (override.length === 2) {
       property = override[0];
       value = override[1];
@@ -188,8 +192,16 @@ const mapEvents = function(notes, map, mapper) {
     const node = map[key];
     const events = notes[key] && notes[key].events;
     if (node && events) {
-      for (const name in events) {
-        mapper(node, name, events[name]);
+      for (const event in events) {
+        let name = event;
+        let value = events[name];
+        // TODO(sjmiles): MWDC components use event-names of the form `MDCTabBar:activated`, support
+        // `on-faux="MDCTabBar:activated=onActivated"`.
+        // I thought we had this feature already, not sure what happened.
+        if (value.includes('=')) {
+          [name, value] = value.split('=');
+        }
+        mapper(node, name, value);
       }
     }
   }

@@ -222,7 +222,7 @@ export class Particle {
   }
   public handleEvent({handler, data}: Eventlet) {
     if (this[handler]) {
-      this[handler]({data});
+      this[handler]({data, ...data});
     } else {
       //console.log(`[${this.id}] event handler [${handler}] not found`);
     }

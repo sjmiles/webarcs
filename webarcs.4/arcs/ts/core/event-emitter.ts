@@ -14,21 +14,21 @@ const nar = [];
 export class EventEmitter {
   // map of event name to listener array
   listeners = {};
-  fire(eventName, event?) {
-    this.getListeners(eventName).forEach(listener => listener(event));
+  getEventListeners(eventName) {
+    return this.listeners[eventName] || (this.listeners[eventName] = []);
   }
-  getListeners(eventName) {
-    return this.listeners[eventName] || nar;
+  fire(eventName, event?) {
+    this.getEventListeners(eventName).forEach(listener => listener(event));
   }
   listen(eventName, listener) {
-    const listeners = this.listeners[eventName] || (this.listeners[eventName] = []);
+    const listeners = this.getEventListeners(eventName);
     listeners.push(listener);
     return listener;
   }
   unlisten(eventName, listener) {
-    const list = this.getListeners(eventName);
+    const list = this.getEventListeners(eventName);
     const index = list.indexOf(listener);
-    if (list >= 0) {
+    if (index >= 0) {
       list.splice(index, 1);
     }
   }

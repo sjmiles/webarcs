@@ -7,7 +7,13 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
-import '../../../elements/corellia-xen/cx-tabs.js';
+// import 'https://unpkg.com/@material/mwc-textfield@0.15.0/mwc-textfield.js?module';
+// import 'https://unpkg.com/@material/mwc-button@0.15.0/mwc-button.js?module';
+// import 'https://unpkg.com/@material/mwc-checkbox@0.15.0/mwc-checkbox.js?module';
+// import 'https://unpkg.com/@material/mwc-formfield@0.15.0/mwc-formfield.js?module';
+
+// import 'https://unpkg.com/@material/mwc-tab-bar@0.15.0/mwc-tab-bar.js?module';
+// import '../../../elements/corellia-xen/cx-tabs.js';
 
 import {TenantsView} from './tenants-view.js';
 import {TenantIcon} from './tenant-icon.js';
@@ -15,10 +21,16 @@ import {TenantView} from './tenant-view.js';
 import {TenantPages} from './tenant-pages.js';
 import {SystemView} from './system-view.js';
 import {DatabaseView} from './database-view.js';
+import {ModalView} from './modal-view.js';
+import {ShareSelector} from './share-selector.js';
 
-window.customElements.define('tenants-view', TenantsView);
-window.customElements.define('tenant-icon', TenantIcon);
-window.customElements.define('tenant-view', TenantView);
-window.customElements.define('tenant-pages', TenantPages);
-window.customElements.define('system-view', SystemView);
-window.customElements.define('database-view', DatabaseView);
+const define = window.customElements.define.bind(window.customElements);
+
+define('tenant-icon', TenantIcon);
+define('tenants-view', TenantsView);
+define('tenant-view', TenantView);
+define('tenant-pages', TenantPages);
+define('system-view', SystemView);
+define('database-view', DatabaseView);
+define('modal-view', ModalView);
+define('share-selector', ShareSelector);

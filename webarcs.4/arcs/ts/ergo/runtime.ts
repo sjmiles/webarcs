@@ -13,25 +13,28 @@
  * @module ergo
  */
 
+import {EventEmitter} from '../core/event-emitter.js';
 import {Store} from '../data/store.js';
+import {Arc} from '../core/arc.js';
 import {Host, ParticleMeta} from '../core/host.js';
 import {Composer} from '../platforms/dom/xen-dom-composer.js';
-import {Arc} from '../core/arc.js';
 import {Recipe} from './recipe.js';
 import {logFactory} from '../utils/log.js';
 import {elt} from '../utils/dom.js';
+import {deepUndefinedToNull} from '../utils/object.js';
 
 const log = logFactory(logFactory.flags.ergo, 'runtime', 'magenta');
 
 // expensive, so Highlander
 const registry = {};
 
-export class Runtime {
+export class Runtime extends EventEmitter {
   static register(name, factory) {
     registry[name] = factory;
   }
   tenant;
   constructor(tenant) {
+    super();
     this.tenant = tenant;
   }
   get arcsArray() {
@@ -56,9 +59,9 @@ export class Runtime {
   }
   async instantiate(arc: Arc, recipe) {
     await Recipe.instantiate(this, arc, recipe);
-    // TODO(sjmiles): must do this after instantiating a recipe so it's here instead of `addArc`, but is seems
-    // neither one is correct
-    this.persistArcMetas();
+    // TODO(sjmiles): must do this after instantiating a recipe so it's here instead of `addArc`, but is either
+    // one is correct by itself?
+    this.updateMetadata();
   }
   realizeStore(arc, id, extra) {
     let store;
@@ -145,10 +148,19 @@ export class Runtime {
     if (hosts.some(host => !host.meta)) {
       debugger;
     }
+    // TODO(sjmiles): `extra` is doing double duty now; the part of `extra` that is
+    // arc meta should be separate so we don't have to synthesize it here
+    const {sharing, description} = arc.extra;
+    const meta = {
+      sharing: sharing || null,
+      description: description || ''
+    };
     return {
       id,
       particles: hosts.map(host => host.meta),
-      stores: Object.keys(stores).map(name => this.exportStoreMetadata(arc, name))
+      stores: Object.keys(stores).map(name => this.exportStoreMetadata(arc, name)),
+      //sharing: arc.extra.sharing || null,
+      meta
     };
   }
   exportStoreMetadata(arc, name) {
@@ -164,11 +176,17 @@ export class Runtime {
       await Promise.all(meta.map(meta => this.importArcMetadata(meta)));
     }
   }
-  async importArcMetadata({id, stores, particles}) {
+  async importArcMetadata({id, stores, particles, meta}) {
     if (this.tenant.arcs[id]) {
       log(`importArcMetadata: Arc ${id} already exists`);
     } else {
       const arc = await this.createArc(id);
+      // TODO(sjmiles): `extra` is doing double duty now; the part of `extra` that is
+      // arc meta should be separate so we don't have to synthesize it here
+      const {sharing, description} = meta;
+      arc.extra["sharing"] = sharing;
+      arc.extra["description"] = description;
+      //
       for (let meta of stores) {
         this.realizeStore(arc, meta.id, meta.extra);
       }
@@ -178,21 +196,6 @@ export class Runtime {
       arc.updateHosts();
     }
   }
-  // send/retrieve from persistent storage
-  // TODO(sjmiles): delegate to persistor object, or at least ambiguate `localStorage`
-  persistArcMetas() {
-    const key = `${this.tenant.id}:arcs`;
-    const meta = this.exportMetadata();
-    const json = JSON.stringify(meta);
-    //console.log(`persistArcMetas: "${key}"="${json}"`);
-    localStorage.setItem(key, json);
-  }
-  restoreArcMetas() {
-    const key = `${this.tenant.id}:arcs`;
-    const json = localStorage.getItem(key);
-    //console.log(`restoreArcMetas: "${key}"="${json}"`);
-    if (json) {
-      return JSON.parse(json);
-    }
+  updateMetadata() {
   }
 };

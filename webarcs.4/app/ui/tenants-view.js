@@ -35,6 +35,10 @@ const template = Xen.Template.html`
     border-radius: 8px;
     background-color: var(--ui-bg-hi-1);
   }
+  tenant-icon {
+    width: 48px;
+    height: 48px;
+  }
 </style>
 
 <div tenants>{{tenants}}</div>

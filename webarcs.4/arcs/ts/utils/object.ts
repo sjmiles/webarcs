@@ -72,4 +72,5 @@ export const deepUndefinedToNull = obj => {
       }
     });
   }
+  return obj;
 };

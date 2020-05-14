@@ -70,6 +70,7 @@ const {keys, entries} = Object;
 
 export class Recipe {
   static async instantiate(runtime, arc, recipe: RecipeSpec, container?) {
+    log.dir(`instantiate`, recipe);
     // `normalize` converts shorthand to longhand before parsing
     // TODO(sjmiles): would be great if it normalized all the things
     await this.instantiateNode(runtime, arc, this.normalize(recipe), container);

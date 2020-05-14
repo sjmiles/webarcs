@@ -14,30 +14,154 @@ import {makeName} from '../arcs/build/utils/names.js';
 import {deepCopy} from '../arcs/build/utils/object.js';
 import {logFactory} from '../arcs/build/utils/log.js';
 import {Store} from '../arcs/build/data/store.js';
+import {Database} from '../arcs/build/data/database.js';
 import {Runtime} from '../arcs/build/ergo/runtime.js';
+import {Hub} from '../arcs/build/net/hub.js';
 import {initParticles} from './particles.js';
-import {initTenants} from './tenants.js';
 import {Planner} from './planner.js';
 import {recipes} from './recipes.js';
 import {users} from './users.js';
 
-const log = logFactory(true, 'Application', 'firebrick');
+// flags
+const enableNetwork = true;
 
 // ui objects
 const {tenantsView, tenantPages} = window;
 
+// logger
+const log = logFactory(true, 'Application', 'firebrick');
+
+// bootstrap
 (async () => {
   // initialize particle corpus
   await initParticles();
-  // initialize tenants (global for debugging only)
-  const tenants = window.tenants = await initTenants(users);
-  // ui
+  // initialize tenants
+  const tenants = await initTenants(users);
+  // global for debugging only
+  window.tenants = tenants;
+  // initialize runtime environments (per tenant)
+  initRuntime(tenants);
+  // bring up ui
   initUi(tenants);
-  // stores & arcs
-  initContext(tenants);
-  // planning
-  initPlanner(tenants);
 })();
+
+const initTenants = specs => {
+  // collate raw material
+  return specs.map(({persona, device, peers}) => ({
+    device,
+    persona,
+    peers: peers.reduce((peers, peer) => (peers[peer] = true, peers), {}),
+    id: `${persona}:${device}`,
+    avataricon: `../assets/users/${persona}.png`,
+    deviceicon: `../assets/devices/${device}.png`,
+    // arcs mapped here by id
+    arcs: {}
+  }));
+};
+
+const initRuntime = async tenants => {
+  await Promise.all(tenants.map(async tenant => initTenant(tenant, tenants)));
+};
+
+const initTenant = (tenant, tenants) => {
+  // create a runtime environment
+  tenant.runtime = new Runtime(tenant);
+  // create a DOM node to render into
+  tenant.root = document.createElement('div');
+  // create tenant's database, populate from persistance layer
+  initContext(tenant);
+  // network
+  if (enableNetwork) {
+    initNetwork(tenant, tenants);
+  }
+  // planning
+  initPlanner(tenant);
+};
+
+const initContext = async tenant => {
+  //const {runtime} = tenant;
+  // Database (context)
+  tenant.context = new Database(`${tenant.id}:context`);
+  // bootstrap profile data
+  initProfileStore(tenant);
+  // bootstrap metadata store for arcs
+  initMetadataStore(tenant);
+  // bootstrap metadata store for shared arcs
+  //initSharedArcStore(tenant);
+};
+
+const initProfileStore = tenant => {
+  // bootstrap profile data
+  const pid = Store.idFromMeta({
+    arcid: `basic_profile`,
+    name: 'profile',
+    type: `BasicProfile`,
+    tags: ['public', 'volatile'],
+    tenantid: tenant.id
+  });
+  const data = {
+    persona: tenant.persona,
+    avataricon: tenant.avataricon
+  };
+  const profile = tenant.runtime.createStore(pid, {value: data});
+  tenant.context.add(profile);
+};
+
+const initMetadataStore = async tenant => {
+  // bootstrap per-persona metadata store
+  const mid = Store.idFromMeta({
+    arcid: `${tenant.persona}`, //`${tenant.id.replace(':', '_')}`, // fake, there is no arc :(
+    name: 'metadata',
+    type: `SystemMetadata`,
+    tags: ['personal'],
+    tenantid: tenant.id
+  });
+  // TODO(sjmiles): metadata is of type arcmeta[], but Store.fix doesn't support top-level arrays
+  // for stopgap, we translate to/from key/value pairs
+  //const entities = metadataToStorable(meta);
+  tenant.metadata = tenant.runtime.createStore(mid);
+  await tenant.runtime.importMetadata(storableToMetadata(tenant.metadata.data));
+  // if we share tenant.metadata, arcs can be manipulated by this persona on other devices
+  // we listen for changes in that metadata so we can build/destroy arcs as needed
+  tenant.metadata.listen('set-truth', async store => {
+    log(`${tenant.id}: metadata set-truth`); //, store.json);
+    const meta = storableToMetadata(store.data);
+    await tenant.runtime.importMetadata(meta);
+  });
+  // make it shareable via context database
+  tenant.context.add(tenant.metadata);
+};
+
+// const initSharedArcStore = (tenant) => {
+//   // bootstrap shared arc store: arc-metadata that reflects shared-arcs
+//   // shared-arc metadata turns out to need a mix of information from the store-spec and the realized-store:
+//   // store-spec for bind to persona-specific data-stores, realized-store for other binding decisions
+//   const mid = Store.idFromMeta({
+//     arcid: `${tenant.persona}`, // there is no arc; we should call 'arcid' something else (e.g. 'contextid')
+//     name: 'arcshare',
+//     type: `[ArcShareMetadata]`,
+//     tags: ['personal'],
+//     tenantid: tenant.id
+//   });
+//   tenant.sharedArcs = tenant.runtime.createStore(mid);
+//   // if we share tenant.sharedArcs, recipients will be able to study the data and offer suggestions to reify
+//   tenant.sharedArcs.listen('set-truth', async store => {
+//     log(`${tenant.id}: sharedArcs set-truth: `, Object.keys(store.pojo.data));
+//   });
+//   // add to context
+//   tenant.context.add(tenant.sharedArcs);
+// };
+
+const initPlanner = tenant => {
+  tenant.planner = new Planner(tenant);
+  window.setInterval(() => tenant.planner.plan(), 500);
+};
+
+const initNetwork = (tenant, tenants) => {
+  // convert array of peer-specs into array of tenant objects
+  tenant.tenants = Object.keys(tenant.peers).map(id => tenants.find(d => d.id === id));
+  tenant.hub = new Hub(tenant);
+};
 
 const initUi = tenants => {
   // tenant selector
@@ -50,93 +174,35 @@ const initUi = tenants => {
   });
 };
 
-const initContext = tenants => {
-  tenants.forEach(async tenant => {
-    const {runtime} = tenant;
-    // bootstrap profile data
-    initProfileStore(tenant);
-    // restore arc metadata (from persistence layer)
-    const meta = runtime.restoreArcMetas();
-    // bootstrap arc metadata store
-    initMetadataStore(tenant, meta);
-    // bootstrap shared arcs metadata store
-    initSharedArcStore(tenant, meta);
-    // reify objects
-    if (meta) {
-      await runtime.importMetadata(meta);
-    }
-  });
+/* */
+
+const createRecipeArc = async (runtime, id, recipe) => {
+  //const arc = await runtime.createArc(runtime.tenant, name, recipe);
+  const arc = await runtime.createArc(id);
+  // instantiate recipe
+  await runtime.instantiate(arc, recipe);
+  // force lifecycle (needed?)
+  arc.updateHosts();
+  // update metadata
+  updateMetadata(runtime);
+  return arc;
 };
 
-const initProfileStore = tenant => {
-  // bootstrap profile data
-  const pid = Store.idFromMeta({
-    arcid: `basic_profile`,
-    name: 'profile',
-    type: `BasicProfile`,
-    tags: ['shared', 'volatile'],
-    tenantid: tenant.id
-  });
-  const data = {
-    persona: tenant.persona,
-    avataricon: tenant.avataricon
-  };
-  const profile = tenant.runtime.createStore(pid, {value: data});
-  tenant.context.add(profile);
+// update sharedArcs store
+// const shareArc = (runtime, arc) => {
+//   const meta = runtime.exportArcMetadata(arc);
+//   runtime.tenant.sharedArcs.change(doc => doc.data[arc.id] = meta);
+// };
+
+// update metadata store
+const updateMetadata = runtime => {
+  const meta = runtime.exportMetadata();
+  const collection = metadataToStorable(meta);
+  log('updateMetadata', collection);
+  runtime.tenant.metadata.change(doc => doc.data = collection);
 };
 
-const initMetadataStore = (tenant, meta) => {
-  // TODO(sjmiles): metadata is of type arcmeta[], but Store.fix doesn't support top-level arrays
-  // To make this work at first, we convert to key/value pairs
-  const entities = metadataToStorable(tenant.runtime, meta);
-  // bootstrap persona metadata store
-  const mid = Store.idFromMeta({
-    arcid: `${tenant.persona}`, //`${tenant.id.replace(':', '_')}`, // fake, there is no arc :(
-    name: 'metadata',
-    type: `SystemMetadata`,
-    tags: ['shared'],
-    tenantid: tenant.id
-  });
-  tenant.metadata = tenant.runtime.createStore(mid, {value: entities});
-  // if we share tenant.metadata, arcs can be manipulated by this persona on other devices
-  // we listen for changes in that metadata so we can build/destroy arcs as needed
-  tenant.metadata.listen('set-truth', async store => {
-    log(`${tenant.id}: metadata set-truth`); //, store.json);
-    const meta = storableToMetadata(store.getProperty());
-    await tenant.runtime.importMetadata(meta);
-  });
-  // make it shareable via context database
-  tenant.context.add(tenant.metadata);
-};
-
-const initSharedArcStore = (tenant) => {
-  // bootstrap shared arc store: arc-metadata that reflects shared-arcs
-  // shared-arc metadata turns out to need a mix of information from the store-spec and the realized-store:
-  // store-spec for bind to persona-specific data-stores, realized-store for other binding decisions
-  const mid = Store.idFromMeta({
-    arcid: `${tenant.persona}`, // there is no arc; we should call 'arcid' something else (e.g. 'contextid')
-    name: 'arcshare',
-    type: `[ArcShareMetadata]`,
-    tags: ['shared'],
-    tenantid: tenant.id
-  });
-  tenant.sharedArcs = tenant.runtime.createStore(mid);
-  // if we share tenant.sharedArcs, recipients will be able to study the data and offer suggestions to reify
-  tenant.sharedArcs.listen('set-truth', async store => {
-    log(`${tenant.id}: sharedArcs set-truth: `, Object.keys(store.pojo.data));
-  });
-  // put into context for sharing
-  tenant.context.add(tenant.sharedArcs);
-};
-
-const initPlanner = tenants => {
-  tenants.forEach(tenant => {
-    tenant.planner = new Planner(tenant);
-    window.setInterval(() => tenant.planner.plan(), 500);
-  });
-};
-
-const metadataToStorable = (runtime, meta) => {
+const metadataToStorable = meta => {
   // TODO(sjmiles): metadata is of type arcmeta[], but Store.fix doesn't support top-level arrays
   // To make this work at first, we convert to key/value pairs
   const entities = {};
@@ -146,43 +212,17 @@ const metadataToStorable = (runtime, meta) => {
   return entities;
 };
 
-const storableToMetadata = (meta) => {
+const storableToMetadata = meta => {
   // TODO(sjmiles): metadata is of type arcmeta[], but Store.fix doesn't support top-level arrays
   // To make this work at first, we convert back from key/value pairs
   return meta ? Object.values(meta) : [];
 };
 
-const createRecipeArc = async (runtime, id, recipe) => {
-  //const arc = await runtime.createArc(runtime.tenant, name, recipe);
-  const arc = await runtime.createArc(id);
-  // instantiate recipe
-  await runtime.instantiate(arc, recipe);
-  // force lifecycle (?)
-  arc.updateHosts();
-  // update metadata
-  updateMetadata(runtime);
-  // TODO(sjmiles): hack to make it go: 'chat' recipe is shared
-  if (recipe === recipes.chat) {
-    log(`detected 'chat' recipe: sharing arc metadata via sharedArcs store`);
-    shareArc(runtime, arc);
-  }
-  return arc;
-};
-
-// update sharedArcs store
-const shareArc = (runtime, arc) => {
-  const meta = runtime.exportArcMetadata(arc);
-  runtime.tenant.sharedArcs.change(doc => doc.data[arc.id] = meta);
-};
-
-// update metadata store
-const updateMetadata = runtime => {
-  const meta = runtime.exportMetadata();
-  const collection = metadataToStorable(runtime, meta);
-  runtime.tenant.metadata.change(doc => doc.data = collection);
-};
-
 // TODO(sjmiles): hack app-level abilities into Runtime object for ui components to access.
+
+Runtime.prototype.updateMetadata = function() {
+  updateMetadata(this);
+};
 
 Runtime.prototype.createRecipeArc = function(recipe) {
   const map = {'school-chat': 'chat', 'lab-chat': 'chat', 'book-club': 'book_club'};
@@ -192,6 +232,6 @@ Runtime.prototype.createRecipeArc = function(recipe) {
 
 Runtime.prototype.importSharedArc = async function(share) {
   await this.importArcMetadata(share);
-  this.persistArcMetas();
-  updateMetadata(this);
+  this.updateMetadata();
 };
+

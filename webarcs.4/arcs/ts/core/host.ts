@@ -53,5 +53,28 @@ export class Host extends Particle {
   public handleEvent(eventlet: Eventlet) {
     return this.particle.handleEvent(eventlet);
   }
+  // protected computeInputs(arc) {
+  //   const hostInputs = {};
+  //   const {meta} = this;
+  //   Object.keys(meta).forEach(name => {
+  //     // skip keywords
+  //     // TODO(sjmiles): start with clearer structure (e.g. remove keywords as preprocess)
+  //     if (name !== 'kind' && name !== 'id' && name !== 'container') {
+  //       const storeName = meta[name];
+  //       // find referenced store
+  //       const store = arc.getStoreByName(storeName);
+  //       if (!store) {
+  //         //this.log.error(`computeHostInputs: "[${storeName}]" (bound to "${name}") not found`)
+  //         return;
+  //       }
+  //       hostInputs[name] = store.pojo.data;
+  //     }
+  //   });
+  //   //this.log(`computeHostInputs(${host.id}) =`, hostInputs);
+  //   //this.log(`computeHostInputs(${host.id}) = {${Object.keys(hostInputs)}}`, hostInputs);
+  //   // dumping the entire data blob on the console is handy occasionally, but unwieldy most of the time
+  //   //this.log.dir(hostInputs);
+  //   return hostInputs;
+  // }
 };
 

@@ -15,7 +15,6 @@ const service = `https://xenonjs.com/services/http/php/tmdb.php`;
 
 return class extends Particle {
   update({query}) {
-    query = 'star trek';
     if (query && query !== this.query) {
       this.query = query;
       log(`awaiting query [${query}]`);
@@ -30,12 +29,15 @@ return class extends Particle {
         log('fetchResults got ', tmdbResults);
         this.output({tmdbResults});
       } finally {
-        this.receiving = true;
+        this.receiving = false;
       }
     }
   }
   async fetchResults(query) {
-    const response = await fetch(`${service}/?query=search/multi/?query=${query}`);
+    //const kind = 'multi';
+    const kind = 'tv';
+    //const kind = 'movie';
+    const response = await fetch(`${service}/?query=search/${kind}/?query=${query}`);
     const data = await response.json();
     if (data.results) {
       return this.processResults(data.results);

@@ -22,7 +22,7 @@ import {logFactory} from '../utils/log.js';
 
 const renderDebounceIntervalMs = 200;
 
-// TODO(sjmiles): mush the *Nexi into the Arc class
+// TODO(sjmiles): should I just mush the *Nexi into the Arc class?
 
 class StoreNexus extends EventEmitter {
   // specs used to generate stores
@@ -102,18 +102,30 @@ class HostNexus extends StoreNexus {
   }
   protected mergeOutputs(host, outputs) {
     this.log(`mergeOutputs(${host.id}, ${Object.keys(outputs||0)})`);
-    this.forEachStore(store => {
-      const {name} = store;
-      if (name in outputs) {
-        this.log(`mergeOutputs: analyzing "${name}"`);
+    Object.entries(outputs).forEach(([name, value]) => {
+      const storeName = host.meta[name] || name;
+      const store = this.getStoreByName(storeName);
+      this.log(`mergeOutputs: analyzing "${name}" ("${storeName}", "${store}")`);
+      if (store) {
         const output = outputs[name];
-        // TODO(sjmiles): need to formalize what can be in outputs: right here we ignore non-object values
-        if (typeof output === 'object' && store.hasChanges({data: output})) {
+        if (/*typeof output === 'object' &&*/ store.hasChanges({data: output})) {
           this.log(`mergeOutputs: "${name}" is dirty, updating Store`);
           store.change(doc => doc.data = outputs[name]);
         }
       }
     });
+  //   this.forEachStore(store => {
+  //     const {name} = store;
+  //     if (name in outputs) {
+  //       this.log(`mergeOutputs: analyzing "${name}"`);
+  //       const output = outputs[name];
+  //       // TODO(sjmiles): need to formalize what can be in outputs: right here we ignore non-object values
+  //       if (typeof output === 'object' && store.hasChanges({data: output})) {
+  //         this.log(`mergeOutputs: "${name}" is dirty, updating Store`);
+  //         store.change(doc => doc.data = outputs[name]);
+  //       }
+  //     }
+  //   });
   }
 }
 
@@ -182,5 +194,12 @@ export class Arc extends HostNexus {
   public updateHosts() {
     //this.log(`updateHosts()`);
     this.hosts.forEach((p: Host) => this.updateHost(p));
+  }
+  getDescription(description) {
+    return this.extra['description'] || '';
+  }
+  setDescription(description) {
+    this.extra['description'] = description;
+    // TODO(sjmiles): fire some flavor of change event
   }
 }

@@ -15,7 +15,7 @@ import {Automerge} from '../data/automerge.js';
 import {logFactory} from '../utils/log.js';
 
 // build logger for 'hub' (if enabled)
-const log = logFactory(logFactory.flags['hub'] || logFactory.flags['all'], 'hub', 'green');
+const log = logFactory(logFactory.flags['hub'] || logFactory.flags['all'], 'endpoint', 'lawngreen');
 
 // rendezvous system
 const hubs = [];
@@ -79,37 +79,34 @@ export class Connection {
   database;
   conn;
   pending;
-  log;
-  frink;
-  liz;
+  //log;
+  arcSharesStore;
   constructor(hub, peer) {
-    //super();
-    // if (hub.tenant.id === 'liz:mobile') {
-    //   this.liz = true;
-    //   this.log = logFactory(true, 'liz:connection', 'sepia');
-    // }
-    // if (hub.tenant.id === 'frink:mobile') {
-    //   this.frink = true;
-    //   this.log = logFactory(true, 'frink:connection', 'brown');
-    // }
     this.hub = hub;
     this.endpoint = new Endpoint(peer, hub.tenant.id);
-    this.database = this.initDatabase(this.hub, this.endpoint);
+    this.database = this.initDatabase(hub.tenant, this.endpoint);
+    this.arcSharesStore = this.initArcShares(hub.tenant, this.endpoint);
     this.conn = new Automerge.Connection(this.database.truth, msg => this.send(msg));
     //log(`connecting to [${endpoint.id}] ...`);
     this.open();
   }
-  initDatabase(hub, endpoint) {
-    const database = new Database(`${hub.tenant.id}:${endpoint.id}:db`);
-    database.ownerId = hub.tenant.id;
+  initDatabase(tenant, endpoint) {
+    const database = new Database(`${tenant.id}:${endpoint.id}:db`);
+    database.ownerId = tenant.id;
     database.listen('doc-changed', docId => this.databaseChanged(docId));
     return database;
   }
   databaseChanged(docId) {
-    // if (this.frink) {
-    //   this.log('databaseChanged', docId);
-    // }
     this.hub.changed();
+  }
+  initArcShares(tenant, endpoint) {
+    // TODO(sjmiles): duplex share has inverted `${tenant.id}:${endpoint.id}` depending
+    // on which end you are on.
+    const id = `connection:store:arcshares:[ArcShareMeta]:private,volatile`; //:${tenant.id}:${endpoint.id}`;
+    // [arcid]:store:[name]:[type]:[tags]:[tenantid]
+    const store = new Store(tenant.id, id);
+    this.database.add(store);
+    return store;
   }
   open() {
     // collect messages as pending until endpoint is open
@@ -130,34 +127,40 @@ export class Connection {
     throw 'connection not open';
   }
   connecting(msg) {
-    //log(`messages pending (connecting to ${this.endpoint.id})`);
+    //this.hub.log(`messages pending (connecting to ${this.endpoint.id})`);
     this.pending.push(msg);
   }
   connected() {
-    //log(`... connected to [${this.endpoint.id}]`);
+    //this.hub.log(`... connected to [${this.endpoint.id}]`);
     this.send = this.sendToEndpoint;
     this.pending.forEach(msg => this.send(msg));
     this.pending = null;
   }
   sendToEndpoint(msg) {
-    //log(`send to %c[${this.endpoint.id}]%c: `, 'font-weight: bold', 'font-weight: normal', msg);
+    //this.hub.log(`send to %c[${this.endpoint.id}]%c: `, 'font-weight: bold', 'font-weight: normal', msg);
     this.endpoint.send(msg);
   }
   receive(msg) {
     // TODO(sjmiles): simulate asynchrony of a real communication channel
-    setTimeout(() => {
-      log(`[${this.hub.tenant.id}] received: `, msg);
-      //console.group(`[${this.hub.tenant.id}] received: `, msg)
-      const doc = this.conn.receiveMsg(msg);
-      if (doc) {
-        const fixed = Store.fix(doc);
-        if (fixed !== doc) {
-          log(this.hub.tenant.id, msg.docId, 'needed fixup');
-        }
-        this.database.get(msg.docId).truth = fixed;
+    setTimeout(() => this._receive(msg), 0);
+  }
+  _receive(msg) {
+    this.hub.log(`[${this.hub.tenant.id}] received: `, msg);
+    //console.group(`[${this.hub.tenant.id}] received: `, msg)
+    const doc = this.conn.receiveMsg(msg);
+    if (doc) {
+      const fixed = Store.fix(doc);
+      if (fixed !== doc) {
+        this.hub.log(this.hub.tenant.id, msg.docId, 'needed fixup');
       }
-      //console.groupEnd();
-    }, 0);
+      const store = this.database.get(msg.docId);
+      if (store) {
+        store.truth = fixed;
+      } else {
+        this.hub.log(`receive: "${this.database.id}" does not contain store "${msg.docId}"`);
+      }
+    }
+    //console.groupEnd();
   }
 }
 
@@ -166,31 +169,17 @@ export class Hub extends EventEmitter {
   database;
   peerStore;
   connections;
+  log;
   constructor(tenant) {
     super();
     // for local (loopback) testing
     hubs.push(this);
+    this.log = logFactory(logFactory.flags['hub'] || logFactory.flags['all'], `hub[${tenant.id}]`, 'green');
     this.tenant = tenant;
-    tenant.context.listen('doc-changed', docId => this.contextChanged(tenant, docId));
     this.peerStore = this.initPeers(tenant);
     tenant.context.add(this.peerStore);
     this.connections = this.connectPeers(this.peerStore.truth);
-  }
-  contextChanged(tenant, docId) {
-    log(`${tenant.id}: sharing`, docId);
-    const store = tenant.context.get(docId);
-    this.forEachConnection(c => this.maybeShareStore(c, store));
-  }
-  maybeShareStore({database}, store) {
-    if (store.isShared()) {
-      log(`ADDING "${store.id}" to "${database.id}"`);
-      database.add(store);
-    } else {
-      if (database.get(store.id)) {
-        log(`REMOVING "${store.id}" from (sharing) "${database.id}"`);
-        database.remove(store);
-      }
-    }
+    this.initContext(tenant);
   }
   initPeers(tenant) {
     //const id = `${tenant.id}:peers`;
@@ -210,6 +199,98 @@ export class Hub extends EventEmitter {
     );
     return connections;
   }
+  initContext(tenant) {
+    // THIS MEANS ANYTHING IN tenant.context IS POTENTIALLY SHARED
+    tenant.context.forEachStore(store => {
+      this.maybeShareStoreWithConnections(store);
+    });
+    // if a context store changes, reconsider it's sharing status
+    tenant.context.listen('doc-changed', docId => this.contextChanged(tenant, docId));
+  }
+  contextChanged(tenant, docId) {
+    this.log(`${tenant.id}: contextChanged:`, docId);
+    const store = tenant.context.get(docId);
+    this.maybeShareStoreWithConnections(store);
+  }
+  maybeShareStoreWithConnections(store) {
+    this.forEachConnection(c => this.maybeShare(c, store));
+  }
+  maybeShare(connection, store) {
+    if (store.meta.type === 'SystemMetadata') {
+      this.maybeShareArcs(connection, store);
+    }
+    this.maybeShareStore(connection, store);
+  }
+  maybeShareStore({endpoint, database}, store) {
+    // share with oneself everything that isn't on fire
+    if (!store.tags.includes('volatile')) {
+      // TODO(sjmiles): ug, fix!
+      const endpointPersona = endpoint.id.split(':')[0];
+      if (endpointPersona == this.tenant.persona) {
+        this.shareStore(database, store);
+      }
+    } else if (store.tags.includes('public')) {
+      this.shareStore(database, store);
+    } else if (database.get(store.id)) {
+      //this.unshareStore(database, store);
+    }
+  }
+  shareStore(database, store) {
+    this.log(`ADDING "${store.id}" to "${database.id}"`);
+    // informational only
+    store.wasShared = true;
+    database.add(store);
+  }
+  unshareStore(database, store) {
+    this.log(`REMOVING "${store.id}" from (sharing) "${database.id}"`);
+    // informational only
+    store.wasShared = false;
+    database.remove(store);
+  }
+  maybeShareArcs(connection, store) {
+    const {endpoint, arcSharesStore} = connection;
+    const selected = {};
+    const shares = store.pojo.data;
+    // TODO(sjmiles): persona should be available directly
+    const connectionPersona = endpoint.id.split(':')[0];
+    if (shares) {
+      this.log('maybeShareArcs with', endpoint.id, shares);
+      Object.values(shares).forEach(share => {
+        const {id, meta} = share as any;
+        const {sharing} = meta as any;
+        const shareWith = sharing && sharing.shareWith || [];
+        const shouldShare = shareWith.some(friend => {
+          // TODO(sjmiles): ditto
+          const shareWithPersona = friend.split(':')[0];
+          if (shareWithPersona === this.tenant.persona) {
+            this.log(`sharing arc "${id}" has eponymous "shareWith" for "${shareWithPersona}"`);
+            return false;
+          }
+          if (shareWithPersona === connectionPersona) {
+            this.log(`sharing arc "${id}" with "${connectionPersona}"`);
+          }
+          return shareWithPersona === connectionPersona;
+        });
+        if (shouldShare) {
+          selected[id] = share;
+          this.log('SHARING ARC STORES', share['stores']);
+          share['stores'].forEach(({id}) => {
+            const store = this.tenant.context.get(id);
+            this.maybeShareArcStore(connection, store);
+          });
+        }
+      });
+    }
+    this.log(`total sharing with "${connectionPersona}" =`, selected);
+    arcSharesStore.change(doc => doc.data = selected);
+  }
+  maybeShareArcStore({endpoint, database}, store) {
+    if (!store.tags.includes('volatile') && !store.tags.includes('private')) {
+      this.shareStore(database, store);
+    } else if (database.get(store.id)) {
+      //this.unshareStore(database, store);
+    }
+  }
   forEachConnection(iter) {
     if (this.connections) {
       Object.values(this.connections).forEach(iter);
@@ -219,9 +300,11 @@ export class Hub extends EventEmitter {
   captureStores(database) {
     //this.forEachConnection(c => c.database.forEachStore(store => !database.get(store.id) && log('capture', store)));
     this.forEachConnection(c => c.database.forEachStore(store => {
-      if (!database.get(store.id)) {
+      //if (/*!store.tags.includes('volatile') &&*/ !database.get(store.id)) {
+        // informational only
+        store.wasShared = true;
         database.add(store);
-      }
+      //}
     }));
   }
   changed() {

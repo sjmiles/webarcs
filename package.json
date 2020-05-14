@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "@material/mwc-button": "^0.15.0",
+    "@webcomponents/webcomponentsjs": "^2.4.3",
     "automerge": "^0.12.1",
     "perge": "^0.1.2"
   },

@@ -13,11 +13,18 @@ import {IconsCss} from '../../../assets/css/icons.css.js';
 
 const template = Xen.Template.html`
 <style>
+  ${IconsCss}
+  icon:hover {
+    color: blue;
+  }
+  /**/
   :host {
     display: flex;
     flex-direction: column;
     overflow: hidden;
     font-size: 16px;
+    --mdc-theme-primary: var(--ui-bg-hi-0);
+    --mdc-theme-on-primary: #333;
   }
   * {
     box-sizing: border-box;
@@ -31,8 +38,18 @@ const template = Xen.Template.html`
   [banner] > * {
     margin: 0 8px;
   }
-  cx-tabs {
+  [banner2] > * {
     background-color: var(--ui-bg-4);
+  }
+  [row] {
+    display: flex;
+    align-items: center;
+  }
+  [row] > * {
+    margin-right: 12px;
+  }
+  cx-tabs {
+    /* background-color: var(--ui-bg-4); */
     text-transform: uppercase;
     font-size: 14px;
     font-weight: bold;
@@ -42,12 +59,12 @@ const template = Xen.Template.html`
     zoom: 0.5;
   }
   [tenants] > * {
-    margin: 0 4px;
+    margin-right: 16px;
   }
   [database] > div {
     padding: 8px;
     font-size: 12px;
-    white-space: pre;
+    /* white-space: pre; */
   }
   [flex] {
     flex: 1;
@@ -113,50 +130,67 @@ const template = Xen.Template.html`
   [arcItem]:hover [options] {
     visibility: visible;
   }
-  ${IconsCss}
+  share-selector {
+    background-color: white;
+    border-radius: 8px;
+  }
+  [toolbar] icon {
+    font-size: 24px;
+  }
 </style>
 
-<div banner>
-  <tenant-icon avatar="{{avataricon}}" device="{{deviceicon}}"></tenant-icon>
+<modal-view show="{{showModal}}" on-click="onSettingsClose">
+  <share-selector kick="{{kick}}" tenant="{{tenant}}" on-click="onShareViewClick" on-close="onSettingsClose"></share-selector>
+</modal-view>
+
+<div banner toolbar>
+  <tenant-icon style="zoom: 0.75;" avatar="{{avataricon}}" device="{{deviceicon}}"></tenant-icon>
   <span>{{id}}</span>
   <span flex></span>
-  <!-- <span tenants>{{tenants}}</span> -->
+  <div row xen:style="{{homeStyle}}" title="Home"><icon on-click="onHome">home</icon></div>
+  <div row xen:style="{{storageStyle}}" title="Storage View"><icon on-click="onStorageToggle">storage</icon></div>
+  <div row xen:style="{{settingsStyle}}" title="Arc Settings..."><icon on-click="onSettingsOpen">settings</icon></div>
+  <div style="width: 1px; height: 100%; border-right: 1px dotted #a0a0a0;"></div>
   <span tenants>{{connects}}</span>
 </div>
 
-<cx-tabs on-select="onTabSelect">
-  <!-- <cx-tab>Home</cx-tab> -->
-  <cx-tab selected>Arcs</cx-tab>
-  <cx-tab>Database</cx-tab>
-</cx-tabs>
-
 <div arc page flex show$="{{showArc}}" style="flex-direction: column; overflow: hidden;">
   <div flex style="display: flex; overflow: hidden;">
-    <div chooser style="width: 132px; padding: 8px; border: 1px solid var(--ui-bg-3);">{{home}}</div>
+    <!-- arc selector -->
+    <div chooser style="width: 132px; padding: 8px; border: 1px solid var(--ui-bg-3);">{{arcs}}</div>
+    <!-- current arc projected here -->
     <div flex style="overflow-x: auto; overflow-y: scroll;">
-      <!-- actual arcs projected here -->
       <slot></slot>
     </div>
   </div>
+  <!-- system/notification area -->
   <system-view tenant="{{tenant}}"></system-view>
 </div>
 
 <div database page flex show$="{{showDatabase}}" style="overflow: auto;">
+  <div banner style="font-size: 16px;"><span>Context Stores</span></div>
   <database-view database="{{database}}"></database-view>
+  <div style="padding: 0;">{{connectionDatabases}}</div>
 </div>
-
 `;
 
-// const tenantTemplate = Xen.Template.html`
-//   <tenant-icon avatar="{{avataricon}}" device="{{deviceicon}}"></tenant-icon>
-// `;
-
 const connectionTemplate = Xen.Template.html`
-  <tenant-icon xen:style="{{style}}" avatar="{{avataricon}}" device="{{deviceicon}}"></tenant-icon>
+  <tenant-icon xen:style="{{style}}" avatar="{{avataricon}}" device="{{deviceicon}}" title="{{persona}}"></tenant-icon>
 `;
 
 const arcTemplate = Xen.Template.html`
-  <div arcItem selected$="{{selected}}" key="{{id}}" on-click="onArcItemClick"><span name>{{id}}</span><span flex></span><icon options style="font-size: 75%;">settings</icon></div>
+  <div arcItem selected$="{{selected}}" key="{{id}}" on-click="onArcItemClick"><span name>{{name}}</span><span flex></span><icon options style="font-size: 75%;">settings</icon></div>
+`;
+
+const connectionDatabaseTemplate = Xen.Template.html`
+  <div>
+    <div banner style="font-size: 16px;">
+      <span>Stores synced with </span>
+      <tenant-icon style="zoom: 0.5;" xen:style="{{style}}" avatar="{{avataricon}}" device="{{deviceicon}}" title="{{persona}}"></tenant-icon>
+      <span>{{id}}</span>
+    </div>
+    <database-view database="{{database}}"></database-view>
+  </div>
 `;
 
 export class TenantView extends Xen.Async {
@@ -173,7 +207,8 @@ export class TenantView extends Xen.Async {
   }
   update({tenant}, state) {
     // TODO(sjmiles): update periodically as a stopgap for observing changes (e.g. a new arc) ... fix!
-    setTimeout(() => this._invalidate(), 500);
+    setTimeout(() => this.state = {kick: Math.random()}, 500);
+    //this._invalidate(), 500);
     if (tenant && tenant.currentArc) {
       const arc = tenant.currentArc;
       state.selectedArcId = arc.id;
@@ -190,6 +225,10 @@ export class TenantView extends Xen.Async {
   onTabSelect({currentTarget: {value: selected}}) {
     this.state = {selectedTab: selected};
   }
+  onTabActivated({detail: {index}}) {
+    this.state = {selectedTab: index};
+    //console.warn(index);
+  }
   onArcItemClick({currentTarget: {key}}) {
     if (key) {
       this.state = {selectedArcId: key, selectedTab: 0};
@@ -198,26 +237,26 @@ export class TenantView extends Xen.Async {
       this.selectArc(tenant, arc);
     }
   }
-  render({tenant}, {selectedTab, selectedArcId}) {
+  render({tenant}, {selectedTab, selectedArcId, showModal, kick}) {
     return {
+      kick,
+      tenant,
       ...tenant,
+      showModal,
       //showHome: (selectedTab === 0),
       showArc: (selectedTab === 0),
       showDatabase: (selectedTab === 1),
       database: tenant && tenant.context,
-      home: {
+      connectionDatabases: this.renderConnectionDatabases(tenant),
+      settingsStyle: selectedArcId ? '' : 'pointer-events: none; color: silver;',
+      arcs: {
         template: arcTemplate,
-        models: this.renderHome(tenant, selectedArcId)
+        models: this.renderArcs(tenant, selectedArcId)
       },
-      // tenants: {
-      //   template: tenantTemplate,
-      //   models: tenant && this.renderTenants(tenant)
-      // },
       connects: {
         template: connectionTemplate,
         models: tenant && this.renderConnections(tenant)
-      },
-      tenant
+      }
     };
   }
   renderTenants({tenants}) {
@@ -234,16 +273,43 @@ export class TenantView extends Xen.Async {
       };
     });
   }
-  renderDatabase(tenant) {
-    return `${tenant.context.dump()}`;
+  renderConnectionDatabases(tenant) {
+    return {
+      template: connectionDatabaseTemplate,
+      models: Object.values(tenant.hub.connections).map(c => {
+        const targetId = c.endpoint.id;
+        const {avataricon} = tenant.tenants.find(t => t.id === targetId);
+        return {
+          id: c.endpoint.id,
+          avataricon,
+          database: c.database,
+        };
+      })
+    };
   }
-  renderHome(tenant, selectedArcId) {
+  renderArcs(tenant, selectedArcId) {
     return Object.keys(tenant.arcs).map(id => ({
       id,
+      name: tenant.arcs[id].getDescription() || id,
       selected: id === selectedArcId
     }));
   }
   selectArc(tenant, arc) {
     tenant.currentArc = arc;
+  }
+  onSettingsOpen() {
+    this.state = {showModal: true};
+  }
+  onSettingsClose() {
+    this.state = {showModal: false};
+  }
+  onShareViewClick(e) {
+    e.stopPropagation();
+  }
+  onHome() {
+    this.state = {selectedTab: 0};
+  }
+  onStorageToggle() {
+    this.state = {selectedTab: this.state.selectedTab == 0 ? 1 : 0};
   }
 }

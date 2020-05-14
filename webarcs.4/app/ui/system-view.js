@@ -113,7 +113,7 @@ export class SystemView extends Xen.Async {
       if (note.recipe) {
         runtime.createRecipeArc(note.recipe);
       } else if (note.share) {
-        console.warn('instructed to create arc from', JSON.stringify(note.share));
+        //console.warn('instructed to create arc from', JSON.stringify(note.share));
         runtime.importSharedArc(note.share);
       }
     }

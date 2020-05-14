@@ -20,7 +20,7 @@ const chat = {
     },
     user: {
       type: 'BasicProfile',
-      tags: ['map', 'private']
+      tags: ['map'/*, 'private'*/]
     }
   },
   root: [{
@@ -55,7 +55,7 @@ const book_club = {
     },
     user: {
       type: 'BasicProfile',
-      tags: ['map', 'private']
+      tags: ['map'/*, 'private'*/]
     }
   },
   root: [{
@@ -85,7 +85,8 @@ const book_club = {
 const tv = {
   stores: {
     tmdbQuery: {
-      type: 'TMDBQuery'
+      type: 'String',
+      value: 'star trek'
     },
     tmdbResults: {
       type: '[TMDBEntry]',
@@ -98,6 +99,11 @@ const tv = {
   root: [{
     particle: 'Frame',
     content: [{
+      particle: {
+        kind: 'TextInput',
+        text: 'tmdbQuery',
+      }
+    }, {
       particle: {
         kind: 'TMDBSearch',
         query: 'tmdbQuery',

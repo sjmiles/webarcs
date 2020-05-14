@@ -17,6 +17,7 @@ const particles = [
   'Frame',
   'Columns',
   'Container',
+  'TextInput',
   'Info',
   'Sorter',
   'Books',

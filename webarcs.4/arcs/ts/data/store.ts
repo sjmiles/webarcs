@@ -24,52 +24,67 @@ const log = logFactory(true, 'store', 'orange');
 export class Store extends AbstractStore {
   name;
   ownerId;
-  //type;
-  //tags;
-  //extra;
   constructor(ownerId, id: string, truth?) {
     super(id);
-    // TODO(sjmiles): to uniquify persistence keys
+    // TODO(sjmiles): only here to uniquify persistence keys
     this.ownerId = ownerId;
     // name of data object in document (should we just make this 'data'?)
-    this.name = this.getMeta().name;
+    this.name = this.meta.name;
     if (!truth) {
       truth = Automerge.init();
     }
     this.truth = truth;
   }
-  // [arcid]:store:[name]:[type]:[tags]:[tenantid]
+  // [arcid]:store:[name]:[type]:[tags]:[persona]
   static idFromMeta({arcid, name, type, tags, tenantid}) {
-    //return `${arcid}:store:${name}:${type}:${tags.join(',')}:${tenantid}`;
     const persona = tenantid.split(':').shift();
     return `${arcid}:store:${name}:${type}:${tags.join(',')}:${persona}`;
   }
   static metaFromId(id) {
-    const [arcid, _, name, type, tags, persona/*, device*/] = id.split(':');
-    return {arcid, name, type: type || 'any', tags: tags || [], persona/*, device, tenantid: `${persona}:${device}*/};
-  }
-  getMeta() {
-    return Store.metaFromId(this.id);
+    const [arcid, _, name, type, tags, persona] = id.split(':');
+    return {arcid, name, type: type || 'any', tags: tags || [], persona};
   }
   get meta() {
-    return this.getMeta();
+    return Store.metaFromId(this.id);
+  }
+  get tags() {
+    return this.meta.tags;
+  }
+  get data() {
+    return this.truth.data;
   }
   getProperty() {
     return this.truth.data;
-    //return this.truth[this.getMeta().name];
+    //return this.truth[this.meta.name];
   }
   isCollection() {
-    return this.getMeta().type[0] === '[';
+    return this.meta.type[0] === '[';
   }
   get length() {
-    return Object.values(this.getProperty()).length;
+    const data = this.getProperty();
+    return data ? Object.values(data).length : 0;
   }
   // TODO(sjmiles): `tags` usage feels brittle, not sure it's the right way to go
-  isShared() {
-    return !this.getMeta().tags.includes('private');
+  // private: don't share this store, full stop
+  isPrivate() {
+    return this.tags.includes('private');
   }
+  // private: share this store willy nilly
+  isPublic() {
+    return this.tags.includes('public');
+  }
+  // deprecated: now all stores personal unless volatile
+  // personal: share this store with other tenants of my Persona
+  // isPersonal() {
+  //   return this.tags.includes('personal');
+  // }
+  // personal: store has been shared with an arc
+  isShared() {
+    return this.tags.includes('shared');
+  }
+  // volatile: do not persist the arc data
   isVolatile() {
-    return this.getMeta().tags.includes('volatile');
+    return this.tags.includes('volatile');
   }
   change(mutator) {
     this.truth = Automerge.change(this.truth, mutator);

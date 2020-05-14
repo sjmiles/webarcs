@@ -57,8 +57,8 @@ const template = Xen.Template.html`
   }
 </style>
 
-<avatar><img src="{{avatar}}"></avatar>
-<device hidden="{{hideDevice}}"><img src="{{device}}"></device>
+<avatar><img draggable="false" src="{{avatar}}"></avatar>
+<device hidden="{{hideDevice}}"><img draggable="false" src="{{device}}"></device>
 `;
 
 export class TenantIcon extends Xen.Async {
@@ -70,7 +70,7 @@ export class TenantIcon extends Xen.Async {
   }
   render({avatar, device}) {
     return {
-      avatar,
+      avatar: avatar || '',
       device: device || '',
       hideDevice: !device
     };

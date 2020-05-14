@@ -15,6 +15,7 @@
 
 import {Xen} from '../../../../../xen/xen-async.js';
 import {logFactory} from '../../utils/log.js';
+import {IconsCss} from '../../../../../assets/css/icons.css.js';
 
 const log = logFactory(logFactory.flags.render, 'render', 'red');
 
@@ -91,6 +92,7 @@ export class Composer {
       .appendTo(root)
       .events(this.mapEvent.bind(this, id))
     ;
+    root.appendChild(Object.assign(document.createElement('style'), {innerText: IconsCss}));
     return slot;
   }
   private mapEvent(pid, node, type, handler) {

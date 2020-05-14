@@ -1,0 +1,63 @@
+App today
+
+- users
+  - user (an email, not used atm)
+  - persona (string id, should be opaque [we use names today for convenience])
+  - device (string id, should be opaque [we use names today for convenience])
+  - peers (array of tenant-ids [`persona:device`] which provide connection endpoints)
+
+users are converted to tenants
+
+- tenants
+  - persona
+  - device
+  - peers (dictionary)
+  - id ([persona]:[device])
+  - (avatar|device)icon
+  - arcs: (dictionary)
+
+runtime objects are initialized on tenants:
+
+  - runtime (see initTenants)
+  - root: DOM node container is created
+  - context (see initContext)
+  - [network stuff = (see initNetwork)]
+    - tenants: Array of tenant objects that are peers
+    - hub
+  - planner: (see initPlanner)
+
+lastly the primary UI is brought up
+  tenantsView.tenants = tenants // should be tenantsSelector
+  tenantPages.tenants = tenants // where all the UI for a single tenant exists
+
+===
+
+initContext
+  - tenant.context = new Database
+    * as of now only Hub attaches a listener to tenant.context
+  - initProfileStore
+  - initMetadataStore
+    * FIX store schema different from persisting schema, so there are translations
+    tenant.metadata = new Store
+    tenant.metadata.on-set-truth => tenant.runtime.importMetadata
+      - * CARE important circular situation: changes to arc trigger changes in metadata (which will try to trigger) changes in arc
+     context.add(metadata)
+      - all context:on-doc-changed observers now watching sharedArcs
+  - initSharedArcStore
+    - tenant.sharedArcs = new Store
+    - tenant.sharedArcs.on-set-truth => log only
+    //- context.add(sharedArcs)
+    //  - all context:on-doc-changed observers now watching sharedArcs
+  - runtime.importMetadata // consumes metadata and reifies objects, needs new name?
+
+initNetwork
+  - tenant.context.on-doc-changed => hub.contextChanged
+  - * CARE important callback frequently invoked, triggers network activity, can create waterfall
+
+===
+
+Callbacks and Events
+
+App::updateMetadata callers:
+  App::createRecipeArc (<= Runtime::createRecipeArc <= SystemView::onNotificationClick}
+  App:Runtime::importSharedArc (<= SystemView::onNotificationClick}

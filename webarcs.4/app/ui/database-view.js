@@ -13,15 +13,18 @@ import {IconsCss} from '../../../assets/css/icons.css.js';
 
 const template = Xen.Template.html`
 <style>
+  ${IconsCss}
   :host {
     display: block;
     font-size: 12px;
   }
-  [data] {
-    overflow: hidden;
-    box-sizing: border-box;
-    /* padding: 8px 6px; */
-    transition: all 300ms ease-out;
+  [header] {
+    padding: 8px 6px;
+    display: flex;
+    align-items: center;
+    font-size:125%;
+    line-height: 150%;
+    background: var(--ui-bg-4);
   }
   tenant-icon {
     width: 24px;
@@ -32,15 +35,22 @@ const template = Xen.Template.html`
     font-size: 125%;
     margin-right: 8px;
   }
-  ${IconsCss}
+  [store] {
+    border-bottom: 1px dotted silver;
+  }
+  [data] {
+    overflow: hidden;
+    box-sizing: border-box;
+    transition: all 300ms ease-out;
+  }
 </style>
 
 <div>{{stores}}</div>
 `;
 
 const storeTemplate = Xen.Template.html`
-  <div style="border-bottom: 1px dotted silver;" key="{{id}}" on-click="onStoreClick">
-    <div style="padding: 8px 6px; display: flex; align-items: center; font-size:125%; line-height: 150%; background: var(--ui-bg-3)">
+  <div store key="{{id}}" on-click="onStoreClick">
+    <div header>
       <tenant-icon avatar="{{avatar}}"></tenant-icon>
       <icon xen:style="{{shareStyle}}">{{icon}}</icon>
       <b><span>{{name}}</span></b>: <span>{{type}}</span>
@@ -88,11 +98,12 @@ export class DatabaseView extends Xen.Async {
     };
   }
   renderStoreModel(store) {
-    const meta = store.getMeta();
+    const {meta} = store;
     const data = store.getProperty() || {};
+    const shared = store.isPublic() || store.wasShared;
     return {
-      shareStyle: store.isShared() ? `color: green;` : `color: gray;`,
-      icon: store.isShared() ? `cloud_upload` : `cloud_off`,
+      shareStyle: shared ? `color: green;` : `color: gray;`,
+      icon: store.isPublic() ? 'public' : shared ? `cloud_upload` : `cloud_off`,
       owner: meta.persona,
       avatar: `../assets/users/${meta.persona}.png`,
       name: meta.name,

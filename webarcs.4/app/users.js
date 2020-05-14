@@ -9,38 +9,38 @@
  */
 
 export const users = [{
-  device: 'mobile',
   user: 'moe@springfield.com',
   persona: 'moe',
+  device: 'mobile',
   peers: ['edna:desktop', 'liz:mobile', 'carl:mobile']
 }, {
-  device: 'desktop',
   user: 'edna@springfield.edu',
   persona: 'edna',
+  device: 'desktop',
   peers: ['moe:mobile', 'liz:mobile', 'lenny:mobile']
 }, {
-  device: 'mobile',
   user: 'carl@springfield.com',
   persona: 'carl',
+  device: 'mobile',
   peers: ['moe:mobile', 'lenny:mobile']
 }, {
-  device: 'mobile',
   user: 'liz@springfield.edu',
   persona: 'liz',
+  device: 'mobile',
   peers: ['moe:mobile', 'edna:desktop', 'frink:mobile']
 }, {
-  device: 'mobile',
   user: 'lenny@springfield.com',
   persona: 'lenny',
+  device: 'mobile',
   peers: ['carl:mobile', 'edna:desktop']
 }, {
-  device: 'mobile',
   user: 'frink@labs.com',
   persona: 'frink',
+  device: 'mobile',
   peers: ['frink:laptop', 'liz:mobile']
 }, {
-  device: 'laptop',
   user: 'frink@labs.com',
   persona: 'frink',
+  device: 'laptop',
   peers: ['frink:mobile']
 }];
