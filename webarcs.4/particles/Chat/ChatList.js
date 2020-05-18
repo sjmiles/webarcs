@@ -80,7 +80,7 @@ return class extends Particle {
   renderEntry({user, time, msg}) {
     return {
       time: new Date(time).toLocaleTimeString(),
-      avatar: user.avataricon, //`../assets/users/${userid}.png`,
+      avatar: user.avataricon, 
       entry: msg
     };
   }

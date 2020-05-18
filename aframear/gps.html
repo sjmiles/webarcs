@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Location-based AR.js demo</title>
+    <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+  </head>
+
+  <script type="module" src="../elements/geo-location.js"></script>
+
+<body style="margin: 0; overflow: hidden;">
+
+  <div id="info" style="position: fixed; top:0; left: 0; right: 0; height: 32px;"></div>
+
+  <a-scene
+    vr-mode-ui="enabled: true"
+    embedded
+    Xarjs="sourceType: webcam; debugUIEnabled: false;"
+  >
+
+    <a-text id="atext"
+      value="This content will always face you."
+      position="-75 0 -200"
+      scale="40 40 40"
+      color="#FF8000"
+      Xlook-at="[gps-camera]"
+      Xgps-entity-place="latitude: 38.17472; longitude: -122.2574;"
+    ></a-text>
+
+    <a-camera gps-camera rotation-reader></a-camera>
+
+  </a-scene>
+
+  <geo-location id="geo"></geo-location>
+  <script>
+    const {info, geo, atext} = window;
+    geo.addEventListener('coords', ({detail: coords}) => {
+      //console.log(coords);
+      if (coords.latitude && coords.longitude) {
+        info.innerText = `latitude: ${coords.latitude}; longitude: ${coords.longitude};`;
+        //atext.setAttribute('gps-entity-place', coords);
+      }
+    });
+  </script>
+
+</body>
+</html>

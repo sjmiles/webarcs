@@ -105,7 +105,7 @@ export class DatabaseView extends Xen.Async {
       shareStyle: shared ? `color: green;` : `color: gray;`,
       icon: store.isPublic() ? 'public' : shared ? `cloud_upload` : `cloud_off`,
       owner: meta.persona,
-      avatar: `../assets/users/${meta.persona}.png`,
+      avatar: `../assets/users/${meta.persona || 'user'}.png`,
       name: meta.name,
       type: meta.type,
       collectionInfo: store.isCollection() ? `[${Object.keys(data).length}]` : '',

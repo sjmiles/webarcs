@@ -17,11 +17,12 @@ import {EventEmitter} from '../core/event-emitter.js';
 import {Store} from '../data/store.js';
 import {Arc} from '../core/arc.js';
 import {Host, ParticleMeta} from '../core/host.js';
-import {Composer} from '../platforms/dom/xen-dom-composer.js';
 import {Recipe} from './recipe.js';
 import {logFactory} from '../utils/log.js';
 import {elt} from '../utils/dom.js';
-import {deepUndefinedToNull} from '../utils/object.js';
+//import {deepUndefinedToNull} from '../utils/object.js';
+//import {XenComposer} from '../platforms/dom/xen-dom-composer.js';
+import {requestSurfaceComposer} from '../../../app/surfaces/surface.js';
 
 const log = logFactory(logFactory.flags.ergo, 'runtime', 'magenta');
 
@@ -46,10 +47,14 @@ export class Runtime extends EventEmitter {
     // - keeps tenant as a POJO
     // - keeps runtime as a class
     // - apis take runtimes
+    //
+    const composer = await requestSurfaceComposer('ar');
+    //const composer = new Composer(arcRoot);
+    //
     const root = tenant.root;
-    const arcRoot = elt('div', {id}, root);
-    const composer = new Composer(arcRoot);
+    const arcRoot = elt('div', {id, style: 'flex: 1; display: flex; flex-direction: column;'}, root);
     const arc = new Arc({id, composer});
+    //
     this.addArc(arc);
     return arc;
   };

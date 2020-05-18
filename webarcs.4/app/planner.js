@@ -8,7 +8,7 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-//import {recipes} from './recipes.js';
+import {recipes} from './recipes.js';
 //import {Recipe} from '../arcs/build/ergo/recipe.js';
 //import {Store} from '../arcs/build/data/store.js';
 import {logFactory} from '../arcs/build/utils/log.js';
@@ -26,8 +26,9 @@ export class Planner {
     // produce suggestions from shared-arcs-stores
     this.suggestSharedArcs(tenant, suggestions);
     // suggestions for sui-generis arcs
-    suggestions['chat'] = {userid: 'system', name: 'chat', recipe: 'chat'};
-    suggestions['tv'] = {userid: 'system', name: 'tv', recipe: 'tv'};
+    Object.keys(recipes).forEach(name => suggestions[name] = {userid: 'system', name, recipe: name});
+    //suggestions['chat'] = {userid: 'system', name: 'chat', recipe: 'chat'};
+    //suggestions['tv'] = {userid: 'system', name: 'tv', recipe: 'tv'};
     // extract values array
     tenant.suggestions = Object.values(suggestions);
   }

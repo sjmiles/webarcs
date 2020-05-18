@@ -1,0 +1,109 @@
+<!doctype html>
+
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+<!-- <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script> -->
+<!-- <script src="https://rawgit.com/jeromeetienne/AR.js/master/aframe/build/aframe-ar.min.js"></script> -->
+<!-- <script src="https://rawgit.com/donmccurdy/aframe-extras/master/dist/aframe-extras.loaders.min.js"></script> -->
+<script src="../aframe-1.0.4.js"></script>
+<script src="../aframe-ar.js"></script>
+<script src="../aframe-extras-6.1.0.min.js"></script>
+<!-- <script src="../aframe-mouse-cursor-component.min.js"></script> -->
+
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+  }
+</style>
+
+<!-- we add detectionMode and matrixCodeType to tell AR.js to recognize barcode markers -->
+<a-scene
+  embedded
+  vr-mode-ui="enabled: false"
+  cursor="rayOrigin: mouse"
+  arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+>
+  <a-assets>
+    <!-- <a-asset-item id="animated-asset" src="../assets/xr/CesiumMan.gltf"></a-asset-item> -->
+    <!-- <a-asset-item id="switch-asset" src="../assets/xr/LightSwitch/scene.gltf"></a-asset-item> -->
+    <a-asset-item id="switch-asset" src="../assets/xr/lever_arm_switch_lowpoly/scene.gltf"></a-asset-item>
+  </a-assets>
+
+  <a-marker id="marker-6" type="barcode" value="6" size="0.1" emitevents="true" hue:light="18">
+    <!-- <a-box cursor-listener position="0 0.5 0" color="yellow"></a-box> -->
+    <!-- <a-entity cursor-listener gltf-model="#switch-asset" scale="15 15 25" rotation="90 0 0"></a-entity> -->
+    <a-entity cursor-listener gltf-model="#switch-asset" scale="0.01 0.01 0.01" rotation="0 90 -90" position="0 -0.4 -0.1"></a-entity>
+  </a-marker>
+
+  <a-marker id="marker-7" type="barcode" value="7" size="0.1" emitevents="true" hue:light="2">
+    <!-- <a-entity cursor-listener gltf-model="#switch-asset" scale="15 15 25" rotation="90 0 0"></a-entity> -->
+    <a-entity cursor-listener gltf-model="#switch-asset" scale="0.01 0.01 0.01" rotation="0 90 -90" position="0 -0.4 -0.1"></a-entity>
+  </a-marker>
+
+  <!-- <a-marker id="animated-marker" type="barcode" value="7" size="0.1" emitevents="true" hue:light="2">
+    <a-entity gltf-model="#animated-asset" scale="2"></a-entity>
+  </a-marker> -->
+
+  <!-- use this <a-entity camera> to support multiple-markers, otherwise use <a-marker-camera> instead of </a-marker> -->
+  <a-entity id="camera" camera>
+    <a-entity id="cursor" cursor Xraycaster="far: 10000;"></a-entity>
+  </a-entity>
+
+</a-scene>
+
+
+<div id="info" style="zoom: 1.0; position: fixed; top:0; left: 0; right: 0; height: 32px; padding: 8px; font-size: 32px;">
+  <button style="padding: 6px 16px;" onclick="light(lightId, 'on')">On</button><button style="padding: 6px 16px;" onclick="light(lightId, 'off')">Off</button>
+</div>
+
+<script>
+  const light = async(id, onOff) => {
+    //alert(onOff);
+    try {
+      console.log(`attempting to turn light "${id}" ${onOff}`);
+      const response = await fetch(`https://xenonjs.com/services/http/php/hue.php/?${id}/${onOff}`);
+      console.log(response.statusText, response);
+    } catch(x) {
+      console.error(x);
+    }
+  };
+  // const {camera} = window;
+  // camera.addEventListener('click', e => {
+  //   console.log(e);
+  // });
+  //
+  let lightId = -1;
+  //
+  info.hidden = lightId < 0;
+  const markers = document.querySelectorAll('a-marker');
+  markers.forEach(marker => {
+    const child = marker.firstElementChild;
+    child.addEventListener('click', e => {
+      // click events are doubled, needs root cause
+      // this is just a workaround
+      if (child.squelch) {
+        child.squelch = false;
+        return;
+      }
+      child.squelch = true;
+      console.log(e);
+      //
+      const id = Number(marker.getAttribute('hue:light'));
+      if (id > 0) {
+        console.log("CLICK! for", id);
+        marker.onOff = !marker.onOff;
+        light(id, marker.onOff ? 'on' : 'off');
+      }
+    });
+    marker.addEventListener('markerFound', e => {
+      lightId = Number(e.currentTarget.getAttribute('hue:light')) || lightId;
+      info.hidden = lightId < 0;
+    });
+    marker.addEventListener('markerLost', e => {
+      lightId = -1;
+      info.hidden = lightId < 0;
+    });
+  });
+  //
+</script>

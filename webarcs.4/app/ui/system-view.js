@@ -19,6 +19,7 @@ const template = Xen.Template.html`
     font-size: 16px;
     background-color: var(--ui-bg-4);
     padding: 12px;
+    user-select: none;
   }
   * {
     box-sizing: border-box;
@@ -88,7 +89,7 @@ export class SystemView extends Xen.Async {
       if (recipe && !msg) {
         msg = `<b>${recipe}</b> is available.`;
       }
-      const avatar = avataricon || `../assets/users/${userid}.png`;
+      const avatar = avataricon || `../assets/users/${userid || 'user'}.png`;
       return {
         key: i,
         avatar,

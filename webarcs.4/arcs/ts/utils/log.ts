@@ -12,7 +12,8 @@ export const logFlags = {
   any: true,
   arc: true,
   database: false,
-  hub: true,
+  hub: false,
+  composer: true,
   render: true,
   ergo: true
 };

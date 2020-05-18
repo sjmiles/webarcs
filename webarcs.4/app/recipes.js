@@ -8,6 +8,24 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
+const dino = {
+  root: [{
+    //modality: 'xr',
+    particle: {
+      kind: 'Xr/Dino'
+    }
+  }]
+};
+
+const marker = {
+  root: [{
+    //modality: 'xr',
+    particle: {
+      kind: 'Xr/Marker'
+    }
+  }]
+};
+
 const chat = {
   stores: {
     padding: {
@@ -122,4 +140,4 @@ const tv = {
   }]
 };
 
-export const recipes = {chat, book_club, tv};
+export const recipes = {chat, tv, book_club, dino, marker};

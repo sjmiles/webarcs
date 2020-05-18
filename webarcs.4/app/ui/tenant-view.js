@@ -159,7 +159,7 @@ const template = Xen.Template.html`
     <!-- arc selector -->
     <div chooser style="width: 132px; padding: 8px; border: 1px solid var(--ui-bg-3);">{{arcs}}</div>
     <!-- current arc projected here -->
-    <div flex style="overflow-x: auto; overflow-y: scroll;">
+    <div flex style="display: flex; overflow-x: auto; overflow-y: scroll;">
       <slot></slot>
     </div>
   </div>
@@ -197,6 +197,9 @@ export class TenantView extends Xen.Async {
   static get observedAttributes() {
     return ['tenant'];
   }
+  // get host() {
+  //   return this;
+  // }
   get template() {
     return template;
   }

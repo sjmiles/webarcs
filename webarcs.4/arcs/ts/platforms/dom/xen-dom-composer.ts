@@ -16,6 +16,7 @@
 import {Xen} from '../../../../../xen/xen-async.js';
 import {logFactory} from '../../utils/log.js';
 import {IconsCss} from '../../../../../assets/css/icons.css.js';
+import {Slot, Composer} from '../../core/composer.js';
 
 const log = logFactory(logFactory.flags.render, 'render', 'red');
 
@@ -30,34 +31,14 @@ interface RenderPacket {
 
 const sanitizeId = id => id.replace(/[)(:]/g, '_');
 
-export class Composer {
+export class XenComposer extends Composer {
   private root;
-  private slots;
-  private pendingPackets;
   constructor(root?) {
+    super();
     this.root = root;
-    this.slots = {};
-    this.pendingPackets = [];
   }
   setRoot(root) {
     this.root = root;
-    this.processPendingPackets();
-  }
-  render(packet: RenderPacket) {
-    const {id, container, content: {template, model}} = packet;
-    log({id, /*container, template,*/ model: `{${Object.keys(model).join(', ')}}`});
-    let slot = this.slots[id];
-    if (!slot) {
-      const parent = this.findContainer(container);
-      if (!parent) {
-        this.pendingPackets.push(packet);
-        //log.warn(`container unavailable for slot`, id);
-        return;
-      }
-      slot = this.generateSlot(id, template, parent);
-      this.slots[id] = slot;
-    }
-    slot.set(model);
     this.processPendingPackets();
   }
   findContainer(container) {
@@ -72,21 +53,13 @@ export class Composer {
     }
     return node;
   }
-  processPendingPackets() {
-    const packets = this.pendingPackets;
-    if (packets.length) {
-      this.pendingPackets = [];
-      packets.forEach(packet => this.render(packet));
-      // if (this.pendingPackets.length == 0) {
-      //   console.warn('YAY, cleaned up pendingPackets');
-      // }
-    }
-  }
-  private generateSlot(id, template, parent) {
+  generateSlot(id, template, parent): Slot {
     const container = parent.appendChild(document.createElement('div'));
+    container.style = 'flex: 1; display: flex; flex-direction: column;'
     container.setAttribute('zlot', id);
     container.id = sanitizeId(id);
-    const root = container.attachShadow({mode: `open`});
+    //const root = container.attachShadow({mode: `open`});
+    const root = container;
     const slot = Xen.Template
       .stamp(template)
       .appendTo(root)
@@ -95,7 +68,7 @@ export class Composer {
     root.appendChild(Object.assign(document.createElement('style'), {innerText: IconsCss}));
     return slot;
   }
-  private mapEvent(pid, node, type, handler) {
+  mapEvent(pid, node, type, handler) {
     node.addEventListener(type, e => {
       const data = {key: null, value: null};
       // walk up the event path to find the topmost key/value data
@@ -118,9 +91,6 @@ export class Composer {
       const eventlet = {name, handler, data};
       this.onevent(pid, eventlet);
     });
-  }
-  onevent(pid, eventlet) {
-    log(`[${pid}] sent [${eventlet.handler}] event`);
   }
 };
 

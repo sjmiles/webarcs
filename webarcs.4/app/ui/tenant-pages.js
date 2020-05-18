@@ -42,6 +42,9 @@ export class TenantPages extends Xen.Async {
   static get observedAttributes() {
     return ['tenants', 'selected'];
   }
+  get host() {
+    return this;
+  }
   get template() {
     return template;
   }

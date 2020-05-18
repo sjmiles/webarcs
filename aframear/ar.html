@@ -1,0 +1,49 @@
+<!doctype html>
+
+<!-- <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script> -->
+<script src="https://aframe.io/releases/1.0.4/aframe.js"></script>
+
+<!-- <a-scene>
+  <a-assets timeout="30000">
+    <a-asset-item id="spinosaurus" src="dino-model.glb"></a-asset-item>
+  </a-assets>
+
+  <a-camera position="0 1.2 0"></a-camera>
+
+  <a-entity id="dino" position="-1 0 -3" scale="0.5 0.5 0.5">
+    <a-entity position="0 2.15 0" rotation="0 55 0"
+              gltf-model="#spinosaurus"
+              animation-mixer
+              shadow="cast: true; receive: false"></a-entity>
+  </a-entity>
+
+</a-scene> -->
+
+<script>
+  const hasAr = window.arwebview;
+  if (!hasAr) {
+    //alert('No `arwebview` object');
+  }
+  const html = `<a-scene>
+    <a-assets timeout="30000">
+      <a-asset-item id="spinosaurus" src="dino-model.glb"></a-asset-item>
+    </a-assets>
+
+    <a-camera position="0 1.2 0"></a-camera>
+
+    <!-- 2D environment omitted for simplicity -->
+
+    <a-entity id="dino" position="-1 0 -3" scale="0.5 0.5 0.5">
+      <a-entity position="0 2.15 0" rotation="0 55 0"
+                gltf-model="#spinosaurus"
+                animation-mixer
+                shadow="cast: true; receive: false"></a-entity>
+    </a-entity>
+
+    <!-- Lights configuration omitted for simplicity -->
+  </a-scene>`;
+  setTimeout(() => {
+    const div = document.body.appendChild(document.createElement('div'));
+    div.innerHTML = html;
+  }, 500);
+</script>

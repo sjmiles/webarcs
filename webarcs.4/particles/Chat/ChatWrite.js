@@ -35,7 +35,10 @@ const template = Particle.html`
   }
 </style>
 
-<input on-change="onInputChange" value="{{value}}"><button>Send</button>
+<div>
+  <input on-change="onInputChange" value="{{value}}"><button>Send</button>
+</div>
+
 `;
 
 return class extends Particle {

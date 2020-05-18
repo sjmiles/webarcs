@@ -67,7 +67,10 @@ const initTenant = (tenant, tenants) => {
   // create a runtime environment
   tenant.runtime = new Runtime(tenant);
   // create a DOM node to render into
-  tenant.root = document.createElement('div');
+  tenant.root = Object.assign(document.createElement('div'), {
+    id: `${tenant.id}-arcs`,
+    style: 'flex: 1; display: flex; flex-direction: column;'}
+  );
   // create tenant's database, populate from persistance layer
   initContext(tenant);
   // network

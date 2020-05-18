@@ -26,6 +26,8 @@ const particles = [
   'TMDBDetail',
   'Chat/ChatList',
   'Chat/ChatWrite',
+  'Xr/Dino',
+  'Xr/Marker'
 ];
 
 export const initParticles = async () => {
