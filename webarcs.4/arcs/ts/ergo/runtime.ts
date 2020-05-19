@@ -19,10 +19,10 @@ import {Arc} from '../core/arc.js';
 import {Host, ParticleMeta} from '../core/host.js';
 import {Recipe} from './recipe.js';
 import {logFactory} from '../utils/log.js';
-import {elt} from '../utils/dom.js';
+//import {dom} from '../utils/dom.js';
 //import {deepUndefinedToNull} from '../utils/object.js';
 //import {XenComposer} from '../platforms/dom/xen-dom-composer.js';
-import {requestSurfaceComposer} from '../../../app/surfaces/surface.js';
+//import {requestSurfaceComposer} from '../../../app/surfaces/surfaces.js';
 
 const log = logFactory(logFactory.flags.ergo, 'runtime', 'magenta');
 
@@ -41,20 +41,19 @@ export class Runtime extends EventEmitter {
   get arcsArray() {
     return Object.values(this.tenant.arcs);
   }
-  async createArc(id) {
+  async createArc(id, composer?) {
     const tenant = this.tenant;
     // TODO(sjmiles): maybe runtime should own tenant:
     // - keeps tenant as a POJO
     // - keeps runtime as a class
     // - apis take runtimes
     //
-    const composer = await requestSurfaceComposer('ar');
+    //const composer = await requestSurfaceComposer('ar');
     //const composer = new Composer(arcRoot);
     //
-    const root = tenant.root;
-    const arcRoot = elt('div', {id, style: 'flex: 1; display: flex; flex-direction: column;'}, root);
+    //const root = tenant.root;
+    //const arcRoot = dom('div', {id, style: 'flex: 1; display: flex; flex-direction: column;'}, root);
     const arc = new Arc({id, composer});
-    //
     this.addArc(arc);
     return arc;
   };

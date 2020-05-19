@@ -14,21 +14,22 @@
  */
 
 import {EventEmitter} from './event-emitter.js';
-//import {Store} from './store.js';
 import {Host} from './host.js';
+import {Store} from '../data/store.js';
 import {debounce} from '../utils/task.js';
 import {makeId} from '../utils/id.js';
 import {logFactory} from '../utils/log.js';
 
 const renderDebounceIntervalMs = 200;
 
-// TODO(sjmiles): should I just mush the *Nexi into the Arc class?
+type StoreMap = Record<string, Store>;
 
+// TODO(sjmiles): should I just mush the *Nexi into the Arc class?
 class StoreNexus extends EventEmitter {
   // specs used to generate stores
   storeSpecs = {};
   // stores mapped by name-in-arc
-  stores = {};
+  stores: StoreMap = {};
   // extra store metadata mapped by name-in-arc
   extra = {};
   // add named store to the arc, with optional extra data
@@ -132,12 +133,20 @@ class HostNexus extends StoreNexus {
 /** Arc class */
 export class Arc extends HostNexus {
   id;
-  private composer;
+  private _composer;
   constructor({id, composer}) {
     super(id || `arc(${makeId()})`);
     this.log = logFactory(logFactory.flags.arc, `Arc[${id}]`, 'blue') as any;
     this.composer = composer;
-    composer.onevent = (pid, eventlet) => this.onComposerEvent(pid, eventlet);
+  }
+  get composer() {
+    return this._composer;
+  }
+  set composer(composer) {
+    this._composer = composer;
+    if (composer) {
+      composer.onevent = (pid, eventlet) => this.onComposerEvent(pid, eventlet);
+    }
   }
   private onComposerEvent(pid, eventlet) {
     this.log(`[${pid}] sent [${eventlet.handler}] event`, eventlet);
@@ -188,7 +197,9 @@ export class Arc extends HostNexus {
     const {template} = host.config;
     if (template) {
       const {id, container} = host;
-      this.composer.render({id, container, content: {template, model}});
+      if (this.composer) {
+        this.composer.render({id, container, content: {template, model}});
+      }
     }
   }
   public updateHosts() {

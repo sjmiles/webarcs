@@ -32,10 +32,12 @@ interface RenderPacket {
 const sanitizeId = id => id.replace(/[)(:]/g, '_');
 
 export class XenComposer extends Composer {
-  private root;
-  constructor(root?) {
+  root;
+  useShadowRoot;
+  constructor(root?, useShadowRoot?) {
     super();
     this.root = root;
+    this.useShadowRoot = useShadowRoot;
   }
   setRoot(root) {
     this.root = root;
@@ -54,12 +56,14 @@ export class XenComposer extends Composer {
     return node;
   }
   generateSlot(id, template, parent): Slot {
+    if (!parent) {
+      throw Error('Cannot generateSlot without a parent node');
+    }
     const container = parent.appendChild(document.createElement('div'));
     container.style = 'flex: 1; display: flex; flex-direction: column;'
     container.setAttribute('zlot', id);
     container.id = sanitizeId(id);
-    //const root = container.attachShadow({mode: `open`});
-    const root = container;
+    const root = this.useShadowRoot ? container.attachShadow({mode: `open`}) : container;
     const slot = Xen.Template
       .stamp(template)
       .appendTo(root)

@@ -16,4 +16,4 @@
 const nob = Object.create(null);
 const create = (tag, props?) => Object.assign(document.createElement(tag), props || nob);
 
-export const elt = (tag, props?, parent?) => parent ? parent.appendChild(create(tag, props)) : create(tag, props);
+export const dom = (tag, props?, parent?) => parent ? parent.appendChild(create(tag, props)) : create(tag, props);

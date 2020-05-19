@@ -15,6 +15,8 @@ import {AbstractStore} from './abstract-store.js';
 
 const log = logFactory(true, 'store', 'orange');
 
+const persist = false;
+
 // These CRDT documents will grow unbounded forever always waiting for a participant
 // to reappear with changes from the distant past.
 //
@@ -166,9 +168,11 @@ export class Store extends AbstractStore {
     return `[${this.ownerId}]:${this.id}`;
   }
   persist() {
-    if (!this.isVolatile()) {
-      const serial = this.save();
-      localStorage.setItem(this.persistId, serial);
+    if (persist) {
+      if (!this.isVolatile()) {
+        const serial = this.save();
+        localStorage.setItem(this.persistId, serial);
+      }
     }
   }
   restore() {

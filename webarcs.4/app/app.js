@@ -21,9 +21,11 @@ import {initParticles} from './particles.js';
 import {Planner} from './planner.js';
 import {recipes} from './recipes.js';
 import {users} from './users.js';
+import {Surfaces} from './surfaces/surfaces.js';
 
 // flags
-const enableNetwork = true;
+const enableNetwork = false;
+// const enablePersistance = false;
 
 // ui objects
 const {tenantsView, tenantPages} = window;
@@ -64,13 +66,15 @@ const initRuntime = async tenants => {
 };
 
 const initTenant = (tenant, tenants) => {
-  // create a runtime environment
-  tenant.runtime = new Runtime(tenant);
-  // create a DOM node to render into
+  // create a DOM node container for tenant-view to install
   tenant.root = Object.assign(document.createElement('div'), {
     id: `${tenant.id}-arcs`,
     style: 'flex: 1; display: flex; flex-direction: column;'}
   );
+  // create a runtime environment
+  tenant.runtime = new Runtime(tenant);
+  // create surface manager
+  tenant.runtime.surfaces = new Surfaces();
   // create tenant's database, populate from persistance layer
   initContext(tenant);
   // network
@@ -135,26 +139,6 @@ const initMetadataStore = async tenant => {
   tenant.context.add(tenant.metadata);
 };
 
-// const initSharedArcStore = (tenant) => {
-//   // bootstrap shared arc store: arc-metadata that reflects shared-arcs
-//   // shared-arc metadata turns out to need a mix of information from the store-spec and the realized-store:
-//   // store-spec for bind to persona-specific data-stores, realized-store for other binding decisions
-//   const mid = Store.idFromMeta({
-//     arcid: `${tenant.persona}`, // there is no arc; we should call 'arcid' something else (e.g. 'contextid')
-//     name: 'arcshare',
-//     type: `[ArcShareMetadata]`,
-//     tags: ['personal'],
-//     tenantid: tenant.id
-//   });
-//   tenant.sharedArcs = tenant.runtime.createStore(mid);
-//   // if we share tenant.sharedArcs, recipients will be able to study the data and offer suggestions to reify
-//   tenant.sharedArcs.listen('set-truth', async store => {
-//     log(`${tenant.id}: sharedArcs set-truth: `, Object.keys(store.pojo.data));
-//   });
-//   // add to context
-//   tenant.context.add(tenant.sharedArcs);
-// };
-
 const initPlanner = tenant => {
   tenant.planner = new Planner(tenant);
   window.setInterval(() => tenant.planner.plan(), 500);
@@ -180,22 +164,23 @@ const initUi = tenants => {
 /* */
 
 const createRecipeArc = async (runtime, id, recipe) => {
-  //const arc = await runtime.createArc(runtime.tenant, name, recipe);
-  const arc = await runtime.createArc(id);
-  // instantiate recipe
-  await runtime.instantiate(arc, recipe);
-  // force lifecycle (needed?)
-  arc.updateHosts();
-  // update metadata
-  updateMetadata(runtime);
-  return arc;
+  const modality = recipe.meta && recipe.meta.modality || 'xen';
+  const surface = await runtime.surfaces.requestSurface(modality, runtime.tenant.root);
+  if (!surface) {
+    alert(`"${modality}" surface is not available on this device.`);
+  } else {
+    const composer = await surface.createComposer(id);
+    const arc = await runtime.createArc(id, composer);
+    // instantiate recipe
+    await runtime.instantiate(arc, recipe);
+    // force lifecycle (needed?)
+    arc.updateHosts();
+    // update metadata
+    updateMetadata(runtime);
+    composer.activate();
+    return arc;
+  }
 };
-
-// update sharedArcs store
-// const shareArc = (runtime, arc) => {
-//   const meta = runtime.exportArcMetadata(arc);
-//   runtime.tenant.sharedArcs.change(doc => doc.data[arc.id] = meta);
-// };
 
 // update metadata store
 const updateMetadata = runtime => {
@@ -227,9 +212,9 @@ Runtime.prototype.updateMetadata = function() {
   updateMetadata(this);
 };
 
-Runtime.prototype.createRecipeArc = function(recipe) {
+Runtime.prototype.createRecipeArc = async function(recipe) {
   const map = {'school-chat': 'chat', 'lab-chat': 'chat', 'book-club': 'book_club'};
-  createRecipeArc(this, `${recipe}-${makeName()}`, recipes[map[recipe] || recipe]);
+  await createRecipeArc(this, `${recipe}-${makeName()}`, recipes[map[recipe] || recipe]);
   tenantPages._invalidate();
 };
 

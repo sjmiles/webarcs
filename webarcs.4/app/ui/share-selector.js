@@ -112,7 +112,7 @@ export class ShareSelector extends Xen.Async {
   }
   renderFriends({persona, tenants: friends}) {
     const sharing = this.getSharing();
-    if (sharing) {
+    if (sharing && friends) {
       const {shareWith} = sharing;
       const models = friends.filter((friend) => friend.persona !== persona).map(friend => ({
         ...friend,

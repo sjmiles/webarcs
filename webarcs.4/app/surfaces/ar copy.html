@@ -7,9 +7,6 @@
     margin: 0;
     overflow: hidden;
   }
-  *[hidden] {
-    display: none;
-  }
 </style>
 
 <script src="../../../aframe-1.0.4.js"></script>
@@ -17,9 +14,6 @@
 <script src="../../../aframe-ar.js"></script>
 
 <script type="module">
-  console.log('ar.html says hello');
-  import {XenSurface} from '../../arcs/build/platforms/dom/xen-surface.js';
-  window.surface = new XenSurface(document.body);
-  //import {ArSurface} from './ar-surface.js';
-  //window.surface = new ArSurface(document.body);
+  import {XenComposer} from '../../arcs/build/platforms/dom/xen-dom-composer.js';
+  window.composer = new XenComposer(document.body);
 </script>

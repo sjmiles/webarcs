@@ -12,7 +12,7 @@ export const particle = ({Particle}) => {
 
 const template = Particle.html`
 
-<a-scene Xembedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
+<a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
   <a-assets>
     <a-asset-item id="animated-asset" src="../../../assets/xr/CesiumMan.gltf"></a-asset-item>
   </a-assets>

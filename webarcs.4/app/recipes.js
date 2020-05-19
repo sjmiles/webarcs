@@ -9,8 +9,10 @@
  */
 
 const dino = {
+  meta: {
+    modality: 'xr'
+  },
   root: [{
-    //modality: 'xr',
     particle: {
       kind: 'Xr/Dino'
     }
@@ -18,8 +20,10 @@ const dino = {
 };
 
 const marker = {
+  meta: {
+    modality: 'ar'
+  },
   root: [{
-    //modality: 'xr',
     particle: {
       kind: 'Xr/Marker'
     }
@@ -88,6 +92,7 @@ const book_club = {
     },
     content: [{
       particle: {
+        kind: 'Chat/ChatWrite',
         entries: 'entries',
         user: 'user'
       }

@@ -20,9 +20,12 @@ import {logFactory} from '../utils/log.js';
 
 const log = logFactory(logFactory.flags.ergo, 'recipe', 'purple');
 //
-// Recipes are made of (1) stores, (2) slots, and (3) particles.
+// Recipes are made of (1) stores, (2) slots, (3) particles, and (4) metadata.
 //
 // {
+//   meta: {
+//     modality?: string
+//   }
 //   stores: [{
 //     <storeName>: {
 //       type, tags[]?, value?, id?
@@ -62,6 +65,7 @@ type SlotSpec = [ChildSpec];
 // keywords in recipe JSON:
 // TODO(sjmiles): do we need qualified names, like `$particle` or something?
 const KEYS = {
+  META: 'meta',
   PARTICLE: 'particle',
   STORES: 'stores'
 };
@@ -80,6 +84,8 @@ export class Recipe {
     for (const key in recipe) {
       let info = recipe[key];
       switch (key) {
+        case KEYS.META:
+          break;
         case KEYS.STORES:
           // real stores are mapped to the arc, but they may not be instantiated
           this.realizeStores(runtime, arc, info);

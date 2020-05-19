@@ -10,10 +10,11 @@
 
 /**
  * @packageDocumentation
- * @module devices
+ * @module core
  */
 
 //import {Xen} from '../../../../../xen/xen-async.js';
+import {EventEmitter} from './event-emitter.js';
 import {logFactory} from '../utils/log.js';
 //import {IconsCss} from '../../../../../assets/css/icons.css.js';
 
@@ -31,12 +32,16 @@ export interface RenderPacket {
 export interface Slot {
 };
 
-export class Composer {
+export class Composer extends EventEmitter {
   protected slots;
   protected pendingPackets;
   constructor() {
+    super();
     this.slots = {};
     this.pendingPackets = [];
+  }
+  activate() {
+    this.fire('activate');
   }
   render(packet: RenderPacket) {
     const {id, container, content: {template, model}} = packet;

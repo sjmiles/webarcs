@@ -208,21 +208,21 @@ export class TenantView extends Xen.Async {
       selectedTab: 0
     };
   }
-  update({tenant}, state) {
+  update({tenant}) {
     // TODO(sjmiles): update periodically as a stopgap for observing changes (e.g. a new arc) ... fix!
     setTimeout(() => this.state = {kick: Math.random()}, 500);
     //this._invalidate(), 500);
     if (tenant && tenant.currentArc) {
-      const arc = tenant.currentArc;
-      state.selectedArcId = arc.id;
-      const root = arc.composer.root;
-      if (state.lastRoot !== root) {
-        if (state.lastRoot) {
-          state.lastRoot.hidden = true;
-        }
-        state.lastRoot = root;
-        root.hidden = false;
-      }
+      this.selectArc(tenant, tenant.currentArc);
+      // state.selectedArcId = arc.id;
+      // const root = arc.composer.root;
+      // if (state.lastRoot !== root) {
+      //   if (state.lastRoot) {
+      //     state.lastRoot.hidden = true;
+      //   }
+      //   state.lastRoot = root;
+      //   root.hidden = false;
+      // }
     }
   }
   onTabSelect({currentTarget: {value: selected}}) {
@@ -250,7 +250,7 @@ export class TenantView extends Xen.Async {
       showArc: (selectedTab === 0),
       showDatabase: (selectedTab === 1),
       database: tenant && tenant.context,
-      connectionDatabases: this.renderConnectionDatabases(tenant),
+      connectionDatabases: tenant && tenant.hub && this.renderConnectionDatabases(tenant),
       settingsStyle: selectedArcId ? '' : 'pointer-events: none; color: silver;',
       arcs: {
         template: arcTemplate,
@@ -258,7 +258,7 @@ export class TenantView extends Xen.Async {
       },
       connects: {
         template: connectionTemplate,
-        models: tenant && this.renderConnections(tenant)
+        models: tenant && tenant.hub && this.renderConnections(tenant)
       }
     };
   }
@@ -299,6 +299,9 @@ export class TenantView extends Xen.Async {
   }
   selectArc(tenant, arc) {
     tenant.currentArc = arc;
+    this.state = {selectedArcId: arc.id};
+    arc.composer.activate();
+    //tenant.runtime.surface.activateComposer(arc.composer);
   }
   onSettingsOpen() {
     this.state = {showModal: true};
