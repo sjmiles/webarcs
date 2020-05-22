@@ -33,8 +33,8 @@ export class Database extends AbstractStore {
       //log.warn(`[${this.id}]: onDocsChanged(${docId}): new truth? ${store.truth === doc}`);
       store.truth = doc;
     } else {
-      //log.warn(`[${this.id}]: onDocsChanged(${docId}): adding missing store`);
-      this.add(new Store(this.ownerId, docId));
+      log.error(`[${this.id}]: onDocsChanged(${docId}): docSet doc without a Store`);
+      //this.add(newx Store(this.ownerId, docId));
     }
     log(`[${this.id}]: onDocsChanged(${docId})`);
     this.fire('doc-changed', docId);

@@ -15,8 +15,6 @@ import {AbstractStore} from './abstract-store.js';
 
 const log = logFactory(true, 'store', 'orange');
 
-const persist = false;
-
 // These CRDT documents will grow unbounded forever always waiting for a participant
 // to reappear with changes from the distant past.
 //
@@ -24,10 +22,15 @@ const persist = false;
 // said participant reappears?
 
 export class Store extends AbstractStore {
+  static enablePersistance: boolean;
   name;
   ownerId;
+  ready;
   constructor(ownerId, id: string, truth?) {
     super(id);
+    // TODO(sjmiles): ad hoc persistence control: I moved 'this.persist()' to 'changed' method,
+    // which is invoked whenever truth is set. 
+    this.ready = false;
     // TODO(sjmiles): only here to uniquify persistence keys
     this.ownerId = ownerId;
     // name of data object in document (should we just make this 'data'?)
@@ -35,7 +38,8 @@ export class Store extends AbstractStore {
     if (!truth) {
       truth = Automerge.init();
     }
-    this.truth = truth;
+    // avoid the set-trap
+    this._truth = truth;
   }
   // [arcid]:store:[name]:[type]:[tags]:[persona]
   static idFromMeta({arcid, name, type, tags, tenantid}) {
@@ -88,9 +92,12 @@ export class Store extends AbstractStore {
   isVolatile() {
     return this.tags.includes('volatile');
   }
+  changed() {
+    this.persist();
+    super.changed();
+  }
   change(mutator) {
     this.truth = Automerge.change(this.truth, mutator);
-    this.persist();
     return this;
   }
   load(serial) {
@@ -114,11 +121,13 @@ export class Store extends AbstractStore {
         const value = Object.values(conflicts)[0];
         if (!value) {
           // weird null conflict value?
-        } else if (Array.isArray(value)) {
+        }
+        else if (Array.isArray(value)) {
           //log(`array conflict for [${key}]`, value, conflicts);
           log(`automerge create-op conflict detected: Array may not be supported!`);
           doc = Automerge.change(doc, root => value.forEach(v => root[key].push(v)));
-        } else if (typeof value === 'object') { //} && !key.includes('$arcs')) {
+        }
+        else if (typeof value === 'object') { //} && !key.includes('$arcs')) {
           //log(`object conflict for [${key}]`, value, conflicts);
           log(`automerge create-op conflict detected: applying fix`); //, JSON.stringify(value));
           doc = Automerge.change(doc, root => {
@@ -168,10 +177,11 @@ export class Store extends AbstractStore {
     return `[${this.ownerId}]:${this.id}`;
   }
   persist() {
-    if (persist) {
+    if (Store.enablePersistance) {
       if (!this.isVolatile()) {
         const serial = this.save();
         localStorage.setItem(this.persistId, serial);
+        log(`${this.persistId}: persisted`, this.pojo.data);
       }
     }
   }
@@ -180,6 +190,7 @@ export class Store extends AbstractStore {
       const serial = localStorage.getItem(this.persistId);
       if (serial) {
         this.load(serial);
+        log(`${this.persistId}: restored`, this.pojo.data);
         return true;
       }
     }

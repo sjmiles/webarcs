@@ -38,7 +38,7 @@ export class XenSurface extends Surface {
     // inert really
     const node = dom('div', {
       id: `arc`,
-      style: 'Xflex: 1; display: flex; flex-direction: column;',
+      style: 'flex: 1; display: flex; flex-direction: column;',
       //hidden: true
     }, this.root);
     return new XenComposer(node, this.useShadowRoot);

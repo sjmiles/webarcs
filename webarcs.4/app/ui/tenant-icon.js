@@ -70,9 +70,9 @@ export class TenantIcon extends Xen.Async {
   }
   render({avatar, device}) {
     return {
-      avatar: avatar || '',
-      device: device || '',
-      hideDevice: !device
+      avatar: avatar || '../assets/users/unknown.png',
+      device: device || '../assets/devices/unknown.png',
+      hideDevice: avatar && !device
     };
   }
 }

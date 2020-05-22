@@ -13,6 +13,9 @@ export const particle = ({Particle}) => {
 const template = Particle.html`
 
 <style>
+  :host {
+    flex: 0 !important;
+  }
   [container] {
     border: 4px solid #f4f4f4;
     padding: 2px;

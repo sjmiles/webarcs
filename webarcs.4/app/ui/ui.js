@@ -7,7 +7,7 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
-// import 'https://unpkg.com/@material/mwc-textfield@0.15.0/mwc-textfield.js?module';
+import 'https://unpkg.com/@material/mwc-textfield@0.15.0/mwc-textfield.js?module';
 // import 'https://unpkg.com/@material/mwc-button@0.15.0/mwc-button.js?module';
 // import 'https://unpkg.com/@material/mwc-checkbox@0.15.0/mwc-checkbox.js?module';
 // import 'https://unpkg.com/@material/mwc-formfield@0.15.0/mwc-formfield.js?module';

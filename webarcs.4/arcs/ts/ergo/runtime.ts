@@ -19,40 +19,45 @@ import {Arc} from '../core/arc.js';
 import {Host, ParticleMeta} from '../core/host.js';
 import {Recipe} from './recipe.js';
 import {logFactory} from '../utils/log.js';
-//import {dom} from '../utils/dom.js';
-//import {deepUndefinedToNull} from '../utils/object.js';
-//import {XenComposer} from '../platforms/dom/xen-dom-composer.js';
-//import {requestSurfaceComposer} from '../../../app/surfaces/surfaces.js';
 
 const log = logFactory(logFactory.flags.ergo, 'runtime', 'magenta');
 
 // expensive, so Highlander
 const registry = {};
 
+// TODO(sjmiles): maybe runtime should exclusively own tenant (no back pointer):
+// - keeps tenant as a POJO
+// - keeps runtime as a class
+// - apis take runtimes
+
 export class Runtime extends EventEmitter {
   static register(name, factory) {
     registry[name] = factory;
   }
   tenant;
+  surfaces;
+  pendingArcs;
   constructor(tenant) {
     super();
     this.tenant = tenant;
+    this.pendingArcs = {};
   }
   get arcsArray() {
     return Object.values(this.tenant.arcs);
   }
+  async createComposer(id, modality) {
+    const surface = await this.surfaces.requestSurface(
+      modality,
+      // TODO(sjmiles): this is a hack; the surface provisioning system should work this out
+      this.tenant.root
+    );
+    if (!surface) {
+      alert(`"${modality}" surface is not available on this device.`);
+    } else {
+      return await surface.createComposer(id);
+    }
+  }
   async createArc(id, composer?) {
-    const tenant = this.tenant;
-    // TODO(sjmiles): maybe runtime should own tenant:
-    // - keeps tenant as a POJO
-    // - keeps runtime as a class
-    // - apis take runtimes
-    //
-    //const composer = await requestSurfaceComposer('ar');
-    //const composer = new Composer(arcRoot);
-    //
-    //const root = tenant.root;
-    //const arcRoot = dom('div', {id, style: 'flex: 1; display: flex; flex-direction: column;'}, root);
     const arc = new Arc({id, composer});
     this.addArc(arc);
     return arc;
@@ -154,16 +159,16 @@ export class Runtime extends EventEmitter {
     }
     // TODO(sjmiles): `extra` is doing double duty now; the part of `extra` that is
     // arc meta should be separate so we don't have to synthesize it here
-    const {sharing, description} = arc.extra;
+    const {sharing, description, modality} = arc.extra;
     const meta = {
       sharing: sharing || null,
-      description: description || ''
+      description: description || '',
+      modality: modality || '',
     };
     return {
       id,
       particles: hosts.map(host => host.meta),
       stores: Object.keys(stores).map(name => this.exportStoreMetadata(arc, name)),
-      //sharing: arc.extra.sharing || null,
       meta
     };
   }
@@ -180,26 +185,38 @@ export class Runtime extends EventEmitter {
       await Promise.all(meta.map(meta => this.importArcMetadata(meta)));
     }
   }
+  // TODO(sjmiles): critical method is kind of hiding down here ... this
+  // is where Arc metadata is reified into live Arcs.
+  // It's conceptually related to the code that creates Arcs from recipes.
   async importArcMetadata({id, stores, particles, meta}) {
-    if (this.tenant.arcs[id]) {
+    if (this.tenant.arcs[id] || this.pendingArcs[id]) {
       log(`importArcMetadata: Arc ${id} already exists`);
     } else {
-      const arc = await this.createArc(id);
-      // TODO(sjmiles): `extra` is doing double duty now; the part of `extra` that is
-      // arc meta should be separate so we don't have to synthesize it here
-      const {sharing, description} = meta;
-      arc.extra["sharing"] = sharing;
-      arc.extra["description"] = description;
-      //
-      for (let meta of stores) {
-        this.realizeStore(arc, meta.id, meta.extra);
+      this.pendingArcs[id] = true;
+      const composer = await this.createComposer(id, meta.modality);
+      if (composer) {
+        const arc = await this.createArc(id, composer);
+        // TODO(sjmiles): `extra` is doing double duty now; the part of `extra` that is
+        // arc meta should be separate so we don't have to synthesize it here
+        const {sharing, description, modality} = meta;
+        arc.extra["sharing"] = sharing;
+        arc.extra["description"] = description;
+        arc.extra["modality"] = modality;
+        // bind to stores
+        for (let meta of stores) {
+          this.realizeStore(arc, meta.id, meta.extra);
+        }
+        // create particles
+        for (let meta of particles) {
+          await arc.addParticle(this, meta);
+        }
+        // crank the engine
+        arc.updateHosts();
       }
-      for (let meta of particles) {
-        await arc.addParticle(this, meta);
-      }
-      arc.updateHosts();
+      this.pendingArcs[id] = false;
     }
   }
   updateMetadata() {
+    // TODO(sjmiles): overridden by App
   }
 };

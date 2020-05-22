@@ -61,7 +61,7 @@ export class XenComposer extends Composer {
     }
     const container = parent.appendChild(document.createElement('div'));
     container.style = 'flex: 1; display: flex; flex-direction: column;'
-    container.setAttribute('zlot', id);
+    container.setAttribute('arcslot', id);
     container.id = sanitizeId(id);
     const root = this.useShadowRoot ? container.attachShadow({mode: `open`}) : container;
     const slot = Xen.Template
@@ -131,6 +131,6 @@ const deepQuerySelectorAll = (root, selector) => {
 };
 
 export const showSlots = () => {
-  const slots = deepQuerySelectorAll(document.body, `[zlot]`);
+  const slots = deepQuerySelectorAll(document.body, `[arcslot]`);
   console.warn(slots);
 };

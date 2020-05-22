@@ -24,8 +24,8 @@ import {users} from './users.js';
 import {Surfaces} from './surfaces/surfaces.js';
 
 // flags
-const enableNetwork = false;
-// const enablePersistance = false;
+const enableNetwork = true;
+const enablePersistance = true;
 
 // ui objects
 const {tenantsView, tenantPages} = window;
@@ -35,6 +35,7 @@ const log = logFactory(true, 'Application', 'firebrick');
 
 // bootstrap
 (async () => {
+  Store.enablePersistance = enablePersistance;
   // initialize particle corpus
   await initParticles();
   // initialize tenants
@@ -92,7 +93,7 @@ const initContext = async tenant => {
   // bootstrap profile data
   initProfileStore(tenant);
   // bootstrap metadata store for arcs
-  initMetadataStore(tenant);
+  await initMetadataStore(tenant);
   // bootstrap metadata store for shared arcs
   //initSharedArcStore(tenant);
 };
@@ -164,12 +165,14 @@ const initUi = tenants => {
 /* */
 
 const createRecipeArc = async (runtime, id, recipe) => {
-  const modality = recipe.meta && recipe.meta.modality || 'xen';
-  const surface = await runtime.surfaces.requestSurface(modality, runtime.tenant.root);
-  if (!surface) {
-    alert(`"${modality}" surface is not available on this device.`);
-  } else {
-    const composer = await surface.createComposer(id);
+  const modality = recipe.meta && recipe.meta.modality;
+  const composer = await runtime.createComposer(id, modality);
+  //const surface = await runtime.surfaces.requestSurface(modality, runtime.tenant.root);
+  //if (!surface) {
+  //  alert(`"${modality}" surface is not available on this device.`);
+  //} else {
+    //const composer = await surface.createComposer(id);
+  if (composer) {
     const arc = await runtime.createArc(id, composer);
     // instantiate recipe
     await runtime.instantiate(arc, recipe);

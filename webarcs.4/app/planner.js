@@ -39,7 +39,7 @@ export class Planner {
         const {data} = c.arcSharesStore;
         if (data) {
           // TODO(sjmiles): persona should be available directly
-          const friendPersona = c.endpoint.id.split(':')[0];
+          const friendPersona = c.endpoint.remoteId.split(':')[0];
           this.suggestionsFromShares(tenant, friendPersona, data, suggestions);
         }
       });

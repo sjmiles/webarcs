@@ -48,13 +48,6 @@ const template = Xen.Template.html`
   [row] > * {
     margin-right: 12px;
   }
-  cx-tabs {
-    /* background-color: var(--ui-bg-4); */
-    text-transform: uppercase;
-    font-size: 14px;
-    font-weight: bold;
-    color: #888888;
-  }
   [tenants] {
     zoom: 0.5;
   }
@@ -64,7 +57,6 @@ const template = Xen.Template.html`
   [database] > div {
     padding: 8px;
     font-size: 12px;
-    /* white-space: pre; */
   }
   [flex] {
     flex: 1;
@@ -90,6 +82,7 @@ const template = Xen.Template.html`
     background-color: var(--ui-bg-2);
   }
   [arcItem] {
+    font-size: 75%;
     display: flex;
     border-radius: 8px;
     margin-bottom: 8px;
@@ -99,7 +92,6 @@ const template = Xen.Template.html`
     color: #999;
     cursor: pointer;
     user-select: none;
-    /* justify-content: center; */
     align-items: center;
   }
   [arcItem][selected] {
@@ -178,8 +170,18 @@ const connectionTemplate = Xen.Template.html`
   <tenant-icon xen:style="{{style}}" avatar="{{avataricon}}" device="{{deviceicon}}" title="{{persona}}"></tenant-icon>
 `;
 
+const modeTemplate = Xen.Template.html`
+  <div style="border: 1px solid silver; margin-bottom: 1em;">
+    <div style="font-size: 75%; margin-top: -0.65em; background-color: inherit;">{{mode}}</div>
+    <div style="padding: 8px;">{{arcs}}</div>
+  </div>
+`;
+
 const arcTemplate = Xen.Template.html`
-  <div arcItem selected$="{{selected}}" key="{{id}}" on-click="onArcItemClick"><span name>{{name}}</span><span flex></span><icon options style="font-size: 75%;">settings</icon></div>
+  <div arcItem selected$="{{selected}}" key="{{id}}" on-click="onArcItemClick">
+    <span name>{{name}}</span><span flex></span><icon options style="font-size: 75%;">settings</icon>
+    <span>{{mode}}</span>
+  </div>
 `;
 
 const connectionDatabaseTemplate = Xen.Template.html`
@@ -197,63 +199,37 @@ export class TenantView extends Xen.Async {
   static get observedAttributes() {
     return ['tenant'];
   }
-  // get host() {
-  //   return this;
-  // }
   get template() {
     return template;
-  }
-  getInitialState() {
-    return {
-      selectedTab: 0
-    };
   }
   update({tenant}) {
     // TODO(sjmiles): update periodically as a stopgap for observing changes (e.g. a new arc) ... fix!
     setTimeout(() => this.state = {kick: Math.random()}, 500);
-    //this._invalidate(), 500);
     if (tenant && tenant.currentArc) {
       this.selectArc(tenant, tenant.currentArc);
-      // state.selectedArcId = arc.id;
-      // const root = arc.composer.root;
-      // if (state.lastRoot !== root) {
-      //   if (state.lastRoot) {
-      //     state.lastRoot.hidden = true;
-      //   }
-      //   state.lastRoot = root;
-      //   root.hidden = false;
-      // }
     }
-  }
-  onTabSelect({currentTarget: {value: selected}}) {
-    this.state = {selectedTab: selected};
-  }
-  onTabActivated({detail: {index}}) {
-    this.state = {selectedTab: index};
-    //console.warn(index);
   }
   onArcItemClick({currentTarget: {key}}) {
     if (key) {
-      this.state = {selectedArcId: key, selectedTab: 0};
+      this.state = {selectedArcId: key, showDatabase: false};
       const {tenant} = this.props;
       const arc = tenant.arcs[key];
       this.selectArc(tenant, arc);
     }
   }
-  render({tenant}, {selectedTab, selectedArcId, showModal, kick}) {
+  render({tenant}, {selectedArcId, showModal, showDatabase, kick}) {
     return {
       kick,
       tenant,
       ...tenant,
       showModal,
-      //showHome: (selectedTab === 0),
-      showArc: (selectedTab === 0),
-      showDatabase: (selectedTab === 1),
+      showDatabase,
+      showArc: !showDatabase,
       database: tenant && tenant.context,
       connectionDatabases: tenant && tenant.hub && this.renderConnectionDatabases(tenant),
       settingsStyle: selectedArcId ? '' : 'pointer-events: none; color: silver;',
       arcs: {
-        template: arcTemplate,
+        template: modeTemplate,
         models: this.renderArcs(tenant, selectedArcId)
       },
       connects: {
@@ -267,41 +243,54 @@ export class TenantView extends Xen.Async {
   }
   renderConnections(tenant) {
     return Object.values(tenant.hub.connections).map(conn => {
-      const targetId = conn.endpoint.id;
-      const {deviceicon, avataricon} = tenant.tenants.find(t => t.id === targetId);
-      return {
-        deviceicon,
-        avataricon,
-        style: `border-radius: 100%; border: 3px solid ${conn.endpoint.open ? 'green' : 'red'};`
-      };
+      const targetId = conn.endpoint.remoteId;
+      const friend = tenant.tenants.find(t => t && (t.id === targetId));
+      if (friend) {
+        return {
+          ...friend,
+          style: `border-radius: 100%; border: 3px solid ${conn.endpoint.open ? 'green' : 'red'};`
+        };
+      }
     });
   }
   renderConnectionDatabases(tenant) {
     return {
       template: connectionDatabaseTemplate,
       models: Object.values(tenant.hub.connections).map(c => {
-        const targetId = c.endpoint.id;
-        const {avataricon} = tenant.tenants.find(t => t.id === targetId);
-        return {
-          id: c.endpoint.id,
-          avataricon,
-          database: c.database,
-        };
+        const targetId = c.endpoint.remoteId;
+        const friend = tenant.tenants.find(t => t && (t.id === targetId));
+        if (friend) {
+          return {
+            ...friend,
+            database: c.database,
+          };
+        }
       })
     };
   }
-  renderArcs(tenant, selectedArcId) {
-    return Object.keys(tenant.arcs).map(id => ({
-      id,
-      name: tenant.arcs[id].getDescription() || id,
-      selected: id === selectedArcId
+  renderArcs({arcs}, selectedArcId) {
+    const modes = {};
+    Object.values(arcs).forEach((arc) => {
+      const mode = arc.extra.modality || 'default';
+      const arcs = modes[mode] || (modes[mode] = []);
+      arcs.push(arc);
+    });
+    return Object.entries(modes).map(([mode, arcs]) => ({
+      mode,
+      arcs: {
+        template: arcTemplate,
+        models: arcs.map(arc => ({
+          id: arc.id,
+          name: arc.getDescription() || arc.id,
+          selected: arc.id === selectedArcId,
+        }))
+      }
     }));
   }
   selectArc(tenant, arc) {
     tenant.currentArc = arc;
     this.state = {selectedArcId: arc.id};
     arc.composer.activate();
-    //tenant.runtime.surface.activateComposer(arc.composer);
   }
   onSettingsOpen() {
     this.state = {showModal: true};
@@ -312,10 +301,7 @@ export class TenantView extends Xen.Async {
   onShareViewClick(e) {
     e.stopPropagation();
   }
-  onHome() {
-    this.state = {selectedTab: 0};
-  }
   onStorageToggle() {
-    this.state = {selectedTab: this.state.selectedTab == 0 ? 1 : 0};
+    this.state = {showDatabase: !this.state.showDatabase};
   }
 }

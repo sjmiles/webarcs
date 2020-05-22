@@ -14,16 +14,24 @@ export class Surfaces {
   constructor() {
     this.surfaces = {};
   }
-  async requestSurface(name, container) {
-    switch (name) {
+  normalizeModality(modality) {
+    switch (modality) {
       case 'xr':
       case 'ar':
       case 'vr':
-        name = 'ar';
+        modality = 'ar';
+        break;
+      default:
+        modality = 'xen';
         break;
     }
+    return modality;
+  }
+  async requestSurface(name, container) {
+    name = this.normalizeModality(name);
+    // provide cached version in case Surface supports multiple arcs
     let surface = this.surfaces[name];
-    // acquire surface (with option to return cached version)
+    // acquire surface (with option to reuse cached instance)
     surface = await this.waitForRenderSurface(surface, name, container);
     this.surfaces[name] = surface;
     return surface;
@@ -48,7 +56,7 @@ const createInprocessXenSurface = container => {
 const createRemoteSurface = async name => {
   const win = open(`./app/surfaces/${name}.html`, `` /*`${name}::Arcs`*/, 'resizable=1, scrollbars=1');
   // TODO(sjmiles): should wait for explicit signal, but this is MVP
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  await new Promise(resolve => setTimeout(resolve, 5000));
   const {surface} = win;
   if (surface) {
     surface.win = win;

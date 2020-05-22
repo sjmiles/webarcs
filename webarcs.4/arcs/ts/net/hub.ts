@@ -14,20 +14,21 @@ import {EventEmitter} from '../core/event-emitter.js';
 import {Automerge} from '../data/automerge.js';
 import {logFactory} from '../utils/log.js';
 
-// build logger for 'hub' (if enabled)
-const log = logFactory(logFactory.flags['hub'] || logFactory.flags['all'], 'endpoint', 'lawngreen');
-
 // rendezvous system
 const hubs = [];
 // for debugging only
 window['hubs'] = hubs;
 
 export class Endpoint {
+  remoteId
   id;
+  log;
   connection;
   open;
-  constructor(id, sourceId) {
-    this.id = id;
+  constructor(remoteId, sourceId) {
+    this.remoteId = remoteId;
+    this.id = `${sourceId}:${remoteId}`;
+    this.log = logFactory(logFactory.flags['hub'] || logFactory.flags['all'], `endpoint[${this.id}]`, 'yellowgreen');
     this.listenForPeer(sourceId);
   }
   listenForPeer(sourceId, delay?) {
@@ -45,7 +46,7 @@ export class Endpoint {
     // id: carl
     // to send a message from Moe to Carl, we have to find Carl's connection to Moe, and receive on it.
     //
-    const hub = hubs.find(hub => hub.tenant.id === this.id && hub.connections); // && hub.connections[sourceId]);
+    const hub = hubs.find(hub => hub.tenant.id === this.remoteId && hub.connections); // && hub.connections[sourceId]);
     if (hub) {
       // find connection to 'moe' inside of 'carl' hub
       this.connection = hub.connections[sourceId];
@@ -62,13 +63,13 @@ export class Endpoint {
     if (delay < max) {
       delay += 30;
       if (delay > 0 && delay <= max) {
-        log(`[${sourceId}] waiting (${delay}s) to connect to [${this.id}]`);
+        this.log(`waiting (${delay}s) to connect`);
       }
     }
     setTimeout(() => this.listenForPeer(sourceId, delay), delay*1e3);
   }
   send(msg) {
-    log(`send to [${this.id}]: `, msg);
+    this.log(`send: `, msg);
     this.connection.receive(msg);
   }
 }
@@ -91,7 +92,7 @@ export class Connection {
     this.open();
   }
   initDatabase(tenant, endpoint) {
-    const database = new Database(`${tenant.id}:${endpoint.id}:db`);
+    const database = new Database(`${endpoint.id}:db`);
     database.ownerId = tenant.id;
     database.listen('doc-changed', docId => this.databaseChanged(docId));
     return database;
@@ -102,8 +103,8 @@ export class Connection {
   initArcShares(tenant, endpoint) {
     // TODO(sjmiles): duplex share has inverted `${tenant.id}:${endpoint.id}` depending
     // on which end you are on.
-    const id = `connection:store:arcshares:[ArcShareMeta]:private,volatile`; //:${tenant.id}:${endpoint.id}`;
     // [arcid]:store:[name]:[type]:[tags]:[tenantid]
+    const id = `connection:store:arcshares:[ArcShareMeta]:private,volatile`;
     const store = new Store(tenant.id, id);
     this.database.add(store);
     return store;
@@ -145,8 +146,8 @@ export class Connection {
     setTimeout(() => this._receive(msg), 0);
   }
   _receive(msg) {
-    this.hub.log(`[${this.hub.tenant.id}] received: `, msg);
-    //console.group(`[${this.hub.tenant.id}] received: `, msg)
+    this.hub.log(`received: `, msg);
+    //console.group(`received: `, msg)
     const doc = this.conn.receiveMsg(msg);
     if (doc) {
       const fixed = Store.fix(doc);
@@ -155,6 +156,7 @@ export class Connection {
       }
       const store = this.database.get(msg.docId);
       if (store) {
+        //this.hub.log('_receive:', store.pojo.data && store.pojo.data.length);
         store.truth = fixed;
       } else {
         this.hub.log(`receive: "${this.database.id}" does not contain store "${msg.docId}"`);
@@ -208,7 +210,7 @@ export class Hub extends EventEmitter {
     tenant.context.listen('doc-changed', docId => this.contextChanged(tenant, docId));
   }
   contextChanged(tenant, docId) {
-    this.log(`${tenant.id}: contextChanged:`, docId);
+    this.log(`contextChanged:`, docId);
     const store = tenant.context.get(docId);
     this.maybeShareStoreWithConnections(store);
   }
@@ -225,7 +227,7 @@ export class Hub extends EventEmitter {
     // share with oneself everything that isn't on fire
     if (!store.tags.includes('volatile')) {
       // TODO(sjmiles): ug, fix!
-      const endpointPersona = endpoint.id.split(':')[0];
+      const endpointPersona = endpoint.remoteId.split(':')[0];
       if (endpointPersona == this.tenant.persona) {
         this.shareStore(database, store);
       }
@@ -252,7 +254,7 @@ export class Hub extends EventEmitter {
     const selected = {};
     const shares = store.pojo.data;
     // TODO(sjmiles): persona should be available directly
-    const connectionPersona = endpoint.id.split(':')[0];
+    const connectionPersona = endpoint.remoteId.split(':')[0];
     if (shares) {
       this.log('maybeShareArcs with', endpoint.id, shares);
       Object.values(shares).forEach(share => {
@@ -296,15 +298,38 @@ export class Hub extends EventEmitter {
       Object.values(this.connections).forEach(iter);
     }
   }
-  // gather up novel stores from connection databases into a master database
+  // gather up stores from connection databases
   captureStores(database) {
-    //this.forEachConnection(c => c.database.forEachStore(store => !database.get(store.id) && log('capture', store)));
+    this.forEachConnection(c => {
+      const db = c.database;
+      [...c.database.docs].forEach(([id, doc]) => {
+        if (!db.stores[id]) {
+          const target = database.stores[id];
+          if (!target) {
+            this.log.log(`connection database has doc "${id}" which has no store; target database does not have this store, creating it`);
+            c.database.add(new Store(database.ownerId, id, doc));
+          } else {
+            this.log.error(`connection database has doc "${id}" which has no store; target database ALREADY HAS this store`);
+            // we get here when:
+            //
+            //   A receives changes from B for a store that B shares with A;
+            //   the store is not in the A -> B sharing set (presumably because it's not marked as 'share-with-B' [the originator])
+            //   but the store exists in context (presumably because it's arc was restored from persistence)
+            //
+            // so we have received changes for a live store that wasn't in the sharing channel, which is bad
+            //
+            // I've attempted to fix this by making sure that if B shares something, it's marked 'share-with-B'
+          }
+        }
+      });
+    });
     this.forEachConnection(c => c.database.forEachStore(store => {
-      //if (/*!store.tags.includes('volatile') &&*/ !database.get(store.id)) {
-        // informational only
-        store.wasShared = true;
-        database.add(store);
-      //}
+      if (store && database.stores[store.id] && database.stores[store.id] !== store && !store.id.includes('arcshares')) {
+        //debugger;
+        this.log.error(`divergent stores for "${store.id}"`);
+      }
+      database.add(store);
+      store.wasShared = true;
     }));
   }
   changed() {

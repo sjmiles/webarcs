@@ -108,13 +108,16 @@ export class ShareSelector extends Xen.Async {
     if (!sharing.shareWith) {
       sharing.shareWith = [];
     }
+    if (!sharing.shareWith.includes(this.tenant.id)) {
+      sharing.shareWith.push(this.tenant.id);
+    }
     return sharing;
   }
   renderFriends({persona, tenants: friends}) {
     const sharing = this.getSharing();
     if (sharing && friends) {
       const {shareWith} = sharing;
-      const models = friends.filter((friend) => friend.persona !== persona).map(friend => ({
+      const models = friends.filter(friend => friend && (friend.persona !== persona)).map(friend => ({
         ...friend,
         //style: `border-radius: 100%; border: 5px solid ${shareWith.includes(friend.id) ? 'blue;' : 'silver;'};`,
         style: {borderRadius: '100%', border: '5px solid', borderColor: shareWith.includes(friend.id) ? 'blue' : 'silver'},

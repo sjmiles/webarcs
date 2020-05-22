@@ -27,7 +27,8 @@ const particles = [
   'Chat/ChatList',
   'Chat/ChatWrite',
   'Xr/Dino',
-  'Xr/Marker'
+  'Xr/Marker',
+  'Xr/Hue',
 ];
 
 export const initParticles = async () => {

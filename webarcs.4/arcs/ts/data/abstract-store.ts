@@ -14,7 +14,7 @@ import {deepCopy} from '../utils/object.js';
 
 export class AbstractStore extends EventEmitter {
   id;
-  _truth;
+  protected _truth;
   constructor(id) {
     super();
     this.id = id;

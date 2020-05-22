@@ -85,6 +85,7 @@ export class Recipe {
       let info = recipe[key];
       switch (key) {
         case KEYS.META:
+          arc.extra.modality = info.modality;
           break;
         case KEYS.STORES:
           // real stores are mapped to the arc, but they may not be instantiated
