@@ -135,7 +135,7 @@ const initMetadataStore = async tenant => {
     log(`${tenant.id}: metadata set-truth`); //, store.json);
     const meta = storableToMetadata(store.data);
     await tenant.runtime.importMetadata(meta);
-  });
+  }, `App ${tenant.id}.metadata change listener`);
   // make it shareable via context database
   tenant.context.add(tenant.metadata);
 };

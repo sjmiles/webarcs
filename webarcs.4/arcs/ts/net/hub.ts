@@ -80,11 +80,12 @@ export class Connection {
   database;
   conn;
   pending;
-  //log;
+  log;
   arcSharesStore;
   constructor(hub, peer) {
     this.hub = hub;
     this.endpoint = new Endpoint(peer, hub.tenant.id);
+    this.log = logFactory(logFactory.flags['hub'] || logFactory.flags['all'], `connection[${this.endpoint.id}]`, 'darkgreen');
     this.database = this.initDatabase(hub.tenant, this.endpoint);
     this.arcSharesStore = this.initArcShares(hub.tenant, this.endpoint);
     this.conn = new Automerge.Connection(this.database.truth, msg => this.send(msg));
@@ -128,17 +129,17 @@ export class Connection {
     throw 'connection not open';
   }
   connecting(msg) {
-    //this.hub.log(`messages pending (connecting to ${this.endpoint.id})`);
+    //this.log(`messages pending (connecting...)`);
     this.pending.push(msg);
   }
   connected() {
-    //this.hub.log(`... connected to [${this.endpoint.id}]`);
+    //this.log(`... connected`);
     this.send = this.sendToEndpoint;
     this.pending.forEach(msg => this.send(msg));
     this.pending = null;
   }
   sendToEndpoint(msg) {
-    //this.hub.log(`send to %c[${this.endpoint.id}]%c: `, 'font-weight: bold', 'font-weight: normal', msg);
+    //this.log(`send: `, msg);
     this.endpoint.send(msg);
   }
   receive(msg) {
@@ -146,23 +147,21 @@ export class Connection {
     setTimeout(() => this._receive(msg), 0);
   }
   _receive(msg) {
-    this.hub.log(`received: `, msg);
-    //console.group(`received: `, msg)
     const doc = this.conn.receiveMsg(msg);
     if (doc) {
+      this.log(`received: `, msg);
       const fixed = Store.fix(doc);
       if (fixed !== doc) {
-        this.hub.log(this.hub.tenant.id, msg.docId, 'needed fixup');
+        this.log(msg.docId, 'needed fixup');
       }
       const store = this.database.get(msg.docId);
       if (store) {
         //this.hub.log('_receive:', store.pojo.data && store.pojo.data.length);
         store.truth = fixed;
       } else {
-        this.hub.log(`receive: "${this.database.id}" does not contain store "${msg.docId}"`);
+        this.log(`receive: "${this.database.id}" does not contain store "${msg.docId}"`);
       }
     }
-    //console.groupEnd();
   }
 }
 
@@ -178,10 +177,12 @@ export class Hub extends EventEmitter {
     hubs.push(this);
     this.log = logFactory(logFactory.flags['hub'] || logFactory.flags['all'], `hub[${tenant.id}]`, 'green');
     this.tenant = tenant;
+    this.id = `${this.tenant.id}:hub`;
     this.peerStore = this.initPeers(tenant);
     tenant.context.add(this.peerStore);
+    this.maintainShareStoreFromContext(tenant);
+    // connect *after* we have populated context
     this.connections = this.connectPeers(this.peerStore.truth);
-    this.initContext(tenant);
   }
   initPeers(tenant) {
     //const id = `${tenant.id}:peers`;
@@ -201,7 +202,7 @@ export class Hub extends EventEmitter {
     );
     return connections;
   }
-  initContext(tenant) {
+  maintainShareStoreFromContext(tenant) {
     // THIS MEANS ANYTHING IN tenant.context IS POTENTIALLY SHARED
     tenant.context.forEachStore(store => {
       this.maybeShareStoreWithConnections(store);
@@ -309,7 +310,7 @@ export class Hub extends EventEmitter {
             this.log.log(`connection database has doc "${id}" which has no store; target database does not have this store, creating it`);
             c.database.add(new Store(database.ownerId, id, doc));
           } else {
-            this.log.error(`connection database has doc "${id}" which has no store; target database ALREADY HAS this store`);
+            this.log.error(`connection database "${db.id}" has doc "${id}" which has no store; target database ALREADY HAS this store`);
             // we get here when:
             //
             //   A receives changes from B for a store that B shares with A;
@@ -318,7 +319,7 @@ export class Hub extends EventEmitter {
             //
             // so we have received changes for a live store that wasn't in the sharing channel, which is bad
             //
-            // I've attempted to fix this by making sure that if B shares something, it's marked 'share-with-B'
+            // I've attempted to fix this by making sure that if B shares something, it's also marked 'share-with-B'
           }
         }
       });

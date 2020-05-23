@@ -12,17 +12,27 @@
 const nar = [];
 
 export class EventEmitter {
+  // only used for telemetry
+  id;
   // map of event name to listener array
   listeners = {};
   getEventListeners(eventName) {
     return this.listeners[eventName] || (this.listeners[eventName] = []);
   }
   fire(eventName, event?) {
-    this.getEventListeners(eventName).forEach(listener => listener(event));
+    const listeners = this.getEventListeners(eventName);
+    if (listeners.length) {
+      const telemetry = listeners.map(({_name}) => _name);
+      if (telemetry.some(m => !m.startsWith('(unnamed'))) {
+        console.warn(`${this['id'] || 'unknown'} received ${eventName} event; listeners:`, telemetry);
+      }
+      listeners.forEach(listener => listener(event));
+    }
   }
-  listen(eventName, listener) {
+  listen(eventName, listener, listenerName?) {
     const listeners = this.getEventListeners(eventName);
     listeners.push(listener);
+    listener._name = listenerName || '(unnamed listener)';
     return listener;
   }
   unlisten(eventName, listener) {

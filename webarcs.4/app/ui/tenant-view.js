@@ -211,10 +211,10 @@ export class TenantView extends Xen.Async {
   }
   onArcItemClick({currentTarget: {key}}) {
     if (key) {
-      this.state = {selectedArcId: key, showDatabase: false};
       const {tenant} = this.props;
       const arc = tenant.arcs[key];
       this.selectArc(tenant, arc);
+      this.state = {selectedArcId: key, showDatabase: false};
     }
   }
   render({tenant}, {selectedArcId, showModal, showDatabase, kick}) {
@@ -288,9 +288,11 @@ export class TenantView extends Xen.Async {
     }));
   }
   selectArc(tenant, arc) {
-    tenant.currentArc = arc;
     this.state = {selectedArcId: arc.id};
-    arc.composer.activate();
+    if (tenant.currentArc !== arc) {
+      tenant.currentArc = arc;
+      arc.composer.activate();
+    }
   }
   onSettingsOpen() {
     this.state = {showModal: true};
