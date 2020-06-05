@@ -12,9 +12,9 @@ export const logFlags = {
   any: true,
   arc: false,
   database: false,
-  hub: true,
-  composer: false,
-  render: false,
+  hub: false,
+  composer: true,
+  render: true,
   ergo: true
 };
 

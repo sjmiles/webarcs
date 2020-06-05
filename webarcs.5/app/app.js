@@ -94,8 +94,6 @@ const initContext = async tenant => {
   initProfileStore(tenant);
   // bootstrap metadata store for arcs
   await initMetadataStore(tenant);
-  // bootstrap metadata store for shared arcs
-  //initSharedArcStore(tenant);
 };
 
 const initProfileStore = tenant => {

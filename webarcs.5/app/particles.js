@@ -29,6 +29,7 @@ const particles = [
   'Xr/Dino',
   'Xr/Marker',
   'Xr/Hue',
+  'Datinator/DatiView'
 ];
 
 export const initParticles = async () => {

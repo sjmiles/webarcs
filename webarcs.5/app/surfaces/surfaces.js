@@ -12,6 +12,7 @@ import {XenSurface} from '../../arcs/build/platforms/dom/xen-surface.js';
 
 export class Surfaces {
   constructor() {
+    this.id = Math.random();
     this.surfaces = {};
   }
   normalizeModality(modality) {
@@ -29,12 +30,19 @@ export class Surfaces {
   }
   async requestSurface(name, container) {
     name = this.normalizeModality(name);
-    // provide cached version in case Surface supports multiple arcs
-    let surface = this.surfaces[name];
-    // acquire surface (with option to reuse cached instance)
-    surface = await this.waitForRenderSurface(surface, name, container);
-    this.surfaces[name] = surface;
-    return surface;
+    let surface;
+    // acquire cached surface promise
+    let promise = this.surfaces[name];
+    if (promise) {
+      // if there is a promise, wait for it
+      surface = await this.surfaces[name];
+    }
+    // get new promise (with option to reuse cached instance)
+    promise = this.waitForRenderSurface(surface, name, container);
+    // cache the promise
+    this.surfaces[name] = promise;
+    // return promised surface
+    return await promise;
   }
   async waitForRenderSurface(surface, name, container) {
     return await this.createRenderSurface(surface, name, container);

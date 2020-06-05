@@ -8,6 +8,14 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
+export const datiview = {
+  root: [{
+    particle: {
+      kind: 'Datinator/DatiView'
+    }
+  }]
+};
+
 export const chat = {
   stores: {
     padding: {
@@ -20,7 +28,7 @@ export const chat = {
     },
     user: {
       type: 'BasicProfile',
-      tags: ['map'/*, 'private'*/]
+      tags: ['map']
     }
   },
   root: [{
@@ -55,7 +63,7 @@ export const book_club = {
     },
     user: {
       type: 'BasicProfile',
-      tags: ['map'/*, 'private'*/]
+      tags: ['map']
     }
   },
   root: [{

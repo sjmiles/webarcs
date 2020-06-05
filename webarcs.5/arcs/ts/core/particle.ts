@@ -216,7 +216,7 @@ export class Particle {
       // TODO(sjmiles): presumptively render by including outputs
       const merge = {...this.inputs, ...outputs};
       // TODO(sjmiles): instead, divide output into channels
-      output.slot = this.render(merge, {});
+      output.slot = this.render(merge, this.state);
     }
     this.onoutput(output);
   }

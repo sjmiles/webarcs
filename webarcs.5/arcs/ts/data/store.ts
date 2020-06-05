@@ -13,7 +13,7 @@ import {logFactory} from '../utils/log.js';
 import {Automerge} from './automerge.js';
 import {AbstractStore} from './abstract-store.js';
 
-const log = logFactory(true, 'store', 'orange');
+const log = logFactory(logFactory.flags.database, 'store', 'orange');
 
 // These CRDT documents will grow unbounded forever always waiting for a participant
 // to reappear with changes from the distant past.
@@ -29,7 +29,7 @@ export class Store extends AbstractStore {
   constructor(ownerId, id: string, truth?) {
     super(id);
     // TODO(sjmiles): ad hoc persistence control: I moved 'this.persist()' to 'changed' method,
-    // which is invoked whenever truth is set. 
+    // which is invoked whenever truth is set.
     this.ready = false;
     // TODO(sjmiles): only here to uniquify persistence keys
     this.ownerId = ownerId;
