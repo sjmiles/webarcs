@@ -8,7 +8,7 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import Realm from '../../../../../realms-shim.esm.js'
+import Realm from '../../../../realms-shim.esm.js'
 
 const root = './particles';
 
